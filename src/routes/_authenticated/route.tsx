@@ -8,11 +8,11 @@ export const Route = createFileRoute("/_authenticated")({
     // Como ssr: false está ativo, este código deve rodar principalmente no cliente.
     if (typeof window === "undefined") return;
 
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) {
       throw redirect({ to: "/auth" });
     }
-    return { user: data.user };
+    return { user: data.session.user };
   },
   component: AuthenticatedLayout,
 });

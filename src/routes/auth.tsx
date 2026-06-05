@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/client";
 import { lovable } from "../integrations/lovable";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,13 @@ import { toast } from "sonner";
 import { LogIn, UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
+  beforeLoad: async () => {
+    if (typeof window === "undefined") return;
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: AuthPage,
 });
 
@@ -21,6 +28,16 @@ function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        navigate({ to: "/dashboard" });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -28,7 +45,7 @@ function AuthPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       toast.success("Bem-vindo de volta!");
-      navigate({ to: "/dashboard" });
+      // O onAuthStateChange cuidará do redirecionamento
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
     } finally {
@@ -44,15 +61,17 @@ function AuthPage() {
         email, 
         password,
         options: {
-          data: { nome }
+          data: { nome },
+          emailRedirectTo: window.location.origin + "/dashboard"
         }
       });
       if (error) throw error;
       
-      // Criar perfil manualmente se necessário, mas o trigger no DB cuidará disso no futuro.
-      // Por enquanto, apenas informar o usuário.
-      if (data.user) {
-        toast.success("Cadastro realizado! Verifique seu e-mail.");
+      if (data.user && data.session) {
+        toast.success("Cadastro realizado com sucesso!");
+        navigate({ to: "/dashboard" });
+      } else {
+        toast.success("Cadastro realizado! Verifique seu e-mail para confirmar a conta.");
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar conta");
