@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRouteContext } from "@tanstack/react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 import { FileText, Plus, History, Trophy } from "lucide-react";
 
 
@@ -10,7 +10,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
 });
 
 function Dashboard() {
-  const { user } = useRouteContext({ from: "/_authenticated" });
+  const context = useRouteContext({ from: "/_authenticated" });
+  const user = (context as any)?.user;
+  
+  if (!user) return null;
+  
   const nome = user.user_metadata?.nome || user.email?.split("@")[0];
 
   return (

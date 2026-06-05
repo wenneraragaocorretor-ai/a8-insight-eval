@@ -1,9 +1,13 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../../integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
+    // No servidor, não temos a sessão no cliente Supabase padrão sem middleware de request.
+    // Como ssr: false está ativo, este código deve rodar principalmente no cliente.
+    if (typeof window === "undefined") return;
+
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
       throw redirect({ to: "/auth" });
