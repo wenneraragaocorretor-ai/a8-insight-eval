@@ -55,18 +55,31 @@ function NovaAvaliacao() {
   };
 
   const handleProcessar = async () => {
+    console.log("Iniciando fluxo de geração de avaliação...");
     setIsLoading(true);
     try {
-      const result = await processarIA({ 
+      const payload = { 
         data: { 
           imovel, 
           comparaveis: comparaveis.map(({ id, ...rest }) => rest) 
         } 
-      });
+      };
+      console.log("Enviando payload:", JSON.stringify(payload));
+
+      const result = await processarIA(payload);
+      
+      console.log("Resultado processado com sucesso:", result);
       toast.success("Avaliação concluída com sucesso!");
-      navigate({ to: "/dashboard" }); // Por enquanto volta ao dashboard
+      
+      // Redireciona para o detalhe da avaliação se tivermos o ID
+      if (result && result.id) {
+        navigate({ to: `/avaliacoes/${result.id}` });
+      } else {
+        navigate({ to: "/dashboard" });
+      }
     } catch (error: any) {
-      toast.error(error.message || "Erro ao processar avaliação");
+      console.error("Erro capturado no frontend:", error);
+      toast.error(error.message || "Erro ao processar avaliação. Verifique os dados e tente novamente.");
     } finally {
       setIsLoading(false);
     }
