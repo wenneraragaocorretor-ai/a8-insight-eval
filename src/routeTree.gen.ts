@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as AuthenticatedAvaliacoesNovaRouteImport } from './routes/_authenticated/avaliacoes.nova'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -34,15 +35,23 @@ const AuthenticatedDashboardIndexRoute =
     path: '/dashboard/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAvaliacoesNovaRoute =
+  AuthenticatedAvaliacoesNovaRouteImport.update({
+    id: '/avaliacoes/nova',
+    path: '/avaliacoes/nova',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -50,18 +59,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard/'
+  fullPaths: '/' | '/auth' | '/avaliacoes/nova' | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard'
+  to: '/' | '/auth' | '/avaliacoes/nova' | '/dashboard'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/avaliacoes/nova'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -101,14 +112,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/avaliacoes/nova': {
+      id: '/_authenticated/avaliacoes/nova'
+      path: '/avaliacoes/nova'
+      fullPath: '/avaliacoes/nova'
+      preLoaderRoute: typeof AuthenticatedAvaliacoesNovaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAvaliacoesNovaRoute: typeof AuthenticatedAvaliacoesNovaRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAvaliacoesNovaRoute: AuthenticatedAvaliacoesNovaRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
 }
 
@@ -123,3 +143,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
