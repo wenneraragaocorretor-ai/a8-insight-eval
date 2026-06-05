@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { processarAvaliacaoIA } from "@/lib/avaliacoes.functions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { processarAvaliacaoIA } from "../../lib/avaliacoes.functions";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2 } from "lucide-react";
 
