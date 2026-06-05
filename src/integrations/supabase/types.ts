@@ -14,7 +14,211 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      avaliacoes: {
+        Row: {
+          andar: number | null
+          area_privativa: number | null
+          area_total: number | null
+          banheiros: number | null
+          caracteristicas: Json | null
+          conservacao: string | null
+          created_at: string | null
+          finalidade: string
+          id: string
+          localizacao: string
+          observacoes: string | null
+          padrao: string | null
+          quartos: number | null
+          status: string | null
+          tipo_imovel: string
+          tipo_relatorio: string
+          user_id: string
+          vagas: number | null
+        }
+        Insert: {
+          andar?: number | null
+          area_privativa?: number | null
+          area_total?: number | null
+          banheiros?: number | null
+          caracteristicas?: Json | null
+          conservacao?: string | null
+          created_at?: string | null
+          finalidade: string
+          id?: string
+          localizacao: string
+          observacoes?: string | null
+          padrao?: string | null
+          quartos?: number | null
+          status?: string | null
+          tipo_imovel: string
+          tipo_relatorio: string
+          user_id: string
+          vagas?: number | null
+        }
+        Update: {
+          andar?: number | null
+          area_privativa?: number | null
+          area_total?: number | null
+          banheiros?: number | null
+          caracteristicas?: Json | null
+          conservacao?: string | null
+          created_at?: string | null
+          finalidade?: string
+          id?: string
+          localizacao?: string
+          observacoes?: string | null
+          padrao?: string | null
+          quartos?: number | null
+          status?: string | null
+          tipo_imovel?: string
+          tipo_relatorio?: string
+          user_id?: string
+          vagas?: number | null
+        }
+        Relationships: []
+      }
+      comparaveis: {
+        Row: {
+          area: number | null
+          avaliacao_id: string
+          conservacao: string | null
+          data_pesquisa: string | null
+          fonte: string
+          id: string
+          link: string | null
+          localizacao: string | null
+          observacoes: string | null
+          padrao: string | null
+          quartos: number | null
+          tipo: string | null
+          vagas: number | null
+          valor_anunciado: number | null
+        }
+        Insert: {
+          area?: number | null
+          avaliacao_id: string
+          conservacao?: string | null
+          data_pesquisa?: string | null
+          fonte: string
+          id?: string
+          link?: string | null
+          localizacao?: string | null
+          observacoes?: string | null
+          padrao?: string | null
+          quartos?: number | null
+          tipo?: string | null
+          vagas?: number | null
+          valor_anunciado?: number | null
+        }
+        Update: {
+          area?: number | null
+          avaliacao_id?: string
+          conservacao?: string | null
+          data_pesquisa?: string | null
+          fonte?: string
+          id?: string
+          link?: string | null
+          localizacao?: string | null
+          observacoes?: string | null
+          padrao?: string | null
+          quartos?: number | null
+          tipo?: string | null
+          vagas?: number | null
+          valor_anunciado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comparaveis_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          cidade: string | null
+          created_at: string | null
+          creci: string | null
+          estado: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+          plano: Database["public"]["Enums"]["user_role"] | null
+          stripe_customer_id: string | null
+          telefone: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          created_at?: string | null
+          creci?: string | null
+          estado?: string | null
+          id: string
+          logo_url?: string | null
+          nome: string
+          plano?: Database["public"]["Enums"]["user_role"] | null
+          stripe_customer_id?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          created_at?: string | null
+          creci?: string | null
+          estado?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          plano?: Database["public"]["Enums"]["user_role"] | null
+          stripe_customer_id?: string | null
+          telefone?: string | null
+        }
+        Relationships: []
+      }
+      resultados: {
+        Row: {
+          avaliacao_id: string
+          created_at: string | null
+          id: string
+          pdf_url: string | null
+          relatorio_json: Json | null
+          valor_central: number | null
+          valor_maximo: number | null
+          valor_minimo: number | null
+          valor_unitario_medio: number | null
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string | null
+          id?: string
+          pdf_url?: string | null
+          relatorio_json?: Json | null
+          valor_central?: number | null
+          valor_maximo?: number | null
+          valor_minimo?: number | null
+          valor_unitario_medio?: number | null
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string | null
+          id?: string
+          pdf_url?: string | null
+          relatorio_json?: Json | null
+          valor_central?: number | null
+          valor_maximo?: number | null
+          valor_minimo?: number | null
+          valor_unitario_medio?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resultados_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +227,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "user" | "pro" | "expert"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +354,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["user", "pro", "expert"],
+    },
   },
 } as const
