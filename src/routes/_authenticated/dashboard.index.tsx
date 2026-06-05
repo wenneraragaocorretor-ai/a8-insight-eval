@@ -69,7 +69,9 @@ function Dashboard() {
               <FileText className="h-8 w-8 text-muted-foreground opacity-50" />
             </div>
             <p className="text-muted-foreground">Você ainda não realizou nenhuma avaliação.</p>
-            <Button variant="link" className="text-brand-blue font-semibold mt-2">Começar agora</Button>
+            <Link to="/avaliacoes/nova">
+              <Button variant="link" className="text-brand-blue font-semibold mt-2">Começar agora</Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
