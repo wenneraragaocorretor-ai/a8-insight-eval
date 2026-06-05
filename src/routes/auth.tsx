@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -157,5 +157,3 @@ function AuthPage() {
   );
 }
 
-// Helper to make Link available inside the component
-import { Link } from "@tanstack/react-router";
