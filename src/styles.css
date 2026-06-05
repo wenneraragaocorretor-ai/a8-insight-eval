@@ -125,9 +125,10 @@
   border: 1px solid var(--color-border);
   box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.1);
+  }
 }
 
-@utility premium-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.1);
-}
