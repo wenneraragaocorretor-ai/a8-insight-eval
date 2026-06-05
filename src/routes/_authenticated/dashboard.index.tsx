@@ -20,10 +20,12 @@ function Dashboard() {
           <h1 className="text-3xl font-bold text-brand-blue">Olá, {nome}</h1>
           <p className="text-muted-foreground">Bem-vindo ao seu painel de avaliações.</p>
         </div>
-        <Button className="bg-brand-gold text-primary-foreground gap-2 h-12 px-6 rounded-xl shadow-lg hover:scale-105 transition-transform">
-          <Plus size={20} />
-          Nova Avaliação
-        </Button>
+        <Link to="/avaliacoes/nova">
+          <Button className="bg-brand-gold text-primary-foreground gap-2 h-12 px-6 rounded-xl shadow-lg hover:scale-105 transition-transform">
+            <Plus size={20} />
+            Nova Avaliação
+          </Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
