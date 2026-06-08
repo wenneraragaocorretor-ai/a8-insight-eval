@@ -154,7 +154,7 @@ function NovaAvaliacao() {
               <Label>Área Privativa (m²)</Label>
               <Input type="number" value={imovel.area_privativa || ""} placeholder="Opcional" onChange={(e) => setImovel({...imovel, area_privativa: Number(e.target.value) || 0})} />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:col-span-2">
               <div className="space-y-2">
                 <Label>Quartos</Label>
                 <Input type="number" value={imovel.quartos} onChange={(e) => setImovel({...imovel, quartos: Number(e.target.value)})} />
