@@ -42,44 +42,7 @@ const fmtBRL = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function AvaliacaoDetalhe() {
-  const { id } = Route.useParams();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [avaliacao, setAvaliacao] = useState<any>(null);
-  const [resultado, setResultado] = useState<any>(null);
-  const [comparaveis, setComparaveis] = useState<any[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const [{ data: av, error: e1 }, { data: res, error: e2 }, { data: comps, error: e3 }] =
-          await Promise.all([
-            supabase.from("avaliacoes").select("*").eq("id", id).single(),
-            supabase.from("resultados").select("*").eq("avaliacao_id", id).maybeSingle(),
-            supabase.from("comparaveis").select("*").eq("avaliacao_id", id),
-          ]);
-        if (e1) throw e1;
-        if (e2) throw e2;
-        if (e3) throw e3;
-        setAvaliacao(av);
-        setResultado(res);
-        setComparaveis(comps || []);
-      } catch (err: any) {
-        setError(err.message || "Erro ao carregar dados");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
-
-  if (loading) return <div className="p-8 text-center text-muted-foreground">Carregando avaliação...</div>;
-  if (error) return (
-    <div className="p-8 text-center">
-      <p className="text-destructive">{error}</p>
-      <Link to="/dashboard"><Button className="mt-4">Voltar</Button></Link>
-    </div>
-  );
-
+  const { avaliacao, resultado, comparaveis } = Route.useLoaderData();
   const rel = resultado?.relatorio_json || {};
 
   return (
@@ -141,7 +104,7 @@ function AvaliacaoDetalhe() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {comparaveis.map((c) => (
+              {comparaveis.map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.fonte}</TableCell>
                   <TableCell>{c.localizacao || "—"}</TableCell>
