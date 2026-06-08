@@ -1,26 +1,41 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "../../integrations/supabase/client";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { ChevronLeft, TrendingUp, TrendingDown, Target } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
-  component: AvaliacaoDetalhe,
-  errorComponent: ({ error }) => (
-    <div className="p-8 text-center">
-      <h2 className="text-xl font-bold text-destructive">Erro ao carregar avaliação</h2>
-      <p className="text-muted-foreground mt-2">{error.message}</p>
-      <Link to="/dashboard"><Button className="mt-4">Voltar ao Dashboard</Button></Link>
-    </div>
-  ),
+  loader: async ({ params }) => {
+    return await getAvaliacaoDetalhe({ data: { id: params.id } });
+  },
+  errorComponent: ({ error }) => {
+    const isUnauthorized = error.message?.includes("permissão") || error.message?.includes("permissao");
+    return (
+      <div className="p-8 text-center">
+        {isUnauthorized ? (
+          <>
+            <ShieldAlert className="mx-auto h-10 w-10 text-destructive mb-3" />
+            <h2 className="text-xl font-bold text-destructive">Acesso Negado</h2>
+            <p className="text-muted-foreground mt-2">{error.message}</p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-bold text-destructive">Erro ao carregar avaliação</h2>
+            <p className="text-muted-foreground mt-2">{error.message}</p>
+          </>
+        )}
+        <Link to="/dashboard"><Button className="mt-4">Voltar ao Dashboard</Button></Link>
+      </div>
+    );
+  },
   notFoundComponent: () => (
     <div className="p-8 text-center">
       <h2 className="text-xl font-bold">Avaliação não encontrada</h2>
       <Link to="/dashboard"><Button className="mt-4">Voltar ao Dashboard</Button></Link>
     </div>
   ),
+  component: AvaliacaoDetalhe,
 });
 
 const fmtBRL = (v: number | null | undefined) =>
