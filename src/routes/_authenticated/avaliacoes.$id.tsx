@@ -58,7 +58,10 @@ function AvaliacaoDetalhe() {
             {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {avaliacao?.area_total} m²
           </p>
         </div>
-        <Button onClick={() => gerarPdfAvaliacao(avaliacao, resultado, comparaveis)} className="gap-2 bg-brand-gold text-primary-foreground">
+        <Button onClick={async () => {
+          const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
+          gerarPdfAvaliacao(avaliacao, resultado, comparaveis);
+        }} className="gap-2 bg-brand-gold text-primary-foreground">
           <Download size={16} /> Baixar PDF
         </Button>
       </div>
