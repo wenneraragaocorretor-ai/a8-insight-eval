@@ -83,6 +83,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Gerando riqueza, construindo patrimônio." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "A8 Investimentos Imobiliários" },
+      { name: "twitter:description", content: "Gerando riqueza, construindo patrimônio." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3958f549-a94e-45b3-aa27-a7ba7279503b/id-preview-882b7fd4--605a3853-d613-4c26-8372-1d3b2682f23b.lovable.app-1780949599748.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3958f549-a94e-45b3-aa27-a7ba7279503b/id-preview-882b7fd4--605a3853-d613-4c26-8372-1d3b2682f23b.lovable.app-1780949599748.png" },
     ],
     links: [
       {
