@@ -72,7 +72,9 @@ ${comparaveis.map((c: any) => `- ${c.fonte}: ${c.area}m² por R$ ${c.valor} (${c
 
     const data = await response.json()
     const content = data.content[0].text
-    const result = JSON.parse(content)
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/)
+    const jsonText = jsonMatch ? jsonMatch[1].trim() : content.trim()
+    const result = JSON.parse(jsonText)
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
