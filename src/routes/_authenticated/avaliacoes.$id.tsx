@@ -3,7 +3,8 @@ import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download } from "lucide-react";
+import { gerarPdfAvaliacao } from "../../lib/pdfReport";
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
@@ -57,6 +58,9 @@ function AvaliacaoDetalhe() {
             {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {avaliacao?.area_total} m²
           </p>
         </div>
+        <Button onClick={() => gerarPdfAvaliacao(avaliacao, resultado, comparaveis)} className="gap-2 bg-brand-gold text-primary-foreground">
+          <Download size={16} /> Baixar PDF
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
