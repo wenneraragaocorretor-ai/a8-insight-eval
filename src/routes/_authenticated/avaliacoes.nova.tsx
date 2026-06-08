@@ -7,8 +7,19 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Checkbox } from "../../components/ui/checkbox";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2 } from "lucide-react";
+
+const CARACTERISTICAS_OPCOES = [
+  "Piscina",
+  "Churrasqueira",
+  "Elevador",
+  "Condomínio Fechado",
+  "Área de Lazer",
+  "Energia Solar",
+  "Gerador",
+];
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/nova")({
   component: NovaAvaliacao,
@@ -26,9 +37,12 @@ function NovaAvaliacao() {
     finalidade: "Venda",
     localizacao: "",
     area_total: 0,
+    area_privativa: 0,
     quartos: 0,
+    suites: 0,
     banheiros: 0,
     vagas: 0,
+    andar: 0,
     padrao: "Normal",
     conservacao: "Bom",
     caracteristicas: [] as string[],
@@ -54,24 +68,37 @@ function NovaAvaliacao() {
     }
   };
 
+  const toggleCaracteristica = (opcao: string) => {
+    setImovel(prev => {
+      const current = prev.caracteristicas;
+      const updated = current.includes(opcao)
+        ? current.filter(c => c !== opcao)
+        : [...current, opcao];
+      return { ...prev, caracteristicas: updated };
+    });
+  };
+
   const handleProcessar = async () => {
     console.log("Iniciando fluxo de geração de avaliação...");
     setIsLoading(true);
     try {
-      const payload = { 
-        data: { 
-          imovel, 
-          comparaveis: comparaveis.map(({ id, ...rest }) => rest) 
-        } 
+      const payload = {
+        data: {
+          imovel: {
+            ...imovel,
+            area_privativa: imovel.area_privativa || undefined,
+            andar: imovel.tipo === "Apartamento" ? imovel.andar : undefined,
+          },
+          comparaveis: comparaveis.map(({ id, ...rest }) => rest)
+        }
       };
       console.log("Enviando payload:", JSON.stringify(payload));
 
       const result = await processarIA(payload);
-      
+
       console.log("Resultado processado com sucesso:", result);
       toast.success("Avaliação concluída com sucesso!");
-      
-      // Redireciona para o detalhe da avaliação se tivermos o ID
+
       if (result && result.id) {
         navigate({ to: `/avaliacoes/${result.id}` });
       } else {
@@ -123,10 +150,18 @@ function NovaAvaliacao() {
               <Label>Área Total (m²)</Label>
               <Input type="number" value={imovel.area_total} onChange={(e) => setImovel({...imovel, area_total: Number(e.target.value)})} />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Área Privativa (m²)</Label>
+              <Input type="number" value={imovel.area_privativa || ""} placeholder="Opcional" onChange={(e) => setImovel({...imovel, area_privativa: Number(e.target.value) || 0})} />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>Quartos</Label>
                 <Input type="number" value={imovel.quartos} onChange={(e) => setImovel({...imovel, quartos: Number(e.target.value)})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Suítes</Label>
+                <Input type="number" value={imovel.suites} onChange={(e) => setImovel({...imovel, suites: Number(e.target.value)})} />
               </div>
               <div className="space-y-2">
                 <Label>Banheiros</Label>
@@ -136,6 +171,54 @@ function NovaAvaliacao() {
                 <Label>Vagas</Label>
                 <Input type="number" value={imovel.vagas} onChange={(e) => setImovel({...imovel, vagas: Number(e.target.value)})} />
               </div>
+            </div>
+            {imovel.tipo === "Apartamento" && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>Andar</Label>
+                <Input type="number" value={imovel.andar || ""} placeholder="Opcional" onChange={(e) => setImovel({...imovel, andar: Number(e.target.value) || 0})} />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Padrão Construtivo</Label>
+              <Select value={imovel.padrao} onValueChange={(v) => setImovel({...imovel, padrao: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Simples">Simples</SelectItem>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Alto">Alto</SelectItem>
+                  <SelectItem value="Luxo">Luxo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Estado de Conservação</Label>
+              <Select value={imovel.conservacao} onValueChange={(v) => setImovel({...imovel, conservacao: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Novo">Novo</SelectItem>
+                  <SelectItem value="Bom">Bom</SelectItem>
+                  <SelectItem value="Regular">Regular</SelectItem>
+                  <SelectItem value="Ruim">Ruim</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-3 md:col-span-2">
+              <Label>Características Adicionais</Label>
+              <div className="flex flex-wrap gap-4">
+                {CARACTERISTICAS_OPCOES.map((opcao) => (
+                  <label key={opcao} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={imovel.caracteristicas.includes(opcao)}
+                      onCheckedChange={() => toggleCaracteristica(opcao)}
+                    />
+                    <span className="text-sm">{opcao}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Observações</Label>
+              <Input placeholder="Informações complementares..." value={imovel.observacoes} onChange={(e) => setImovel({...imovel, observacoes: e.target.value})} />
             </div>
           </CardContent>
           <div className="p-6 border-t flex justify-end">
