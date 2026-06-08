@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download } from "lucide-react";
-import { gerarPdfAvaliacao } from "../../lib/pdfReport";
+
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
@@ -58,7 +58,10 @@ function AvaliacaoDetalhe() {
             {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {avaliacao?.area_total} m²
           </p>
         </div>
-        <Button onClick={() => gerarPdfAvaliacao(avaliacao, resultado, comparaveis)} className="gap-2 bg-brand-gold text-primary-foreground">
+        <Button onClick={async () => {
+          const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
+          gerarPdfAvaliacao(avaliacao, resultado, comparaveis);
+        }} className="gap-2 bg-brand-gold text-primary-foreground">
           <Download size={16} /> Baixar PDF
         </Button>
       </div>
