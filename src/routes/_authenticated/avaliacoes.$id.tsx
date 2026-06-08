@@ -58,6 +58,9 @@ function AvaliacaoDetalhe() {
             {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {avaliacao?.area_total} m²
           </p>
         </div>
+        <Button onClick={() => gerarPdfAvaliacao(avaliacao, resultado, comparaveis)} className="gap-2 bg-brand-gold text-primary-foreground">
+          <Download size={16} /> Baixar PDF
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
