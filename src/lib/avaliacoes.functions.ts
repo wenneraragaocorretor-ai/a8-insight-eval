@@ -159,3 +159,24 @@ export const getAvaliacaoDetalhe = createServerFn({ method: "GET" })
 
     return { avaliacao, resultado: resultado ?? null, comparaveis: comparaveis ?? [] };
   });
+
+export const listarAvaliacoes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("avaliacoes")
+      .select("id, tipo_imovel, localizacao, created_at, status, resultados(valor_central)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((a: any) => ({
+      id: a.id,
+      tipo_imovel: a.tipo_imovel,
+      localizacao: a.localizacao,
+      created_at: a.created_at,
+      status: a.status,
+      valor_central: a.resultados?.[0]?.valor_central ?? null,
+    }));
+  });
