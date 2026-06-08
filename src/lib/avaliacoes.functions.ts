@@ -108,3 +108,34 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       throw new Error(error.message || "Falha ao processar avaliação");
     }
   });
+
+const idSchema = z.object({ id: z.string().uuid() });
+
+export const getAvaliacaoDetalhe = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => idSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: avaliacao, error: errA } = await supabase
+      .from("avaliacoes")
+      .select("*")
+      .eq("id", data.id)
+      .single();
+
+    if (errA) throw new Error("Avaliação não encontrada");
+
+    if (avaliacao.user_id !== userId) {
+      throw new Error("Você não tem permissão para visualizar esta avaliação");
+    }
+
+    const [{ data: resultado, error: errR }, { data: comparaveis, error: errC }] = await Promise.all([
+      supabase.from("resultados").select("*").eq("avaliacao_id", data.id).maybeSingle(),
+      supabase.from("comparaveis").select("*").eq("avaliacao_id", data.id),
+    ]);
+
+    if (errR) throw new Error("Erro ao carregar resultado");
+    if (errC) throw new Error("Erro ao carregar comparáveis");
+
+    return { avaliacao, resultado: resultado ?? null, comparaveis: comparaveis ?? [] };
+  });

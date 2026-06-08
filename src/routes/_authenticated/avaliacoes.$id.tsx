@@ -1,70 +1,48 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "../../integrations/supabase/client";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { ChevronLeft, TrendingUp, TrendingDown, Target } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
-  component: AvaliacaoDetalhe,
-  errorComponent: ({ error }) => (
-    <div className="p-8 text-center">
-      <h2 className="text-xl font-bold text-destructive">Erro ao carregar avaliação</h2>
-      <p className="text-muted-foreground mt-2">{error.message}</p>
-      <Link to="/dashboard"><Button className="mt-4">Voltar ao Dashboard</Button></Link>
-    </div>
-  ),
+  loader: async ({ params }) => {
+    return await getAvaliacaoDetalhe({ data: { id: params.id } });
+  },
+  errorComponent: ({ error }) => {
+    const isUnauthorized = error.message?.includes("permissão") || error.message?.includes("permissao");
+    return (
+      <div className="p-8 text-center">
+        {isUnauthorized ? (
+          <>
+            <ShieldAlert className="mx-auto h-10 w-10 text-destructive mb-3" />
+            <h2 className="text-xl font-bold text-destructive">Acesso Negado</h2>
+            <p className="text-muted-foreground mt-2">{error.message}</p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-bold text-destructive">Erro ao carregar avaliação</h2>
+            <p className="text-muted-foreground mt-2">{error.message}</p>
+          </>
+        )}
+        <Link to="/dashboard"><Button className="mt-4">Voltar ao Dashboard</Button></Link>
+      </div>
+    );
+  },
   notFoundComponent: () => (
     <div className="p-8 text-center">
       <h2 className="text-xl font-bold">Avaliação não encontrada</h2>
       <Link to="/dashboard"><Button className="mt-4">Voltar ao Dashboard</Button></Link>
     </div>
   ),
+  component: AvaliacaoDetalhe,
 });
 
 const fmtBRL = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function AvaliacaoDetalhe() {
-  const { id } = Route.useParams();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [avaliacao, setAvaliacao] = useState<any>(null);
-  const [resultado, setResultado] = useState<any>(null);
-  const [comparaveis, setComparaveis] = useState<any[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const [{ data: av, error: e1 }, { data: res, error: e2 }, { data: comps, error: e3 }] =
-          await Promise.all([
-            supabase.from("avaliacoes").select("*").eq("id", id).single(),
-            supabase.from("resultados").select("*").eq("avaliacao_id", id).maybeSingle(),
-            supabase.from("comparaveis").select("*").eq("avaliacao_id", id),
-          ]);
-        if (e1) throw e1;
-        if (e2) throw e2;
-        if (e3) throw e3;
-        setAvaliacao(av);
-        setResultado(res);
-        setComparaveis(comps || []);
-      } catch (err: any) {
-        setError(err.message || "Erro ao carregar dados");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
-
-  if (loading) return <div className="p-8 text-center text-muted-foreground">Carregando avaliação...</div>;
-  if (error) return (
-    <div className="p-8 text-center">
-      <p className="text-destructive">{error}</p>
-      <Link to="/dashboard"><Button className="mt-4">Voltar</Button></Link>
-    </div>
-  );
-
+  const { avaliacao, resultado, comparaveis } = Route.useLoaderData();
   const rel = resultado?.relatorio_json || {};
 
   return (
@@ -126,7 +104,7 @@ function AvaliacaoDetalhe() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {comparaveis.map((c) => (
+              {comparaveis.map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.fonte}</TableCell>
                   <TableCell>{c.localizacao || "—"}</TableCell>
