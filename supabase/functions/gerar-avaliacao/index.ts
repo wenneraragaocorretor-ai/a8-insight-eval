@@ -55,7 +55,7 @@ ${comparaveis.map((c: any) => `- ${c.fonte}: ${c.area}m² por R$ ${c.valor} (${c
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20240620', // Versão estável mais recente
+        model: 'claude-sonnet-4-5',
         max_tokens: 1024,
         system: systemPrompt,
         messages: [
