@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download } from "lucide-react";
-import { gerarPdfAvaliacao } from "../../lib/pdfReport";
+
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
