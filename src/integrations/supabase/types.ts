@@ -30,6 +30,7 @@ export type Database = {
           padrao: string | null
           quartos: number | null
           status: string | null
+          suites: number | null
           tipo_imovel: string
           tipo_relatorio: string
           user_id: string
@@ -50,6 +51,7 @@ export type Database = {
           padrao?: string | null
           quartos?: number | null
           status?: string | null
+          suites?: number | null
           tipo_imovel: string
           tipo_relatorio: string
           user_id: string
@@ -70,6 +72,7 @@ export type Database = {
           padrao?: string | null
           quartos?: number | null
           status?: string | null
+          suites?: number | null
           tipo_imovel?: string
           tipo_relatorio?: string
           user_id?: string
