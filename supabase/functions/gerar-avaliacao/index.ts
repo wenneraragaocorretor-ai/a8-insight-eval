@@ -13,10 +13,10 @@ serve(async (req) => {
 
   try {
     const { imovel, comparaveis } = await req.json()
-    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
+    const anthropicApiKey = Deno.env.get('CHAVE_API_ANTROPICA')
 
     if (!anthropicApiKey) {
-      throw new Error('ANTHROPIC_API_KEY não configurada')
+      throw new Error('CHAVE_API_ANTROPICA não configurada')
     }
 
     console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
