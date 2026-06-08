@@ -16,6 +16,7 @@ const evaluationSchema = z.object({
     andar: z.number().optional(),
     padrao: z.string(),
     conservacao: z.string(),
+    posicao: z.string().optional(),
     caracteristicas: z.array(z.string()),
     observacoes: z.string().optional(),
   }),
@@ -23,6 +24,18 @@ const evaluationSchema = z.object({
     fonte: z.string(),
     localizacao: z.string(),
     area: z.number(),
+    area_privativa: z.number().optional(),
+    quartos: z.number().optional(),
+    suites: z.number().optional(),
+    banheiros: z.number().optional(),
+    vagas: z.number().optional(),
+    padrao: z.string().optional(),
+    conservacao: z.string().optional(),
+    posicao: z.string().optional(),
+    andar: z.number().optional(),
+    idade: z.number().optional(),
+    condominio: z.number().optional(),
+    caracteristicas: z.array(z.string()).optional(),
     valor: z.number(),
   })).min(3),
 });
@@ -33,10 +46,8 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     console.log("Iniciando processamento no servidor para o usuário:", userId);
-    console.log("Dados recebidos:", JSON.stringify(data));
 
     try {
-      // Chamando a Edge Function do Supabase
       const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
         body: data,
       });
@@ -47,13 +58,9 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       }
 
       if (aiResult.error) {
-        console.error("Erro retornado pela IA:", aiResult.error);
         throw new Error(aiResult.error);
       }
 
-      console.log("Resultado da IA recebido com sucesso");
-
-      // Salvar no banco de dados
       const { data: avaliacao, error: errA } = await supabase
         .from("avaliacoes")
         .insert({
@@ -71,6 +78,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           andar: data.imovel.andar ?? null,
           padrao: data.imovel.padrao,
           conservacao: data.imovel.conservacao,
+          posicao: data.imovel.posicao ?? null,
           caracteristicas: data.imovel.caracteristicas,
           observacoes: data.imovel.observacoes,
           status: "concluido",
@@ -78,25 +86,32 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         .select()
         .single();
 
-      if (errA) {
-        console.error("Erro ao salvar avaliação:", errA);
-        throw errA;
-      }
+      if (errA) throw errA;
 
-      // Salvar comparáveis
       const comparaveisData = data.comparaveis.map(c => ({
         avaliacao_id: avaliacao.id,
         fonte: c.fonte,
         localizacao: c.localizacao,
         tipo: data.imovel.tipo,
         area: c.area,
+        area_privativa: c.area_privativa ?? null,
+        quartos: c.quartos ?? null,
+        suites: c.suites ?? null,
+        banheiros: c.banheiros ?? null,
+        vagas: c.vagas ?? null,
+        padrao: c.padrao ?? null,
+        conservacao: c.conservacao ?? null,
+        posicao: c.posicao ?? null,
+        andar: c.andar ?? null,
+        idade: c.idade ?? null,
+        condominio: c.condominio ?? null,
+        caracteristicas: c.caracteristicas ?? [],
         valor_anunciado: c.valor,
       }));
-      
+
       const { error: errC } = await supabase.from("comparaveis").insert(comparaveisData);
       if (errC) console.error("Erro ao salvar comparáveis:", errC);
 
-      // Salvar resultado
       const { error: errR } = await supabase.from("resultados").insert({
         avaliacao_id: avaliacao.id,
         valor_minimo: aiResult.valor_minimo,

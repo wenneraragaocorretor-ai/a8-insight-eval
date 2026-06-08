@@ -21,6 +21,59 @@ const CARACTERISTICAS_OPCOES = [
   "Gerador",
 ];
 
+const CARACTERISTICAS_COMPARAVEL = [
+  "Piscina",
+  "Churrasqueira",
+  "Elevador",
+  "Condomínio Fechado",
+  "Área de Lazer",
+];
+
+const POSICOES_IMOVEL = ["Meio de quadra", "Esquina", "Encravado", "Gleba"];
+const POSICOES_COMPARAVEL = ["Meio de quadra", "Esquina", "Encravado"];
+const PADROES = ["Simples", "Normal", "Alto", "Luxo"];
+const CONSERVACOES = ["Novo", "Bom", "Regular", "Ruim"];
+
+type Comparavel = {
+  id: number;
+  fonte: string;
+  localizacao: string;
+  area: number;
+  area_privativa: number;
+  quartos: number;
+  suites: number;
+  banheiros: number;
+  vagas: number;
+  padrao: string;
+  conservacao: string;
+  posicao: string;
+  andar: number;
+  idade: number;
+  condominio: number;
+  caracteristicas: string[];
+  valor: number;
+};
+
+const novoComparavel = (id: number): Comparavel => ({
+  id,
+  fonte: "",
+  localizacao: "",
+  area: 0,
+  area_privativa: 0,
+  quartos: 0,
+  suites: 0,
+  banheiros: 0,
+  vagas: 0,
+  padrao: "Normal",
+  conservacao: "Bom",
+  posicao: "Meio de quadra",
+  andar: 0,
+  idade: 0,
+  condominio: 0,
+  caracteristicas: [],
+  valor: 0,
+});
+
 export const Route = createFileRoute("/_authenticated/avaliacoes/nova")({
   component: NovaAvaliacao,
 });
@@ -31,7 +84,6 @@ function NovaAvaliacao() {
   const navigate = useNavigate();
   const processarIA = useServerFn(processarAvaliacaoIA);
 
-  // Dados do Imóvel
   const [imovel, setImovel] = useState({
     tipo: "Apartamento",
     finalidade: "Venda",
@@ -45,72 +97,93 @@ function NovaAvaliacao() {
     andar: 0,
     padrao: "Normal",
     conservacao: "Bom",
+    posicao: "Meio de quadra",
     caracteristicas: [] as string[],
     observacoes: "",
   });
 
-  // Comparáveis
-  const [comparaveis, setComparaveis] = useState([
-    { id: 1, fonte: "", localizacao: "", area: 0, valor: 0 },
-    { id: 2, fonte: "", localizacao: "", area: 0, valor: 0 },
-    { id: 3, fonte: "", localizacao: "", area: 0, valor: 0 },
+  const [comparaveis, setComparaveis] = useState<Comparavel[]>([
+    novoComparavel(1),
+    novoComparavel(2),
+    novoComparavel(3),
   ]);
 
   const addComparavel = () => {
-    if (comparaveis.length < 12) {
-      setComparaveis([...comparaveis, { id: Date.now(), fonte: "", localizacao: "", area: 0, valor: 0 }]);
-    }
+    if (comparaveis.length < 12) setComparaveis([...comparaveis, novoComparavel(Date.now())]);
   };
 
   const removeComparavel = (id: number) => {
-    if (comparaveis.length > 3) {
-      setComparaveis(comparaveis.filter(c => c.id !== id));
-    }
+    if (comparaveis.length > 3) setComparaveis(comparaveis.filter(c => c.id !== id));
+  };
+
+  const updateComp = (index: number, patch: Partial<Comparavel>) => {
+    const newC = [...comparaveis];
+    newC[index] = { ...newC[index], ...patch };
+    setComparaveis(newC);
   };
 
   const toggleCaracteristica = (opcao: string) => {
-    setImovel(prev => {
-      const current = prev.caracteristicas;
-      const updated = current.includes(opcao)
-        ? current.filter(c => c !== opcao)
-        : [...current, opcao];
-      return { ...prev, caracteristicas: updated };
+    setImovel(prev => ({
+      ...prev,
+      caracteristicas: prev.caracteristicas.includes(opcao)
+        ? prev.caracteristicas.filter(c => c !== opcao)
+        : [...prev.caracteristicas, opcao],
+    }));
+  };
+
+  const toggleCompCaracteristica = (index: number, opcao: string) => {
+    const cur = comparaveis[index].caracteristicas;
+    updateComp(index, {
+      caracteristicas: cur.includes(opcao) ? cur.filter(c => c !== opcao) : [...cur, opcao],
     });
   };
 
   const handleProcessar = async () => {
-    console.log("Iniciando fluxo de geração de avaliação...");
     setIsLoading(true);
     try {
+      const isApto = imovel.tipo === "Apartamento";
       const payload = {
         data: {
           imovel: {
             ...imovel,
             area_privativa: imovel.area_privativa || undefined,
-            andar: imovel.tipo === "Apartamento" ? imovel.andar : undefined,
+            suites: imovel.suites || undefined,
+            andar: isApto ? imovel.andar || undefined : undefined,
           },
-          comparaveis: comparaveis.map(({ id, ...rest }) => rest)
-        }
+          comparaveis: comparaveis.map(({ id, ...c }) => ({
+            fonte: c.fonte,
+            localizacao: c.localizacao,
+            area: c.area,
+            area_privativa: c.area_privativa || undefined,
+            quartos: c.quartos || undefined,
+            suites: c.suites || undefined,
+            banheiros: c.banheiros || undefined,
+            vagas: c.vagas || undefined,
+            padrao: c.padrao,
+            conservacao: c.conservacao,
+            posicao: c.posicao,
+            andar: isApto ? c.andar || undefined : undefined,
+            idade: c.idade || undefined,
+            condominio: c.condominio || undefined,
+            caracteristicas: c.caracteristicas,
+            valor: c.valor,
+          })),
+        },
       };
-      console.log("Enviando payload:", JSON.stringify(payload));
 
       const result = await processarIA(payload);
-
-      console.log("Resultado processado com sucesso:", result);
       toast.success("Avaliação concluída com sucesso!");
-
-      if (result && result.id) {
-        navigate({ to: `/avaliacoes/${result.id}` });
-      } else {
-        navigate({ to: "/dashboard" });
-      }
+      if (result && result.id) navigate({ to: `/avaliacoes/${result.id}` });
+      else navigate({ to: "/dashboard" });
     } catch (error: any) {
-      console.error("Erro capturado no frontend:", error);
-      toast.error(error.message || "Erro ao processar avaliação. Verifique os dados e tente novamente.");
+      console.error("Erro:", error);
+      toast.error(error.message || "Erro ao processar avaliação.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const isApto = imovel.tipo === "Apartamento";
 
   return (
     <div className="max-w-4xl mx-auto py-8">
@@ -172,21 +245,27 @@ function NovaAvaliacao() {
                 <Input type="number" value={imovel.vagas} onChange={(e) => setImovel({...imovel, vagas: Number(e.target.value)})} />
               </div>
             </div>
-            {imovel.tipo === "Apartamento" && (
-              <div className="space-y-2 md:col-span-2">
+            {isApto && (
+              <div className="space-y-2">
                 <Label>Andar</Label>
                 <Input type="number" value={imovel.andar || ""} placeholder="Opcional" onChange={(e) => setImovel({...imovel, andar: Number(e.target.value) || 0})} />
               </div>
             )}
             <div className="space-y-2">
+              <Label>Posição do terreno/imóvel</Label>
+              <Select value={imovel.posicao} onValueChange={(v) => setImovel({...imovel, posicao: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {POSICOES_IMOVEL.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Padrão Construtivo</Label>
               <Select value={imovel.padrao} onValueChange={(v) => setImovel({...imovel, padrao: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Simples">Simples</SelectItem>
-                  <SelectItem value="Normal">Normal</SelectItem>
-                  <SelectItem value="Alto">Alto</SelectItem>
-                  <SelectItem value="Luxo">Luxo</SelectItem>
+                  {PADROES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -195,10 +274,7 @@ function NovaAvaliacao() {
               <Select value={imovel.conservacao} onValueChange={(v) => setImovel({...imovel, conservacao: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Novo">Novo</SelectItem>
-                  <SelectItem value="Bom">Bom</SelectItem>
-                  <SelectItem value="Regular">Regular</SelectItem>
-                  <SelectItem value="Ruim">Ruim</SelectItem>
+                  {CONSERVACOES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -232,38 +308,97 @@ function NovaAvaliacao() {
           <h2 className="text-xl font-bold text-brand-blue">Imóveis Comparáveis (Mínimo 3)</h2>
           {comparaveis.map((c, index) => (
             <Card key={c.id} className="premium-card">
-              <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base">Comparável #{index + 1}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => removeComparavel(c.id)} className="text-destructive" disabled={comparaveis.length <= 3}>
+                  <Trash2 size={18} />
+                </Button>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Fonte (Ex: Zap)</Label>
-                  <Input value={c.fonte} onChange={(e) => {
-                    const newC = [...comparaveis];
-                    newC[index].fonte = e.target.value;
-                    setComparaveis(newC);
-                  }} />
+                  <Label>Fonte (Ex: Zap, OLX)</Label>
+                  <Input value={c.fonte} onChange={(e) => updateComp(index, { fonte: e.target.value })} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Localização / Referência</Label>
+                  <Input value={c.localizacao} onChange={(e) => updateComp(index, { localizacao: e.target.value })} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Área (m²)</Label>
-                  <Input type="number" value={c.area} onChange={(e) => {
-                    const newC = [...comparaveis];
-                    newC[index].area = Number(e.target.value);
-                    setComparaveis(newC);
-                  }} />
+                  <Label>Área Total (m²)</Label>
+                  <Input type="number" value={c.area} onChange={(e) => updateComp(index, { area: Number(e.target.value) })} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Valor (R$)</Label>
-                  <Input type="number" value={c.valor} onChange={(e) => {
-                    const newC = [...comparaveis];
-                    newC[index].valor = Number(e.target.value);
-                    setComparaveis(newC);
-                  }} />
+                  <Label>Área Privativa (m²)</Label>
+                  <Input type="number" value={c.area_privativa || ""} placeholder="Opcional" onChange={(e) => updateComp(index, { area_privativa: Number(e.target.value) || 0 })} />
                 </div>
-                <div className="flex items-end pb-1 gap-2">
-                  <Input placeholder="Local/Ref" value={c.localizacao} onChange={(e) => {
-                    const newC = [...comparaveis];
-                    newC[index].localizacao = e.target.value;
-                    setComparaveis(newC);
-                  }} />
-                  <Button variant="ghost" size="icon" onClick={() => removeComparavel(c.id)} className="text-destructive"><Trash2 size={18} /></Button>
+                <div className="space-y-2">
+                  <Label>Valor Anunciado (R$)</Label>
+                  <Input type="number" value={c.valor} onChange={(e) => updateComp(index, { valor: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Quartos</Label>
+                  <Input type="number" value={c.quartos} onChange={(e) => updateComp(index, { quartos: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Suítes</Label>
+                  <Input type="number" value={c.suites} onChange={(e) => updateComp(index, { suites: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Banheiros</Label>
+                  <Input type="number" value={c.banheiros} onChange={(e) => updateComp(index, { banheiros: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Vagas</Label>
+                  <Input type="number" value={c.vagas} onChange={(e) => updateComp(index, { vagas: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Padrão Construtivo</Label>
+                  <Select value={c.padrao} onValueChange={(v) => updateComp(index, { padrao: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{PADROES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Estado de Conservação</Label>
+                  <Select value={c.conservacao} onValueChange={(v) => updateComp(index, { conservacao: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{CONSERVACOES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Posição</Label>
+                  <Select value={c.posicao} onValueChange={(v) => updateComp(index, { posicao: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{POSICOES_COMPARAVEL.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                {isApto && (
+                  <div className="space-y-2">
+                    <Label>Andar</Label>
+                    <Input type="number" value={c.andar || ""} placeholder="Opcional" onChange={(e) => updateComp(index, { andar: Number(e.target.value) || 0 })} />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Idade aprox. (anos)</Label>
+                  <Input type="number" value={c.idade || ""} placeholder="Opcional" onChange={(e) => updateComp(index, { idade: Number(e.target.value) || 0 })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Condomínio mensal (R$)</Label>
+                  <Input type="number" value={c.condominio || ""} placeholder="Opcional" onChange={(e) => updateComp(index, { condominio: Number(e.target.value) || 0 })} />
+                </div>
+                <div className="space-y-3 md:col-span-3">
+                  <Label>Características presentes</Label>
+                  <div className="flex flex-wrap gap-4">
+                    {CARACTERISTICAS_COMPARAVEL.map((opcao) => (
+                      <label key={opcao} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={c.caracteristicas.includes(opcao)}
+                          onCheckedChange={() => toggleCompCaracteristica(index, opcao)}
+                        />
+                        <span className="text-sm">{opcao}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>

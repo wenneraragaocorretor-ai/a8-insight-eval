@@ -28,6 +28,7 @@ export type Database = {
           localizacao: string
           observacoes: string | null
           padrao: string | null
+          posicao: string | null
           quartos: number | null
           status: string | null
           suites: number | null
@@ -49,6 +50,7 @@ export type Database = {
           localizacao: string
           observacoes?: string | null
           padrao?: string | null
+          posicao?: string | null
           quartos?: number | null
           status?: string | null
           suites?: number | null
@@ -70,6 +72,7 @@ export type Database = {
           localizacao?: string
           observacoes?: string | null
           padrao?: string | null
+          posicao?: string | null
           quartos?: number | null
           status?: string | null
           suites?: number | null
@@ -82,49 +85,73 @@ export type Database = {
       }
       comparaveis: {
         Row: {
+          andar: number | null
           area: number | null
+          area_privativa: number | null
           avaliacao_id: string
+          banheiros: number | null
+          caracteristicas: Json | null
+          condominio: number | null
           conservacao: string | null
           data_pesquisa: string | null
           fonte: string
           id: string
+          idade: number | null
           link: string | null
           localizacao: string | null
           observacoes: string | null
           padrao: string | null
+          posicao: string | null
           quartos: number | null
+          suites: number | null
           tipo: string | null
           vagas: number | null
           valor_anunciado: number | null
         }
         Insert: {
+          andar?: number | null
           area?: number | null
+          area_privativa?: number | null
           avaliacao_id: string
+          banheiros?: number | null
+          caracteristicas?: Json | null
+          condominio?: number | null
           conservacao?: string | null
           data_pesquisa?: string | null
           fonte: string
           id?: string
+          idade?: number | null
           link?: string | null
           localizacao?: string | null
           observacoes?: string | null
           padrao?: string | null
+          posicao?: string | null
           quartos?: number | null
+          suites?: number | null
           tipo?: string | null
           vagas?: number | null
           valor_anunciado?: number | null
         }
         Update: {
+          andar?: number | null
           area?: number | null
+          area_privativa?: number | null
           avaliacao_id?: string
+          banheiros?: number | null
+          caracteristicas?: Json | null
+          condominio?: number | null
           conservacao?: string | null
           data_pesquisa?: string | null
           fonte?: string
           id?: string
+          idade?: number | null
           link?: string | null
           localizacao?: string | null
           observacoes?: string | null
           padrao?: string | null
+          posicao?: string | null
           quartos?: number | null
+          suites?: number | null
           tipo?: string | null
           vagas?: number | null
           valor_anunciado?: number | null

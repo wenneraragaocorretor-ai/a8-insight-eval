@@ -21,9 +21,14 @@ serve(async (req) => {
 
     console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
 
-    const systemPrompt = `Você é um especialista em avaliação imobiliária.
-Analise os dados do imóvel avaliando e os comparáveis fornecidos para estimar o valor de mercado.
-Calcule o valor unitário médio (R$/m²) e aplique ao imóvel alvo, ajustando levemente por suas características.
+    const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653).
+Faça a HOMOGENEIZAÇÃO dos comparáveis em relação ao imóvel avaliando, considerando:
+área total/privativa, quartos, suítes, banheiros, vagas, padrão construtivo,
+estado de conservação, posição (esquina, meio de quadra, encravado, gleba),
+andar (se apartamento), idade aproximada, condomínio e características presentes
+(piscina, churrasqueira, elevador, condomínio fechado, área de lazer, etc.).
+Calcule o valor unitário homogeneizado (R$/m²) e aplique ao imóvel alvo,
+gerando faixa mínima, central e máxima (intervalo de confiança).
 Retorne APENAS um JSON estruturado conforme o exemplo:
 {
   "valor_minimo": 450000,
@@ -34,17 +39,29 @@ Retorne APENAS um JSON estruturado conforme o exemplo:
   "dicas_anuncio": ["Destaque a vista livre", "Enfatize a proximidade com o metrô"]
 }`
 
-    const userPrompt = `DADOS DO IMÓVEL:
+    const fmt = (v: any) => (v === undefined || v === null || v === "" ? "-" : v);
+    const userPrompt = `DADOS DO IMÓVEL AVALIANDO:
 - Tipo: ${imovel.tipo}
+- Finalidade: ${imovel.finalidade}
 - Localização: ${imovel.localizacao}
-- Área: ${imovel.area_total}m²
-- Quartos: ${imovel.quartos}
-- Padrão: ${imovel.padrao}
-- Conservação: ${imovel.conservacao}
-- Características: ${(imovel.caracteristicas || []).join(", ")}
+- Área total: ${imovel.area_total}m²
+- Área privativa: ${fmt(imovel.area_privativa)}m²
+- Quartos: ${imovel.quartos} | Suítes: ${fmt(imovel.suites)} | Banheiros: ${imovel.banheiros} | Vagas: ${imovel.vagas}
+- Andar: ${fmt(imovel.andar)}
+- Padrão: ${imovel.padrao} | Conservação: ${imovel.conservacao} | Posição: ${fmt(imovel.posicao)}
+- Características: ${(imovel.caracteristicas || []).join(", ") || "-"}
+- Observações: ${fmt(imovel.observacoes)}
 
-COMPARÁVEIS:
-${comparaveis.map((c: any) => `- ${c.fonte}: ${c.area}m² por R$ ${c.valor} (${c.localizacao})`).join("\n")}
+COMPARÁVEIS (${comparaveis.length}):
+${comparaveis.map((c: any, i: number) => `
+Comparável #${i + 1} (${c.fonte}):
+  - Localização: ${fmt(c.localizacao)}
+  - Área total: ${c.area}m² | Privativa: ${fmt(c.area_privativa)}m²
+  - Valor anunciado: R$ ${c.valor}
+  - Quartos: ${fmt(c.quartos)} | Suítes: ${fmt(c.suites)} | Banheiros: ${fmt(c.banheiros)} | Vagas: ${fmt(c.vagas)}
+  - Padrão: ${fmt(c.padrao)} | Conservação: ${fmt(c.conservacao)} | Posição: ${fmt(c.posicao)}
+  - Andar: ${fmt(c.andar)} | Idade: ${fmt(c.idade)} anos | Condomínio: R$ ${fmt(c.condominio)}
+  - Características: ${(c.caracteristicas || []).join(", ") || "-"}`).join("\n")}
 `
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
