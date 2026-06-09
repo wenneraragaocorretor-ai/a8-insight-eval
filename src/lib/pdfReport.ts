@@ -348,10 +348,10 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   doc.setTextColor(...BLUE);
   doc.text("Potencial de Valorização", M + 8, yRow + 12);
   doc.text("Tendências de Mercado", M + colW + gap + 8, yRow + 12);
-  textoMultilinha(doc, String(ab.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
+  textoMultilinha(doc, String(ab.potencial_valorizacao ?? rel?.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
     size: 10, color: TEXT, lineHeight: 4.6,
   });
-  textoMultilinha(doc, String(ab.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
+  textoMultilinha(doc, String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
     size: 10, color: TEXT, lineHeight: 4.6,
   });
 
