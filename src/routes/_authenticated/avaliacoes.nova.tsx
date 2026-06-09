@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { processarAvaliacaoIA } from "../../lib/avaliacoes.functions";
+import { supabase } from "../../integrations/supabase/client";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus } from "lucide-react";
+
 
 const CARACTERISTICAS_OPCOES = [
   "Piscina",
