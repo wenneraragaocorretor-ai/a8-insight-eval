@@ -81,10 +81,15 @@ function desenharCabecalho(doc: jsPDF, refNumero: string, selo?: string) {
   doc.line(MARGIN, 32, pageW - MARGIN, 32);
 }
 
-function desenharRodape(doc: jsPDF, corretor: string) {
+function desenharRodape(doc: jsPDF, corretor: CorretorInfo) {
   const total = doc.getNumberOfPages();
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
+  const extras = [
+    corretor.creci ? `CRECI ${corretor.creci}` : null,
+    corretor.telefone || null,
+    [corretor.cidade, corretor.estado].filter(Boolean).join("/") || null,
+  ].filter(Boolean).join(" • ");
   for (let i = 1; i <= total; i++) {
     doc.setPage(i);
     doc.setDrawColor(...COR_DOURADO);
@@ -98,11 +103,20 @@ function desenharRodape(doc: jsPDF, corretor: string) {
     const lines = doc.splitTextToSize(aviso, pageW - MARGIN * 2);
     doc.text(lines, pageW / 2, pageH - 14, { align: "center" });
 
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...COR_TEXTO);
+    doc.text(corretor.nome, MARGIN, pageH - 6);
+    if (extras) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...COR_MUTED);
+      doc.text(extras, MARGIN + doc.getTextWidth(corretor.nome) + 3, pageH - 6);
+    }
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...COR_TEXTO);
-    doc.text(`${corretor} — ${hoje()}`, MARGIN, pageH - 6);
-    doc.text(`Página ${i} de ${total}`, pageW - MARGIN, pageH - 6, { align: "right" });
+    doc.text(`Página ${i} de ${total} — ${hoje()}`, pageW - MARGIN, pageH - 6, { align: "right" });
   }
 }
 
