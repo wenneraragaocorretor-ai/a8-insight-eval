@@ -21,6 +21,33 @@ serve(async (req) => {
 
     console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
 
+    // Baixa as fotos do imóvel (caminhos no bucket privado) usando service role
+    const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 3) : []
+    const fotosImagens: Array<{ mediaType: string; base64: string }> = []
+    if (fotosPaths.length > 0) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      if (supabaseUrl && serviceKey) {
+        const supa = createClient(supabaseUrl, serviceKey)
+        for (const p of fotosPaths) {
+          try {
+            const { data: blob, error } = await supa.storage.from('avaliacoes-fotos').download(p)
+            if (error || !blob) continue
+            const buf = new Uint8Array(await blob.arrayBuffer())
+            // base64 encode
+            let bin = ''
+            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i])
+            const base64 = btoa(bin)
+            const mediaType = blob.type || (p.toLowerCase().endsWith('.png') ? 'image/png' : p.toLowerCase().endsWith('.webp') ? 'image/webp' : 'image/jpeg')
+            fotosImagens.push({ mediaType, base64 })
+          } catch (e) {
+            console.error('Falha ao baixar foto', p, e)
+          }
+        }
+      }
+    }
+
+
     // ABNT NBR 14653-2 — área base do cálculo conforme tipo de imóvel
     const pick = (priv: any, total: any) => {
       const p = Number(priv); const t = Number(total)
@@ -104,8 +131,12 @@ e devem ser preenchidos com base nas características reais — NÃO retorne str
   },
   "dicas_precificacao": ["Iniciar 5% acima do valor central", "Ajustar após 30 dias"],
   "estrategias_venda": ["Tour virtual em alta", "Parceria com home staging"],
-  "dicas_anuncio": ["Destaque a vista livre", "Enfatize a proximidade com o metrô"]
-}`
+  "dicas_anuncio": ["Destaque a vista livre", "Enfatize a proximidade com o metrô"],
+  "analise_fotos": "${fotosImagens.length > 0 ? 'Análise visual das fotos enviadas: padrão construtivo aparente, estado de conservação real, acabamentos visíveis (piso, esquadrias, bancadas, pintura), pontos positivos e pontos de atenção observados nas imagens. Se houver discrepância entre as fotos e os dados informados pelo corretor, mencione-a explicitamente. 4-6 frases.' : ''}"
+}
+
+${fotosImagens.length > 0 ? `ANÁLISE DAS FOTOS (OBRIGATÓRIO): As imagens em anexo são fotos reais do imóvel avaliando. Analise-as e identifique: padrão construtivo (simples/normal/alto/luxo), estado de conservação real, acabamentos visíveis, pontos positivos e pontos de atenção baseados nas imagens. Se as fotos contradizerem os dados informados pelo corretor (padrão, conservação), mencione a discrepância no campo "analise_fotos" e ajuste o valor estimado conforme o que as fotos efetivamente mostram.` : ''}`
+
 
     const fmt = (v: any) => (v === undefined || v === null || v === "" ? "-" : v);
     const userPrompt = `DADOS DO IMÓVEL AVALIANDO:
@@ -151,10 +182,20 @@ Comparável #${i + 1} (${c.fonte}):
         max_tokens: 4096,
         system: systemPrompt,
         messages: [
-          { role: 'user', content: userPrompt }
+          {
+            role: 'user',
+            content: [
+              ...fotosImagens.map((img) => ({
+                type: 'image',
+                source: { type: 'base64', media_type: img.mediaType, data: img.base64 },
+              })),
+              { type: 'text', text: userPrompt },
+            ],
+          },
         ],
       }),
     })
+
 
     if (!response.ok) {
       const error = await response.text()

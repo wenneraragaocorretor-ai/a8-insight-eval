@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { processarAvaliacaoIA } from "../../lib/avaliacoes.functions";
+import { supabase } from "../../integrations/supabase/client";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus } from "lucide-react";
+
 
 const CARACTERISTICAS_OPCOES = [
   "Piscina",
@@ -196,7 +198,86 @@ function NovaAvaliacao() {
     novoComparavel(3),
   ]);
 
+  type FotoItem = { path: string; previewUrl: string; uploading?: boolean };
+  const [fotos, setFotos] = useState<FotoItem[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Limpa as object URLs ao desmontar
+  useEffect(() => {
+    return () => {
+      fotos.forEach((f) => {
+        if (f.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(f.previewUrl);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const ACEITOS = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+  const MAX_BYTES = 5 * 1024 * 1024;
+
+  const handleFotosSelected = async (filesList: FileList | null) => {
+    if (!filesList) return;
+    const files = Array.from(filesList);
+    const disponivel = 3 - fotos.length;
+    if (disponivel <= 0) {
+      toast.error("Limite de 3 fotos atingido.");
+      return;
+    }
+    const aProcessar = files.slice(0, disponivel);
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) {
+      toast.error("Sessão expirada. Faça login novamente.");
+      return;
+    }
+    for (const file of aProcessar) {
+      if (!ACEITOS.includes(file.type)) {
+        toast.error(`${file.name}: formato inválido (use JPG, PNG ou WEBP).`);
+        continue;
+      }
+      if (file.size > MAX_BYTES) {
+        toast.error(`${file.name}: maior que 5MB.`);
+        continue;
+      }
+      const previewUrl = URL.createObjectURL(file);
+      const tempItem: FotoItem = { path: "", previewUrl, uploading: true };
+      setFotos((prev) => [...prev, tempItem]);
+      try {
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage
+          .from("avaliacoes-fotos")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (error) throw error;
+        setFotos((prev) =>
+          prev.map((f) => (f.previewUrl === previewUrl ? { ...f, path, uploading: false } : f)),
+        );
+      } catch (err: any) {
+        console.error("Erro no upload:", err);
+        toast.error(`Falha ao enviar ${file.name}: ${err.message || "erro desconhecido"}`);
+        setFotos((prev) => prev.filter((f) => f.previewUrl !== previewUrl));
+        URL.revokeObjectURL(previewUrl);
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removerFoto = async (idx: number) => {
+    const alvo = fotos[idx];
+    if (!alvo) return;
+    setFotos((prev) => prev.filter((_, i) => i !== idx));
+    if (alvo.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(alvo.previewUrl);
+    if (alvo.path) {
+      try {
+        await supabase.storage.from("avaliacoes-fotos").remove([alvo.path]);
+      } catch (e) {
+        console.error("Falha ao remover do storage:", e);
+      }
+    }
+  };
+
   const campos = camposDoTipo(imovel.tipo);
+
 
   const setImovelField = <K extends keyof typeof imovel>(key: K, value: (typeof imovel)[K]) => {
     safe(() => setImovel((prev) => ({ ...prev, [key]: value })));
@@ -283,7 +364,9 @@ function NovaAvaliacao() {
             andar: c.andar ? imovel.andar || undefined : undefined,
             conservacao: c.conservacao ? imovel.conservacao : "Bom",
             caracteristicas: c.caracteristicas ? imovel.caracteristicas : [],
+            fotos: fotos.filter((f) => f.path && !f.uploading).map((f) => f.path),
           },
+
           comparaveis: comparaveis.map(({ id, ...c2 }) => ({
             fonte: c2.fonte,
             localizacao: c2.localizacao,
@@ -455,6 +538,66 @@ function NovaAvaliacao() {
                 value={imovel.observacoes}
                 onChange={(e) => setImovelField("observacoes", e.target.value)}
               />
+            </div>
+
+            <div className="space-y-3 md:col-span-2">
+              <div className="flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <Label className="text-base">Fotos do Imóvel</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Até 3 fotos · JPG, PNG ou WEBP · máx. 5MB cada · usadas pela IA na análise visual e no PDF.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2"
+                  disabled={fotos.length >= 3}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImagePlus size={16} /> Adicionar foto
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => safe(() => handleFotosSelected(e.target.files))}
+                />
+              </div>
+
+              {fotos.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-border rounded-lg py-8 flex flex-col items-center gap-2 text-muted-foreground hover:border-brand-gold hover:text-brand-gold transition-colors"
+                >
+                  <Upload size={28} />
+                  <span className="text-sm">Clique para enviar fotos do imóvel</span>
+                </button>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {fotos.map((f, i) => (
+                    <div key={f.previewUrl} className="relative group rounded-lg overflow-hidden border border-border aspect-[4/3] bg-muted">
+                      <img src={f.previewUrl} alt={`Foto ${i + 1} do imóvel`} className="w-full h-full object-cover" />
+                      {f.uploading && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs">
+                          Enviando…
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => safe(() => removerFoto(i))}
+                        className="absolute top-2 right-2 bg-black/70 hover:bg-destructive text-white rounded-full p-1.5 opacity-90"
+                        aria-label="Remover foto"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
           <div className="p-6 border-t flex justify-end">

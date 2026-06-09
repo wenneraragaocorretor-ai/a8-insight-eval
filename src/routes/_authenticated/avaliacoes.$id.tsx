@@ -3,11 +3,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
+import { supabase } from "../../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock } from "lucide-react";
+
 
 
 
@@ -68,10 +70,29 @@ function AvaliacaoDetalhe() {
       });
       return;
     }
+    // Carrega fotos do imóvel (paths privados → dataURL) para embutir no PDF
+    const fotosPaths: string[] = Array.isArray((avaliacao as any)?.fotos) ? (avaliacao as any).fotos : [];
+    const fotosDataUrls: string[] = [];
+    for (const p of fotosPaths.slice(0, 3)) {
+      try {
+        const { data: blob, error } = await supabase.storage.from("avaliacoes-fotos").download(p);
+        if (error || !blob) continue;
+        const dataUrl: string = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+        fotosDataUrls.push(dataUrl);
+      } catch (e) {
+        console.error("Falha ao carregar foto para o PDF:", e);
+      }
+    }
     const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
     gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
       modelo,
       plano,
+      fotosDataUrls,
       corretor: {
         nome: profile?.nome ?? "Corretor",
         creci: profile?.creci ?? null,
@@ -82,6 +103,7 @@ function AvaliacaoDetalhe() {
       },
     });
   };
+
 
   return (
     <div className="max-w-5xl mx-auto py-8 space-y-6">
