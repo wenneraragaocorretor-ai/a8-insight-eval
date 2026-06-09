@@ -73,34 +73,32 @@ function card(
   y: number,
   w: number,
   h: number,
-  opts: { radius?: number; border?: boolean } = {},
+  opts: { radius?: number; variant?: "white" | "blue" | "darkblue"; border?: "gold" | "soft" | "none" } = {},
 ) {
-  const radius = opts.radius ?? 4;
-  // gradient simulation: top half slightly lighter
-  doc.setFillColor(...CARD_TOP);
+  const radius = opts.radius ?? 3;
+  const variant = opts.variant ?? "white";
+  const fill: [number, number, number] =
+    variant === "darkblue" ? BLUE : variant === "blue" ? CARD_BLUE : WHITE;
+  doc.setFillColor(...fill);
   doc.roundedRect(x, y, w, h, radius, radius, "F");
-  doc.setFillColor(...CARD_BOTTOM);
-  doc.roundedRect(x, y + h * 0.55, w, h * 0.45, radius, radius, "F");
-  // top accent overlay (rounded again to cover bottom rect corners cleanly)
-  doc.setFillColor(...CARD_TOP);
-  doc.roundedRect(x, y, w, h * 0.55, radius, radius, "F");
-  doc.setFillColor(...CARD_BOTTOM);
-  doc.rect(x, y + h * 0.55, w, h * 0.45 - radius, "F");
-  doc.setFillColor(...CARD_BOTTOM);
-  doc.roundedRect(x, y + h * 0.55, w, h * 0.45, radius, radius, "F");
-  if (opts.border) {
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.2);
+  const border = opts.border ?? (variant === "white" ? "soft" : "none");
+  if (border !== "none") {
+    if (border === "gold") {
+      doc.setDrawColor(...GOLD);
+      doc.setLineWidth(0.4);
+    } else {
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.2);
+    }
     doc.roundedRect(x, y, w, h, radius, radius, "S");
   }
 }
 
-function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, number] = WHITE) {
+function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, number] = BLUE) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(36);
   doc.setTextColor(...cor);
   doc.text(texto, M, y);
-  // gold underline accent
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(1.2);
   doc.line(M, y + 3, M + 24, y + 3);
@@ -109,7 +107,7 @@ function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, n
 function microHeader(doc: jsPDF, corretor: CorretorInfo) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.setTextColor(...GRAY);
+  doc.setTextColor(...BLUE);
   doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW - M, 10, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
@@ -121,15 +119,18 @@ function rodape(doc: jsPDF) {
   const total = doc.getNumberOfPages();
   for (let i = 2; i <= total; i++) {
     doc.setPage(i);
+    // strip
+    doc.setFillColor(...BLUE);
+    doc.rect(0, PH - 12, PW, 12, "F");
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.2);
-    doc.line(M, PH - 10, PW - M, PH - 10);
+    doc.setLineWidth(0.6);
+    doc.line(0, PH - 12, PW, PH - 12);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(7);
-    doc.setTextColor(...GRAY_DIM);
-    doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", M, PH - 6);
+    doc.setTextColor(...WHITE);
+    doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", M, PH - 5);
     doc.setFont("helvetica", "normal");
-    doc.text(`${i} / ${total}  •  ${hoje()}`, PW - M, PH - 6, { align: "right" });
+    doc.text(`${i} / ${total}  •  ${hoje()}`, PW - M, PH - 5, { align: "right" });
   }
 }
 
