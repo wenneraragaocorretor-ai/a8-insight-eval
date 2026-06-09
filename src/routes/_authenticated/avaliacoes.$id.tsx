@@ -72,7 +72,13 @@ function AvaliacaoDetalhe() {
     gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
       modelo,
       plano,
-      corretor: profile?.nome ?? "Corretor",
+      corretor: {
+        nome: profile?.nome ?? "Corretor",
+        creci: profile?.creci ?? null,
+        telefone: profile?.telefone ?? null,
+        cidade: profile?.cidade ?? null,
+        estado: profile?.estado ?? null,
+      },
     });
   };
 

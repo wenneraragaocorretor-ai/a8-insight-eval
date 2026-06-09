@@ -18,6 +18,13 @@ const MARGIN = 20; // mm
 
 export type PlanoUsuario = "basico" | "profissional" | "expert" | "user" | "pro" | string;
 export type ModeloPdf = 1 | 2 | 3;
+export type CorretorInfo = {
+  nome: string;
+  creci?: string | null;
+  telefone?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+};
 
 const fmtBRL = (v: number | null | undefined) =>
   v == null || isNaN(Number(v))
@@ -81,10 +88,15 @@ function desenharCabecalho(doc: jsPDF, refNumero: string, selo?: string) {
   doc.line(MARGIN, 32, pageW - MARGIN, 32);
 }
 
-function desenharRodape(doc: jsPDF, corretor: string) {
+function desenharRodape(doc: jsPDF, corretor: CorretorInfo) {
   const total = doc.getNumberOfPages();
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
+  const extras = [
+    corretor.creci ? `CRECI ${corretor.creci}` : null,
+    corretor.telefone || null,
+    [corretor.cidade, corretor.estado].filter(Boolean).join("/") || null,
+  ].filter(Boolean).join(" • ");
   for (let i = 1; i <= total; i++) {
     doc.setPage(i);
     doc.setDrawColor(...COR_DOURADO);
@@ -98,11 +110,20 @@ function desenharRodape(doc: jsPDF, corretor: string) {
     const lines = doc.splitTextToSize(aviso, pageW - MARGIN * 2);
     doc.text(lines, pageW / 2, pageH - 14, { align: "center" });
 
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...COR_TEXTO);
+    doc.text(corretor.nome, MARGIN, pageH - 6);
+    if (extras) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...COR_MUTED);
+      doc.text(extras, MARGIN + doc.getTextWidth(corretor.nome) + 3, pageH - 6);
+    }
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...COR_TEXTO);
-    doc.text(`${corretor} — ${hoje()}`, MARGIN, pageH - 6);
-    doc.text(`Página ${i} de ${total}`, pageW - MARGIN, pageH - 6, { align: "right" });
+    doc.text(`Página ${i} de ${total} — ${hoje()}`, pageW - MARGIN, pageH - 6, { align: "right" });
   }
 }
 
@@ -211,14 +232,18 @@ function novaPaginaSeNecessario(doc: jsPDF, y: number, espacoRequerido = 30) {
 // Coletor de campos
 // ------------------------------------------------------------
 function dadosBasicos(a: any): [string, string][] {
+  const carac = Array.isArray(a.caracteristicas) ? a.caracteristicas.join(", ") : "";
   return [
     ["Tipo do imóvel", String(a.tipo_imovel ?? "—")],
     ["Localização", String(a.localizacao ?? "—")],
     ["Área total", a.area_total ? `${a.area_total} m²` : "—"],
-    ["Quartos", String(a.quartos ?? "—")],
-    ["Vagas", String(a.vagas ?? "—")],
+    ["Área privativa", a.area_privativa ? `${a.area_privativa} m²` : "—"],
+    ["Quartos / Suítes", `${a.quartos ?? "—"} / ${a.suites ?? "—"}`],
+    ["Banheiros / Vagas", `${a.banheiros ?? "—"} / ${a.vagas ?? "—"}`],
     ["Padrão", String(a.padrao ?? "—")],
     ["Conservação", String(a.conservacao ?? "—")],
+    ["Posição", String(a.posicao ?? "—")],
+    ["Características", carac || "—"],
   ];
 }
 
@@ -243,7 +268,7 @@ function dadosCompletos(a: any): [string, string][] {
 // ------------------------------------------------------------
 // MODELO 1 — Plano Básico
 // ------------------------------------------------------------
-function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: string) {
+function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const ref = numeroReferencia(avaliacao?.id ?? "");
   desenharCabecalho(doc, ref);
@@ -291,7 +316,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
 // ------------------------------------------------------------
 // MODELO 2 — Plano Profissional
 // ------------------------------------------------------------
-function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: string) {
+function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const rel = resultado?.relatorio_json || {};
   const ref = numeroReferencia(avaliacao?.id ?? "");
@@ -394,7 +419,7 @@ function calcEstatisticas(comparaveis: any[]) {
   return { media, mediana, desvio, cv, n: unit.length };
 }
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: string) {
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const rel = resultado?.relatorio_json || {};
   const ref = numeroReferencia(avaliacao?.id ?? "");
@@ -410,7 +435,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   y = tituloSecao(doc, y, "1. Identificação e Objetivo da Avaliação");
   y = paragrafo(doc, y,
     `Avaliação mercadológica do imóvel localizado em ${avaliacao?.localizacao ?? "—"}, com finalidade de ${avaliacao?.finalidade ?? "—"}. ` +
-    `Referência: ${ref}. Solicitante: ${corretor}.`,
+    `Referência: ${ref}. Solicitante: ${corretor.nome}${corretor.creci ? ` (CRECI ${corretor.creci})` : ""}.`,
   );
 
   y = tituloSecao(doc, y, "2. Caracterização do Imóvel Avaliando");
@@ -459,12 +484,32 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   autoTable(doc, {
     startY: y,
     head: [["#", "F. Oferta", "F. Área", "F. Padrão", "F. Conserv.", "F. Localiz.", "F. Total"]],
-    body: comparaveis.map((_c, i) => {
+    body: comparaveis.map((c, i) => {
+      const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+      const ordemPadrao = ["baixo", "simples", "popular", "medio", "médio", "normal", "alto", "luxo", "alto luxo"];
+      const ordemConserv = ["ruim", "regular", "bom", "novo", "reformado"];
+      const rank = (lista: string[], v: string) => {
+        const i = lista.indexOf(v);
+        return i === -1 ? 0 : i;
+      };
       const fOferta = 0.9;
-      const fArea = 1.0;
-      const fPadrao = 1.0;
-      const fConserv = 1.0;
-      const fLocal = 1.0;
+      const areaA = Number(avaliacao?.area_total) || 0;
+      const areaC = Number(c.area) || 0;
+      let fArea = 1.0;
+      if (areaA > 0 && areaC > 0) {
+        // Fator de área (Heidecke/equivalente simplificado): limita entre 0,80 e 1,20
+        fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
+      }
+      const pA = rank(ordemPadrao, norm(avaliacao?.padrao));
+      const pC = rank(ordemPadrao, norm(c.padrao));
+      const fPadrao = pC === pA ? 1.0 : pC < pA ? 1.1 : 0.9;
+      const cA = rank(ordemConserv, norm(avaliacao?.conservacao));
+      const cC = rank(ordemConserv, norm(c.conservacao));
+      const fConserv = cC === cA ? 1.0 : cC < cA ? 1.08 : 0.95;
+      // Fator de localização: mesma localização → 1,0; bairro diferente → leve ajuste
+      const locA = norm(avaliacao?.localizacao);
+      const locC = norm(c.localizacao);
+      const fLocal = !locA || !locC ? 1.0 : locA === locC ? 1.0 : locA.split(",")[0] === locC.split(",")[0] ? 0.98 : 0.95;
       const total = fOferta * fArea * fPadrao * fConserv * fLocal;
       return [
         String(i + 1),
@@ -524,11 +569,32 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
     "registrais que possam afetar o imóvel.",
   );
 
+  const dicasPrec = rel.dicas_precificacao || rel.precificacao;
+  if (dicasPrec) {
+    y = novaPaginaSeNecessario(doc, y, 30);
+    y = tituloSecao(doc, y, "10. Dicas de Precificação");
+    y = listaNumerada(doc, y, Array.isArray(dicasPrec) ? dicasPrec : [String(dicasPrec)]);
+  }
+
+  const estrategias = rel.estrategias_venda || rel.estrategias;
+  if (estrategias) {
+    y = novaPaginaSeNecessario(doc, y, 30);
+    y = tituloSecao(doc, y, "11. Estratégias de Venda");
+    y = listaNumerada(doc, y, Array.isArray(estrategias) ? estrategias : [String(estrategias)]);
+  }
+
+  const divulgacao = rel.dicas_anuncio || rel.dicas || rel.recomendacoes;
+  if (divulgacao) {
+    y = novaPaginaSeNecessario(doc, y, 30);
+    y = tituloSecao(doc, y, "12. Dicas de Divulgação e Anúncio");
+    y = listaNumerada(doc, y, Array.isArray(divulgacao) ? divulgacao : [String(divulgacao)]);
+  }
+
   y = novaPaginaSeNecessario(doc, y, 20);
-  y = tituloSecao(doc, y, "10. Identificação do Sistema");
+  y = tituloSecao(doc, y, "13. Identificação do Sistema");
   paragrafo(doc, y, "Avaliação gerada pela plataforma A8 Investimentos Imobiliários.");
 
-  marcaDagua(doc, corretor);
+  marcaDagua(doc, corretor.nome);
   desenharRodape(doc, corretor);
   return doc;
 }
@@ -540,9 +606,13 @@ export function gerarPdfAvaliacao(
   avaliacao: any,
   resultado: any,
   comparaveis: any[],
-  opts: { modelo: ModeloPdf; plano: PlanoUsuario; corretor?: string },
+  opts: { modelo: ModeloPdf; plano: PlanoUsuario; corretor?: CorretorInfo | string },
 ) {
-  const { modelo, plano, corretor = "Corretor não identificado" } = opts;
+  const { modelo, plano } = opts;
+  const corretor: CorretorInfo =
+    typeof opts.corretor === "string"
+      ? { nome: opts.corretor || "Corretor não identificado" }
+      : opts.corretor ?? { nome: "Corretor não identificado" };
   if (!podeGerarModelo(plano, modelo)) {
     throw new Error("Faça upgrade para acessar este relatório");
   }
