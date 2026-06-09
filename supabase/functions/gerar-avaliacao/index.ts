@@ -29,13 +29,32 @@ andar (se apartamento), idade aproximada, condomínio e características present
 (piscina, churrasqueira, elevador, condomínio fechado, área de lazer, etc.).
 Calcule o valor unitário homogeneizado (R$/m²) e aplique ao imóvel alvo,
 gerando faixa mínima, central e máxima (intervalo de confiança).
-Retorne APENAS um JSON estruturado conforme o exemplo:
+Além da avaliação, gere conteúdo qualitativo personalizado para o imóvel e a região,
+com base no tipo de imóvel, localização (bairro/cidade) e características informadas.
+Retorne APENAS um JSON estruturado (sem comentários, sem markdown) conforme o exemplo:
 {
   "valor_minimo": 450000,
   "valor_central": 500000,
   "valor_maximo": 550000,
   "valor_unitario_medio": 5000,
   "resumo_texto": "O imóvel apresenta excelente conservação...",
+  "pontos_positivos": ["Localização privilegiada", "Boa metragem", "Bem conservado"],
+  "pontos_negativos": ["Sem vaga coberta", "Andar baixo"],
+  "analise_bairro": {
+    "bairro": "Nome do bairro",
+    "cidade": "Cidade/UF",
+    "potencial_valorizacao": "Texto sobre o potencial de valorização da região, 2-3 frases.",
+    "tendencias_mercado": "Texto sobre tendências atuais do mercado local, 2-3 frases.",
+    "descricao": "Resumo da região (infraestrutura, lazer, mobilidade), 3-4 frases."
+  },
+  "perfil_publico": {
+    "profissao": "Profissão predominante dos moradores da região.",
+    "renda_media": "Faixa de renda média estimada.",
+    "preferencias": "O que esse público busca em um imóvel.",
+    "interesses": "Hábitos e interesses culturais/de lazer."
+  },
+  "dicas_precificacao": ["Iniciar 5% acima do valor central", "Ajustar após 30 dias"],
+  "estrategias_venda": ["Tour virtual em alta", "Parceria com home staging"],
   "dicas_anuncio": ["Destaque a vista livre", "Enfatize a proximidade com o metrô"]
 }`
 
@@ -73,7 +92,7 @@ Comparável #${i + 1} (${c.fonte}):
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 1024,
+        max_tokens: 4096,
         system: systemPrompt,
         messages: [
           { role: 'user', content: userPrompt }

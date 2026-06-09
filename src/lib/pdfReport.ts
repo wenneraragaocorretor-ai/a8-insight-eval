@@ -1,20 +1,25 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { COVER_BG_BASE64 } from "../assets/cover-bg";
 
 // ============================================================
-// A8 Investimentos — Geração de PDF (3 modelos)
-// Identidade visual:
-//   Primária  #0F2D5C (azul escuro)
-//   Destaque  #C8A951 (dourado)
-//   A4, margens 20mm, Helvetica
+// A8 Investimentos — PDF Premium (dark, landscape A4)
+// 297mm x 210mm | Fundo escuro | Dourado #C8A951 | Azul #0F2D5C
 // ============================================================
 
-const COR_AZUL: [number, number, number] = [15, 45, 92];
-const COR_DOURADO: [number, number, number] = [200, 169, 81];
-const COR_TEXTO: [number, number, number] = [40, 40, 40];
-const COR_MUTED: [number, number, number] = [110, 110, 110];
+const BG: [number, number, number] = [10, 15, 30];        // #0A0F1E
+const BG_SOFT: [number, number, number] = [15, 25, 35];   // #0F1923
+const CARD_TOP: [number, number, number] = [26, 37, 64];  // #1A2540
+const CARD_BOTTOM: [number, number, number] = [15, 25, 35];
+const GOLD: [number, number, number] = [200, 169, 81];    // #C8A951
+const BLUE: [number, number, number] = [15, 45, 92];      // #0F2D5C
+const WHITE: [number, number, number] = [255, 255, 255];
+const GRAY: [number, number, number] = [180, 188, 200];
+const GRAY_DIM: [number, number, number] = [130, 140, 156];
 
-const MARGIN = 20; // mm
+const PW = 297; // page width landscape
+const PH = 210; // page height landscape
+const M = 18;   // margin
 
 export type PlanoUsuario = "basico" | "profissional" | "expert" | "user" | "pro" | string;
 export type ModeloPdf = 1 | 2 | 3;
@@ -24,6 +29,7 @@ export type CorretorInfo = {
   telefone?: string | null;
   cidade?: string | null;
   estado?: string | null;
+  email?: string | null;
 };
 
 const fmtBRL = (v: number | null | undefined) =>
@@ -36,9 +42,6 @@ const fmtNum = (v: number | null | undefined, digits = 2) =>
 
 const hoje = () => new Date().toLocaleDateString("pt-BR");
 
-const numeroReferencia = (id: string) =>
-  `A8-${(id || "").slice(0, 8).toUpperCase()}-${new Date().getFullYear()}`;
-
 export function modelosDisponiveis(plano: PlanoUsuario): ModeloPdf[] {
   const p = String(plano || "basico").toLowerCase();
   if (p === "expert") return [1, 2, 3];
@@ -50,558 +53,737 @@ export function podeGerarModelo(plano: PlanoUsuario, modelo: ModeloPdf) {
   return modelosDisponiveis(plano).includes(modelo);
 }
 
-// ------------------------------------------------------------
-// Header / Footer comuns
-// ------------------------------------------------------------
-function desenharCabecalho(doc: jsPDF, refNumero: string, selo?: string) {
-  const pageW = doc.internal.pageSize.getWidth();
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.setTextColor(...COR_AZUL);
-  doc.text("A8 Investimentos Imobiliários", MARGIN, 18);
-
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(10);
-  doc.setTextColor(...COR_DOURADO);
-  doc.text("Gerando riqueza, construindo patrimônio", MARGIN, 24);
-
-  // Bloco direito: data + referência (+ selo opcional)
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...COR_TEXTO);
-  doc.text(`Data: ${hoje()}`, pageW - MARGIN, 16, { align: "right" });
-  doc.text(`Ref.: ${refNumero}`, pageW - MARGIN, 21, { align: "right" });
-  if (selo) {
-    doc.setFillColor(...COR_DOURADO);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    const w = doc.getTextWidth(selo) + 6;
-    doc.roundedRect(pageW - MARGIN - w, 24, w, 6, 1, 1, "F");
-    doc.text(selo, pageW - MARGIN - 3, 28.2, { align: "right" });
-  }
-
-  // Linha separadora dourada
-  doc.setDrawColor(...COR_DOURADO);
-  doc.setLineWidth(0.8);
-  doc.line(MARGIN, 32, pageW - MARGIN, 32);
+// ---------- helpers ----------
+function pintarFundo(doc: jsPDF) {
+  doc.setFillColor(...BG);
+  doc.rect(0, 0, PW, PH, "F");
 }
 
-function desenharRodape(doc: jsPDF, corretor: CorretorInfo) {
-  const total = doc.getNumberOfPages();
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const extras = [
-    corretor.creci ? `CRECI ${corretor.creci}` : null,
-    corretor.telefone || null,
-    [corretor.cidade, corretor.estado].filter(Boolean).join("/") || null,
-  ].filter(Boolean).join(" • ");
-  for (let i = 1; i <= total; i++) {
-    doc.setPage(i);
-    doc.setDrawColor(...COR_DOURADO);
-    doc.setLineWidth(0.3);
-    doc.line(MARGIN, pageH - 18, pageW - MARGIN, pageH - 18);
+function novaPagina(doc: jsPDF) {
+  doc.addPage();
+  pintarFundo(doc);
+}
 
+function card(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  opts: { radius?: number; border?: boolean } = {},
+) {
+  const radius = opts.radius ?? 4;
+  // gradient simulation: top half slightly lighter
+  doc.setFillColor(...CARD_TOP);
+  doc.roundedRect(x, y, w, h, radius, radius, "F");
+  doc.setFillColor(...CARD_BOTTOM);
+  doc.roundedRect(x, y + h * 0.55, w, h * 0.45, radius, radius, "F");
+  // top accent overlay (rounded again to cover bottom rect corners cleanly)
+  doc.setFillColor(...CARD_TOP);
+  doc.roundedRect(x, y, w, h * 0.55, radius, radius, "F");
+  doc.setFillColor(...CARD_BOTTOM);
+  doc.rect(x, y + h * 0.55, w, h * 0.45 - radius, "F");
+  doc.setFillColor(...CARD_BOTTOM);
+  doc.roundedRect(x, y + h * 0.55, w, h * 0.45, radius, radius, "F");
+  if (opts.border) {
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(x, y, w, h, radius, radius, "S");
+  }
+}
+
+function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, number] = WHITE) {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(36);
+  doc.setTextColor(...cor);
+  doc.text(texto, M, y);
+  // gold underline accent
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(1.2);
+  doc.line(M, y + 3, M + 24, y + 3);
+}
+
+function microHeader(doc: jsPDF, corretor: CorretorInfo) {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+  doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW - M, 10, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...GOLD);
+  doc.text(corretor.nome.toUpperCase(), PW - M, 14, { align: "right" });
+}
+
+function rodape(doc: jsPDF) {
+  const total = doc.getNumberOfPages();
+  for (let i = 2; i <= total; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.2);
+    doc.line(M, PH - 10, PW - M, PH - 10);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(7);
-    doc.setTextColor(...COR_MUTED);
-    const aviso = "Esta avaliação é mercadológica e não substitui laudo técnico assinado por profissional habilitado (CNAI/IBAPE)";
-    const lines = doc.splitTextToSize(aviso, pageW - MARGIN * 2);
-    doc.text(lines, pageW / 2, pageH - 14, { align: "center" });
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(...COR_TEXTO);
-    doc.text(corretor.nome, MARGIN, pageH - 6);
-    if (extras) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.setTextColor(...COR_MUTED);
-      doc.text(extras, MARGIN + doc.getTextWidth(corretor.nome) + 3, pageH - 6);
-    }
+    doc.setTextColor(...GRAY_DIM);
+    doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", M, PH - 6);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...COR_TEXTO);
-    doc.text(`Página ${i} de ${total} — ${hoje()}`, pageW - MARGIN, pageH - 6, { align: "right" });
+    doc.text(`${i} / ${total}  •  ${hoje()}`, PW - M, PH - 6, { align: "right" });
   }
 }
 
-function marcaDagua(doc: jsPDF, texto: string) {
-  const total = doc.getNumberOfPages();
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  for (let i = 1; i <= total; i++) {
-    doc.setPage(i);
-    doc.saveGraphicsState();
-    // @ts-ignore - GState exists at runtime
-    doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(60);
-    doc.setTextColor(...COR_AZUL);
-    doc.text(texto, pageW / 2, pageH / 2, { align: "center", angle: 45 });
-    doc.restoreGraphicsState();
+function textoMultilinha(
+  doc: jsPDF,
+  texto: string,
+  x: number,
+  y: number,
+  w: number,
+  opts: { size?: number; color?: [number, number, number]; bold?: boolean; lineHeight?: number } = {},
+) {
+  const size = opts.size ?? 10;
+  doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+  doc.setFontSize(size);
+  doc.setTextColor(...(opts.color ?? GRAY));
+  const lines = doc.splitTextToSize(texto, w);
+  const lh = opts.lineHeight ?? size * 0.42;
+  doc.text(lines, x, y);
+  return y + lines.length * lh;
+}
+
+// ---------- PAGE 1: COVER ----------
+function paginaCapa(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, titulo: string) {
+  pintarFundo(doc);
+  // background image (full page) then dark overlay
+  try {
+    doc.addImage(COVER_BG_BASE64, "JPEG", 0, 0, PW, PH, undefined, "FAST");
+  } catch {
+    /* ignore if image fails */
   }
-}
+  // dark gradient overlay (left → right): solid left, fade right
+  doc.setFillColor(...BG);
+  doc.rect(0, 0, PW, PH, "F"); // start with full bg
+  doc.addImage(COVER_BG_BASE64, "JPEG", 0, 0, PW, PH, undefined, "FAST");
+  // overlay
+  doc.saveGraphicsState();
+  // @ts-ignore
+  doc.setGState(new (doc as any).GState({ opacity: 0.65 }));
+  doc.setFillColor(...BG);
+  doc.rect(0, 0, PW, PH, "F");
+  doc.restoreGraphicsState();
 
-function tituloSecao(doc: jsPDF, y: number, texto: string) {
+  // top-right brand
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(...COR_AZUL);
-  doc.text(texto, MARGIN, y);
-  doc.setDrawColor(...COR_DOURADO);
-  doc.setLineWidth(0.4);
-  doc.line(MARGIN, y + 1.5, MARGIN + 40, y + 1.5);
-  return y + 6;
-}
+  doc.setFontSize(14);
+  doc.setTextColor(...WHITE);
+  doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW - M, 20, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...GOLD);
+  doc.text(corretor.nome.toUpperCase(), PW - M, 27, { align: "right" });
 
-function tituloPrincipal(doc: jsPDF, y: number, texto: string) {
+  // big title bottom-left
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.setTextColor(...COR_AZUL);
-  const pageW = doc.internal.pageSize.getWidth();
-  doc.text(texto, pageW / 2, y, { align: "center" });
-  return y + 8;
+  doc.setFontSize(64);
+  doc.setTextColor(...WHITE);
+  const partes = titulo.split(" ");
+  const linha1 = partes[0];
+  const linha2 = partes.slice(1).join(" ");
+  doc.text(linha1.toUpperCase(), M, PH - 40);
+  doc.setFontSize(28);
+  doc.setTextColor(...GOLD);
+  doc.text(linha2.toUpperCase(), M, PH - 22);
+
+  // small ref
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text(`${avaliacao?.localizacao ?? ""}  •  ${hoje()}`, M, PH - 10);
 }
 
-function caixasValor(doc: jsPDF, y: number, vMin: number | null | undefined, vCentral: number | null | undefined, vMax: number | null | undefined) {
-  const pageW = doc.internal.pageSize.getWidth();
-  const usable = pageW - MARGIN * 2;
+// ---------- PAGE: SUMÁRIO ----------
+function paginaSumario(doc: jsPDF, sec: string[]) {
+  novaPagina(doc);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(54);
+  doc.setTextColor(...WHITE);
+  doc.text("Sumário", M, 70);
+
+  const xCard = PW / 2 + 4;
+  const wCard = PW - xCard - M;
+  const hCard = 14;
   const gap = 4;
-  const boxW = (usable - gap * 2) / 3;
-  const boxH = 22;
-
-  const blocos: Array<[string, string, [number, number, number]]> = [
-    ["Valor Mínimo", fmtBRL(vMin), [120, 130, 150]],
-    ["Valor Central", fmtBRL(vCentral), COR_DOURADO],
-    ["Valor Máximo", fmtBRL(vMax), [80, 110, 80]],
-  ];
-
-  blocos.forEach(([label, valor, cor], i) => {
-    const x = MARGIN + i * (boxW + gap);
-    doc.setFillColor(...cor);
-    doc.roundedRect(x, y, boxW, boxH, 2, 2, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(label, x + boxW / 2, y + 7, { align: "center" });
+  let y = 30;
+  sec.forEach((nome, i) => {
+    card(doc, xCard, y, wCard, hCard);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(i === 1 ? 14 : 12);
-    doc.text(valor, x + boxW / 2, y + 16, { align: "center" });
-  });
-
-  return y + boxH + 6;
-}
-
-function paragrafo(doc: jsPDF, y: number, texto: string, tamanho = 10) {
-  const pageW = doc.internal.pageSize.getWidth();
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(tamanho);
-  doc.setTextColor(...COR_TEXTO);
-  const lines = doc.splitTextToSize(texto, pageW - MARGIN * 2);
-  doc.text(lines, MARGIN, y);
-  return y + lines.length * (tamanho * 0.45) + 3;
-}
-
-function listaNumerada(doc: jsPDF, y: number, itens: string[]) {
-  const pageW = doc.internal.pageSize.getWidth();
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...COR_TEXTO);
-  itens.forEach((it, i) => {
-    const linhas = doc.splitTextToSize(`${i + 1}. ${it}`, pageW - MARGIN * 2 - 4);
-    if (y + linhas.length * 5 > doc.internal.pageSize.getHeight() - 25) {
-      doc.addPage();
-      y = 40;
-    }
-    doc.text(linhas, MARGIN, y);
-    y += linhas.length * 5 + 1;
-  });
-  return y + 2;
-}
-
-function novaPaginaSeNecessario(doc: jsPDF, y: number, espacoRequerido = 30) {
-  if (y + espacoRequerido > doc.internal.pageSize.getHeight() - 25) {
-    doc.addPage();
-    return 40;
-  }
-  return y;
-}
-
-// ------------------------------------------------------------
-// Coletor de campos
-// ------------------------------------------------------------
-function dadosBasicos(a: any): [string, string][] {
-  const carac = Array.isArray(a.caracteristicas) ? a.caracteristicas.join(", ") : "";
-  return [
-    ["Tipo do imóvel", String(a.tipo_imovel ?? "—")],
-    ["Localização", String(a.localizacao ?? "—")],
-    ["Área total", a.area_total ? `${a.area_total} m²` : "—"],
-    ["Área privativa", a.area_privativa ? `${a.area_privativa} m²` : "—"],
-    ["Quartos / Suítes", `${a.quartos ?? "—"} / ${a.suites ?? "—"}`],
-    ["Banheiros / Vagas", `${a.banheiros ?? "—"} / ${a.vagas ?? "—"}`],
-    ["Padrão", String(a.padrao ?? "—")],
-    ["Conservação", String(a.conservacao ?? "—")],
-    ["Posição", String(a.posicao ?? "—")],
-    ["Características", carac || "—"],
-  ];
-}
-
-function dadosCompletos(a: any): [string, string][] {
-  const carac = Array.isArray(a.caracteristicas) ? a.caracteristicas.join(", ") : "—";
-  return [
-    ["Tipo do imóvel", String(a.tipo_imovel ?? "—")],
-    ["Finalidade", String(a.finalidade ?? "—")],
-    ["Localização", String(a.localizacao ?? "—")],
-    ["Área total", a.area_total ? `${a.area_total} m²` : "—"],
-    ["Área privativa", a.area_privativa ? `${a.area_privativa} m²` : "—"],
-    ["Quartos / Suítes", `${a.quartos ?? "—"} / ${a.suites ?? "—"}`],
-    ["Banheiros / Vagas", `${a.banheiros ?? "—"} / ${a.vagas ?? "—"}`],
-    ["Andar", String(a.andar ?? "—")],
-    ["Padrão / Conservação", `${a.padrao ?? "—"} / ${a.conservacao ?? "—"}`],
-    ["Posição", String(a.posicao ?? "—")],
-    ["Características", carac || "—"],
-    ["Observações", String(a.observacoes ?? "—")],
-  ];
-}
-
-// ------------------------------------------------------------
-// MODELO 1 — Plano Básico
-// ------------------------------------------------------------
-function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const ref = numeroReferencia(avaliacao?.id ?? "");
-  desenharCabecalho(doc, ref);
-
-  let y = tituloPrincipal(doc, 42, "Estudo de Mercado Simplificado");
-
-  y = tituloSecao(doc, y, "1. Dados do Imóvel Avaliando");
-  autoTable(doc, {
-    startY: y,
-    body: dadosBasicos(avaliacao),
-    theme: "plain",
-    styles: { fontSize: 9, cellPadding: 1.2, textColor: COR_TEXTO },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 } },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as any).lastAutoTable.finalY + 6;
-
-  y = tituloSecao(doc, y, "2. Comparáveis Pesquisados");
-  autoTable(doc, {
-    startY: y,
-    head: [["Fonte", "Localização", "Área", "Quartos", "Vagas", "Valor", "R$/m²"]],
-    body: comparaveis.map((c) => [
-      c.fonte ?? "—",
-      c.localizacao ?? "—",
-      `${c.area ?? "—"} m²`,
-      String(c.quartos ?? "—"),
-      String(c.vagas ?? "—"),
-      fmtBRL(Number(c.valor_anunciado)),
-      c.area > 0 ? fmtBRL(Number(c.valor_anunciado) / Number(c.area)) : "—",
-    ]),
-    headStyles: { fillColor: COR_AZUL, textColor: 255, fontSize: 9 },
-    styles: { fontSize: 8 },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as any).lastAutoTable.finalY + 8;
-
-  y = novaPaginaSeNecessario(doc, y, 40);
-  y = tituloSecao(doc, y, "3. Resultado da Avaliação");
-  caixasValor(doc, y, resultado?.valor_minimo, resultado?.valor_central, resultado?.valor_maximo);
-
-  desenharRodape(doc, corretor);
-  return doc;
-}
-
-// ------------------------------------------------------------
-// MODELO 2 — Plano Profissional
-// ------------------------------------------------------------
-function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const rel = resultado?.relatorio_json || {};
-  const ref = numeroReferencia(avaliacao?.id ?? "");
-  desenharCabecalho(doc, ref);
-
-  let y = tituloPrincipal(doc, 42, "Estudo de Mercado Completo");
-
-  y = tituloSecao(doc, y, "1. Dados do Imóvel Avaliando");
-  autoTable(doc, {
-    startY: y,
-    body: dadosCompletos(avaliacao),
-    theme: "plain",
-    styles: { fontSize: 9, cellPadding: 1.2, textColor: COR_TEXTO },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 } },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as any).lastAutoTable.finalY + 6;
-
-  y = tituloSecao(doc, y, "2. Pesquisa de Mercado — Comparáveis");
-  autoTable(doc, {
-    startY: y,
-    head: [["Fonte", "Local", "Área", "Priv.", "Q/S/B/V", "Padrão", "Conserv.", "Valor", "R$/m²"]],
-    body: comparaveis.map((c) => [
-      c.fonte ?? "—",
-      c.localizacao ?? "—",
-      `${c.area ?? "—"}`,
-      c.area_privativa ? `${c.area_privativa}` : "—",
-      `${c.quartos ?? "-"}/${c.suites ?? "-"}/${c.banheiros ?? "-"}/${c.vagas ?? "-"}`,
-      c.padrao ?? "—",
-      c.conservacao ?? "—",
-      fmtBRL(Number(c.valor_anunciado)),
-      c.area > 0 ? fmtBRL(Number(c.valor_anunciado) / Number(c.area)) : "—",
-    ]),
-    headStyles: { fillColor: COR_AZUL, textColor: 255, fontSize: 8 },
-    styles: { fontSize: 7.5 },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as any).lastAutoTable.finalY + 8;
-
-  y = novaPaginaSeNecessario(doc, y, 40);
-  y = tituloSecao(doc, y, "3. Resultado da Avaliação");
-  y = caixasValor(doc, y, resultado?.valor_minimo, resultado?.valor_central, resultado?.valor_maximo);
-
-  if (resultado?.valor_unitario_medio) {
+    doc.setFontSize(14);
+    doc.setTextColor(...GOLD);
+    doc.text(String(i + 3).padStart(1, "0"), xCard + 6, y + 9);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(...COR_AZUL);
-    doc.text(`4. Valor Unitário Médio: ${fmtBRL(resultado.valor_unitario_medio)}/m²`, MARGIN, y);
-    y += 8;
-  }
-
-  const analise = rel.resumo_texto || rel.analise;
-  if (analise) {
-    y = novaPaginaSeNecessario(doc, y, 30);
-    y = tituloSecao(doc, y, "5. Análise de Mercado");
-    y = paragrafo(doc, y, typeof analise === "string" ? analise : JSON.stringify(analise));
-    y += 3;
-  }
-
-  const dicasPrec = rel.dicas_precificacao || rel.precificacao;
-  if (dicasPrec) {
-    y = novaPaginaSeNecessario(doc, y, 30);
-    y = tituloSecao(doc, y, "6. Dicas de Precificação");
-    y = listaNumerada(doc, y, Array.isArray(dicasPrec) ? dicasPrec : [String(dicasPrec)]);
-  }
-
-  const estrategias = rel.estrategias_venda || rel.estrategias;
-  if (estrategias) {
-    y = novaPaginaSeNecessario(doc, y, 30);
-    y = tituloSecao(doc, y, "7. Estratégias de Venda");
-    y = listaNumerada(doc, y, Array.isArray(estrategias) ? estrategias : [String(estrategias)]);
-  }
-
-  const divulgacao = rel.dicas_anuncio || rel.dicas || rel.recomendacoes;
-  if (divulgacao) {
-    y = novaPaginaSeNecessario(doc, y, 30);
-    y = tituloSecao(doc, y, "8. Dicas de Divulgação e Anúncio");
-    y = listaNumerada(doc, y, Array.isArray(divulgacao) ? divulgacao : [String(divulgacao)]);
-  }
-
-  desenharRodape(doc, corretor);
-  return doc;
+    doc.setTextColor(...WHITE);
+    doc.text(nome.toUpperCase(), xCard + 22, y + 9);
+    y += hCard + gap;
+  });
 }
 
-// ------------------------------------------------------------
-// MODELO 3 — Plano Expert (ABNT NBR 14653-2)
-// ------------------------------------------------------------
-function calcEstatisticas(comparaveis: any[]) {
+// ---------- PAGE: IMÓVEL ----------
+function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "O Imóvel");
+
+  // metric cards row
+  const items: Array<[string, string]> = [
+    ["TIPOLOGIA", String(a.tipo_imovel ?? "—")],
+    ["QUARTOS", String(a.quartos ?? "—")],
+    ["SUÍTES", String(a.suites ?? "—")],
+    ["VAGAS", String(a.vagas ?? "—")],
+    ["ÁREA (m²)", String(a.area_total ?? "—")],
+  ];
+  const usable = PW - M * 2;
+  const gap = 4;
+  const cw = (usable - gap * (items.length - 1)) / items.length;
+  const ch = 32;
+  const yRow = 50;
+  items.forEach(([label, value], i) => {
+    const x = M + i * (cw + gap);
+    card(doc, x, yRow, cw, ch);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY_DIM);
+    doc.text(label, x + cw / 2, yRow + 10, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(...WHITE);
+    const val = value.length > 14 ? value.slice(0, 13) + "…" : value;
+    doc.text(val, x + cw / 2, yRow + 22, { align: "center" });
+  });
+
+  // location bar
+  const yLoc = yRow + ch + 6;
+  card(doc, M, yLoc, usable, 14);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...GOLD);
+  doc.text("LOCALIZAÇÃO", M + 6, yLoc + 6);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...WHITE);
+  doc.text(String(a.localizacao ?? "—"), M + 6, yLoc + 11);
+
+  // pros / cons
+  const pos: string[] = Array.isArray(rel?.pontos_positivos) ? rel.pontos_positivos : [];
+  const neg: string[] = Array.isArray(rel?.pontos_negativos) ? rel.pontos_negativos : [];
+  const yPN = yLoc + 22;
+  const colW = (usable - gap) / 2;
+  const colH = PH - yPN - 18;
+  card(doc, M, yPN, colW, colH);
+  card(doc, M + colW + gap, yPN, colW, colH);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...GOLD);
+  doc.text("Pontos Positivos", M + 8, yPN + 12);
+  doc.setTextColor(255, 120, 120);
+  doc.text("Pontos de Atenção", M + colW + gap + 8, yPN + 12);
+
+  let yp = yPN + 22;
+  pos.slice(0, 6).forEach((p) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("•", M + 8, yp);
+    yp = textoMultilinha(doc, p, M + 12, yp, colW - 18, { size: 10, color: WHITE, lineHeight: 4.5 });
+    yp += 3;
+  });
+  let yn = yPN + 22;
+  neg.slice(0, 6).forEach((p) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(255, 120, 120);
+    doc.text("•", M + colW + gap + 8, yn);
+    yn = textoMultilinha(doc, p, M + colW + gap + 12, yn, colW - 18, { size: 10, color: WHITE, lineHeight: 4.5 });
+    yn += 3;
+  });
+}
+
+// ---------- PAGE: ANÁLISE DO BAIRRO ----------
+function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Análise do Bairro");
+
+  const ab = rel?.analise_bairro ?? {};
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(...GOLD);
+  doc.text(`◉ ${ab.bairro || a.localizacao || "—"}`, M, 46);
+  if (ab.cidade) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(...GRAY);
+    doc.text(String(ab.cidade), M, 53);
+  }
+
+  const usable = PW - M * 2;
+  const gap = 6;
+  const colW = (usable - gap) / 2;
+  const yRow = 62;
+  const ch = 56;
+  card(doc, M, yRow, colW, ch);
+  card(doc, M + colW + gap, yRow, colW, ch);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...GOLD);
+  doc.text("Potencial de Valorização", M + 8, yRow + 12);
+  doc.text("Tendências de Mercado", M + colW + gap + 8, yRow + 12);
+  textoMultilinha(doc, String(ab.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
+    size: 10, color: WHITE, lineHeight: 4.6,
+  });
+  textoMultilinha(doc, String(ab.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
+    size: 10, color: WHITE, lineHeight: 4.6,
+  });
+
+  // descrição
+  const yDesc = yRow + ch + 8;
+  card(doc, M, yDesc, usable, PH - yDesc - 18);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...GOLD);
+  doc.text("Sobre a Região", M + 8, yDesc + 12);
+  textoMultilinha(doc, String(ab.descricao ?? rel?.resumo_texto ?? ""), M + 8, yDesc + 22, usable - 16, {
+    size: 11, color: WHITE, lineHeight: 5.2,
+  });
+}
+
+// ---------- PAGE: PERFIL DO PÚBLICO ----------
+function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Perfil do Público");
+
+  const pp = rel?.perfil_publico ?? {};
+  const items: Array<[string, string]> = [
+    ["Profissão Predominante", String(pp.profissao ?? "—")],
+    ["Renda Média", String(pp.renda_media ?? "—")],
+    ["Preferências", String(pp.preferencias ?? "—")],
+    ["Interesses", String(pp.interesses ?? "—")],
+  ];
+  const usable = PW - M * 2;
+  const gap = 6;
+  const cw = (usable - gap) / 2;
+  const ch = 56;
+  const yStart = 56;
+  items.forEach(([label, value], i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = M + col * (cw + gap);
+    const y = yStart + row * (ch + gap);
+    card(doc, x, y, cw, ch);
+    // icon dot
+    doc.setFillColor(...GOLD);
+    doc.circle(x + 12, y + 12, 3, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...GOLD);
+    doc.text(label, x + 20, y + 14);
+    textoMultilinha(doc, value, x + 8, y + 24, cw - 16, { size: 10, color: WHITE, lineHeight: 4.8 });
+  });
+}
+
+// ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
+function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) {
+  const PER_PAGE = 4;
+  for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
+    novaPagina(doc);
+    microHeader(doc, corretor);
+    if (p === 0) tituloPagina(doc, "Anúncios na Região");
+
+    const pageItems = comparaveis.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
+    const usable = PW - M * 2;
+    const ch = 32;
+    const gap = 4;
+    const yStart = 48;
+    pageItems.forEach((c, idx) => {
+      const i = p * PER_PAGE + idx;
+      const y = yStart + idx * (ch + gap);
+      card(doc, M, y, usable, ch);
+      // number badge
+      doc.setFillColor(...BLUE);
+      doc.circle(M + 10, y + ch / 2, 6, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...WHITE);
+      doc.text(String(i + 1), M + 10, y + ch / 2 + 1.5, { align: "center" });
+
+      // cols
+      const x0 = M + 22;
+      const colW = (usable - 30) / 4;
+      // col 1: local + quartos
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...WHITE);
+      const loc = doc.splitTextToSize(String(c.localizacao ?? "—").toUpperCase(), colW - 4);
+      doc.text(loc.slice(0, 2), x0, y + 10);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text(`${c.quartos ?? 0} quartos`, x0, y + 22);
+      doc.text(`${c.suites ?? 0} suítes  •  ${c.vagas ?? 0} vagas`, x0, y + 26);
+
+      // col 2: metragem + valor + tempo
+      const x1 = x0 + colW;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...GRAY);
+      doc.text(`Metragem: ${c.area ?? "—"} m²`, x1, y + 10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...WHITE);
+      doc.text(`Valor: ${fmtBRL(Number(c.valor_anunciado))}`, x1, y + 17);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRAY);
+      doc.text(`Fonte: ${c.fonte ?? "—"}`, x1, y + 24);
+
+      // col 3: R$/m²
+      const x2 = x1 + colW;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...GRAY);
+      doc.text("Valor unitário", x2, y + 10);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(...GOLD);
+      const vm = Number(c.area) > 0 ? fmtBRL(Number(c.valor_anunciado) / Number(c.area)) : "—";
+      doc.text(`${vm}/m²`, x2, y + 19);
+
+      // col 4: conservação
+      const x3 = x2 + colW;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...GRAY);
+      doc.text("Estado de conservação", x3, y + 10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...WHITE);
+      const cons = doc.splitTextToSize(String(c.conservacao ?? "—"), colW - 4);
+      doc.text(cons.slice(0, 2), x3, y + 17);
+    });
+  }
+}
+
+// ---------- PAGE: VALOR DO IMÓVEL ----------
+function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Valor do Imóvel");
+
+  const central = resultado?.valor_central;
+  const minV = resultado?.valor_minimo;
+  const maxV = resultado?.valor_maximo;
+
+  // central giant
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...GRAY);
+  doc.text("Valor sugerido de mercado", PW / 2, 60, { align: "center" });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(58);
+  doc.setTextColor(...GOLD);
+  doc.text(fmtBRL(central), PW / 2, 88, { align: "center" });
+
+  // min / max range
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(...WHITE);
+  doc.text(`Faixa sugerida:  ${fmtBRL(minV)}   —   ${fmtBRL(maxV)}`, PW / 2, 102, { align: "center" });
+
+  // 3 tip cards
+  const tips: Array<[string, string]> = [
+    ["Comece acima do valor", "Iniciar levemente acima do central permite margem para negociação."],
+    ["Valor é sugestão", "A faixa é mercadológica; o preço final depende de estratégia e momento."],
+    ["IA + mercado local", "Análise considera comparáveis reais e contexto da região informada."],
+  ];
+  const usable = PW - M * 2;
+  const gap = 6;
+  const cw = (usable - gap * 2) / 3;
+  const ch = 50;
+  const yRow = 120;
+  tips.forEach(([t, d], i) => {
+    const x = M + i * (cw + gap);
+    card(doc, x, yRow, cw, ch);
+    doc.setFillColor(...GOLD);
+    doc.circle(x + 10, yRow + 8, 2.4, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...GOLD);
+    doc.text(t, x + 16, yRow + 14);
+    textoMultilinha(doc, d, x + 8, yRow + 24, cw - 16, { size: 10, color: WHITE, lineHeight: 4.8 });
+  });
+}
+
+// ---------- PAGE: CONTATO ----------
+function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
+  novaPagina(doc);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...GRAY);
+  doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW / 2, 40, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...GOLD);
+  doc.text(corretor.nome.toUpperCase(), PW / 2, 48, { align: "center" });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(96);
+  doc.setTextColor(...WHITE);
+  doc.text("Obrigado!", PW / 2, 110, { align: "center" });
+
+  // contact pills
+  const items = [
+    corretor.telefone ? `☎  ${corretor.telefone}` : null,
+    corretor.email ? `✉  ${corretor.email}` : null,
+    corretor.creci ? `CRECI ${corretor.creci}` : null,
+  ].filter(Boolean) as string[];
+
+  let totalW = 0;
+  const pads: number[] = [];
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  items.forEach((t) => {
+    const w = doc.getTextWidth(t) + 18;
+    pads.push(w);
+    totalW += w;
+  });
+  totalW += (items.length - 1) * 6;
+  let x = (PW - totalW) / 2;
+  const y = 140;
+  items.forEach((t, i) => {
+    const w = pads[i];
+    doc.setFillColor(...GOLD);
+    doc.roundedRect(x, y, w, 14, 7, 7, "F");
+    doc.setTextColor(15, 15, 30);
+    doc.text(t, x + w / 2, y + 9.2, { align: "center" });
+    x += w + 6;
+  });
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY_DIM);
+  doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", PW / 2, PH - 18, { align: "center" });
+}
+
+// ---------- EXPERT EXTRA: HOMOGENEIZAÇÃO ----------
+function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Homogeneização");
+
+  const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+  const ordemPadrao = ["baixo", "simples", "popular", "medio", "médio", "normal", "alto", "luxo", "alto luxo"];
+  const ordemConserv = ["ruim", "regular", "bom", "novo", "reformado"];
+  const rank = (lista: string[], v: string) => {
+    const i = lista.indexOf(v);
+    return i === -1 ? 0 : i;
+  };
+
+  const body = comparaveis.map((c, i) => {
+    const fOferta = 0.9;
+    const areaA = Number(a?.area_total) || 0;
+    const areaC = Number(c.area) || 0;
+    let fArea = 1.0;
+    if (areaA > 0 && areaC > 0) {
+      fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
+    }
+    const pA = rank(ordemPadrao, norm(a?.padrao));
+    const pC = rank(ordemPadrao, norm(c.padrao));
+    const fPadrao = pC === pA ? 1.0 : pC < pA ? 1.1 : 0.9;
+    const cA = rank(ordemConserv, norm(a?.conservacao));
+    const cC = rank(ordemConserv, norm(c.conservacao));
+    const fConserv = cC === cA ? 1.0 : cC < cA ? 1.08 : 0.95;
+    const locA = norm(a?.localizacao);
+    const locC = norm(c.localizacao);
+    const fLocal = !locA || !locC ? 1.0 : locA === locC ? 1.0 : locA.split(",")[0] === locC.split(",")[0] ? 0.98 : 0.95;
+    const total = fOferta * fArea * fPadrao * fConserv * fLocal;
+    return [
+      String(i + 1),
+      String(c.fonte ?? "—"),
+      fmtNum(fOferta, 2),
+      fmtNum(fArea, 2),
+      fmtNum(fPadrao, 2),
+      fmtNum(fConserv, 2),
+      fmtNum(fLocal, 2),
+      fmtNum(total, 3),
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 48,
+    head: [["#", "Fonte", "F. Oferta", "F. Área", "F. Padrão", "F. Conserv.", "F. Localiz.", "F. Total"]],
+    body,
+    theme: "grid",
+    headStyles: { fillColor: GOLD, textColor: [10, 15, 30], fontSize: 10, halign: "center" },
+    bodyStyles: { fillColor: CARD_TOP, textColor: WHITE, fontSize: 10, halign: "center", lineColor: [40, 50, 70] },
+    alternateRowStyles: { fillColor: CARD_BOTTOM },
+    margin: { left: M, right: M },
+  });
+}
+
+// ---------- EXPERT EXTRA: TRATAMENTO ESTATÍSTICO ----------
+function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Tratamento Estatístico");
+
   const unit = comparaveis
     .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
     .map((c) => Number(c.valor_anunciado) / Number(c.area));
-  if (unit.length === 0) return { media: 0, mediana: 0, desvio: 0, cv: 0, n: 0 };
-  const media = unit.reduce((a, b) => a + b, 0) / unit.length;
-  const sorted = [...unit].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  const mediana = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-  const variancia = unit.reduce((acc, v) => acc + (v - media) ** 2, 0) / unit.length;
-  const desvio = Math.sqrt(variancia);
-  const cv = media > 0 ? (desvio / media) * 100 : 0;
-  return { media, mediana, desvio, cv, n: unit.length };
+  let media = 0, mediana = 0, desvio = 0, cv = 0;
+  if (unit.length) {
+    media = unit.reduce((a, b) => a + b, 0) / unit.length;
+    const sorted = [...unit].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    mediana = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    const variancia = unit.reduce((acc, v) => acc + (v - media) ** 2, 0) / unit.length;
+    desvio = Math.sqrt(variancia);
+    cv = media > 0 ? (desvio / media) * 100 : 0;
+  }
+  const items: Array<[string, string]> = [
+    ["Amostras (n)", String(unit.length)],
+    ["Média (R$/m²)", fmtBRL(media)],
+    ["Mediana (R$/m²)", fmtBRL(mediana)],
+    ["Desvio padrão", fmtBRL(desvio)],
+    ["Coef. variação", `${fmtNum(cv, 2)}%`],
+  ];
+  const usable = PW - M * 2;
+  const gap = 6;
+  const cw = (usable - gap * 4) / 5;
+  const ch = 50;
+  const yRow = 60;
+  items.forEach(([l, v], i) => {
+    const x = M + i * (cw + gap);
+    card(doc, x, yRow, cw, ch);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY_DIM);
+    doc.text(l, x + cw / 2, yRow + 14, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(...GOLD);
+    doc.text(v, x + cw / 2, yRow + 30, { align: "center" });
+  });
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  const t = "Tratamento por fatores de homogeneização (ABNT NBR 14653-2:2011). A média dos valores unitários, ponderada pela qualidade da amostra, fundamenta o valor central apurado.";
+  textoMultilinha(doc, t, M, yRow + ch + 14, usable, { size: 11, color: WHITE, lineHeight: 5.2 });
 }
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+// ---------- EXPERT EXTRA: CAMPO DE ARBÍTRIO ----------
+function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Campo de Arbítrio");
+
+  const c = Number(resultado?.valor_central ?? 0);
+  const minA = c * 0.85;
+  const maxA = c * 1.15;
+
+  const usable = PW - M * 2;
+  const yRow = 60;
+  const ch = 60;
+  const gap = 6;
+  const cw = (usable - gap * 2) / 3;
+
+  const items: Array<[string, string]> = [
+    ["LIMITE INFERIOR (-15%)", fmtBRL(minA)],
+    ["VALOR CENTRAL", fmtBRL(c)],
+    ["LIMITE SUPERIOR (+15%)", fmtBRL(maxA)],
+  ];
+  items.forEach(([l, v], i) => {
+    const x = M + i * (cw + gap);
+    card(doc, x, yRow, cw, ch, { border: i === 1 });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY_DIM);
+    doc.text(l, x + cw / 2, yRow + 18, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(i === 1 ? 26 : 20);
+    doc.setTextColor(...(i === 1 ? GOLD : WHITE));
+    doc.text(v, x + cw / 2, yRow + 42, { align: "center" });
+  });
+
+  textoMultilinha(
+    doc,
+    "Conforme item 9.2.3 da ABNT NBR 14653-2, é admitido um campo de arbítrio de ±15% sobre o valor central como margem técnica de ajuste, sem alterar o grau de fundamentação da avaliação.",
+    M,
+    yRow + ch + 18,
+    usable,
+    { size: 11, color: WHITE, lineHeight: 5.4 },
+  );
+}
+
+// ============================================================
+// Orquestração dos modelos
+// ============================================================
+function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
-  const ref = numeroReferencia(avaliacao?.id ?? "");
-  desenharCabecalho(doc, ref, "Avaliador Expert");
-
-  let y = tituloPrincipal(doc, 42, "Laudo de Avaliação Mercadológica");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...COR_MUTED);
-  doc.text("ABNT NBR 14653-2", doc.internal.pageSize.getWidth() / 2, y, { align: "center" });
-  y += 8;
-
-  y = tituloSecao(doc, y, "1. Identificação e Objetivo da Avaliação");
-  y = paragrafo(doc, y,
-    `Avaliação mercadológica do imóvel localizado em ${avaliacao?.localizacao ?? "—"}, com finalidade de ${avaliacao?.finalidade ?? "—"}. ` +
-    `Referência: ${ref}. Solicitante: ${corretor.nome}${corretor.creci ? ` (CRECI ${corretor.creci})` : ""}.`,
-  );
-
-  y = tituloSecao(doc, y, "2. Caracterização do Imóvel Avaliando");
-  autoTable(doc, {
-    startY: y,
-    body: dadosCompletos(avaliacao),
-    theme: "grid",
-    styles: { fontSize: 9, cellPadding: 1.5, textColor: COR_TEXTO },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 55, fillColor: [245, 240, 225] } },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as any).lastAutoTable.finalY + 6;
-
-  y = novaPaginaSeNecessario(doc, y, 30);
-  y = tituloSecao(doc, y, "3. Metodologia");
-  y = paragrafo(doc, y,
-    "Foi adotado o Método Comparativo Direto de Dados de Mercado, conforme prescrito pela ABNT NBR 14653-2:2011, " +
-    "com tratamento por fatores de homogeneização aplicados aos atributos de oferta, área, padrão construtivo, " +
-    "conservação e localização dos elementos pesquisados.",
-  );
-
-  y = novaPaginaSeNecessario(doc, y, 30);
-  y = tituloSecao(doc, y, "4. Pesquisa de Mercado");
-  autoTable(doc, {
-    startY: y,
-    head: [["#", "Fonte", "Local", "Área", "Q/S/B/V", "Padrão", "Conserv.", "Valor", "R$/m²"]],
-    body: comparaveis.map((c, i) => [
-      String(i + 1),
-      c.fonte ?? "—",
-      c.localizacao ?? "—",
-      `${c.area ?? "—"}`,
-      `${c.quartos ?? "-"}/${c.suites ?? "-"}/${c.banheiros ?? "-"}/${c.vagas ?? "-"}`,
-      c.padrao ?? "—",
-      c.conservacao ?? "—",
-      fmtBRL(Number(c.valor_anunciado)),
-      c.area > 0 ? fmtBRL(Number(c.valor_anunciado) / Number(c.area)) : "—",
-    ]),
-    headStyles: { fillColor: COR_AZUL, textColor: 255, fontSize: 8 },
-    styles: { fontSize: 7.5 },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as any).lastAutoTable.finalY + 6;
-
-  y = novaPaginaSeNecessario(doc, y, 40);
-  y = tituloSecao(doc, y, "5. Homogeneização dos Dados");
-  autoTable(doc, {
-    startY: y,
-    head: [["#", "F. Oferta", "F. Área", "F. Padrão", "F. Conserv.", "F. Localiz.", "F. Total"]],
-    body: comparaveis.map((c, i) => {
-      const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-      const ordemPadrao = ["baixo", "simples", "popular", "medio", "médio", "normal", "alto", "luxo", "alto luxo"];
-      const ordemConserv = ["ruim", "regular", "bom", "novo", "reformado"];
-      const rank = (lista: string[], v: string) => {
-        const i = lista.indexOf(v);
-        return i === -1 ? 0 : i;
-      };
-      const fOferta = 0.9;
-      const areaA = Number(avaliacao?.area_total) || 0;
-      const areaC = Number(c.area) || 0;
-      let fArea = 1.0;
-      if (areaA > 0 && areaC > 0) {
-        // Fator de área (Heidecke/equivalente simplificado): limita entre 0,80 e 1,20
-        fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
-      }
-      const pA = rank(ordemPadrao, norm(avaliacao?.padrao));
-      const pC = rank(ordemPadrao, norm(c.padrao));
-      const fPadrao = pC === pA ? 1.0 : pC < pA ? 1.1 : 0.9;
-      const cA = rank(ordemConserv, norm(avaliacao?.conservacao));
-      const cC = rank(ordemConserv, norm(c.conservacao));
-      const fConserv = cC === cA ? 1.0 : cC < cA ? 1.08 : 0.95;
-      // Fator de localização: mesma localização → 1,0; bairro diferente → leve ajuste
-      const locA = norm(avaliacao?.localizacao);
-      const locC = norm(c.localizacao);
-      const fLocal = !locA || !locC ? 1.0 : locA === locC ? 1.0 : locA.split(",")[0] === locC.split(",")[0] ? 0.98 : 0.95;
-      const total = fOferta * fArea * fPadrao * fConserv * fLocal;
-      return [
-        String(i + 1),
-        fmtNum(fOferta, 2),
-        fmtNum(fArea, 2),
-        fmtNum(fPadrao, 2),
-        fmtNum(fConserv, 2),
-        fmtNum(fLocal, 2),
-        fmtNum(total, 3),
-      ];
-    }),
-    headStyles: { fillColor: COR_AZUL, textColor: 255, fontSize: 8 },
-    styles: { fontSize: 8, halign: "center" },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as any).lastAutoTable.finalY + 6;
-
-  const stats = calcEstatisticas(comparaveis);
-  y = novaPaginaSeNecessario(doc, y, 40);
-  y = tituloSecao(doc, y, "6. Tratamento Estatístico");
-  autoTable(doc, {
-    startY: y,
-    body: [
-      ["Amostras válidas (n)", String(stats.n)],
-      ["Valor unitário médio", `${fmtBRL(stats.media)}/m²`],
-      ["Mediana", `${fmtBRL(stats.mediana)}/m²`],
-      ["Desvio padrão", `${fmtBRL(stats.desvio)}/m²`],
-      ["Coeficiente de variação", `${fmtNum(stats.cv, 2)}%`],
-    ],
-    theme: "grid",
-    styles: { fontSize: 9, cellPadding: 1.5 },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 70, fillColor: [245, 240, 225] } },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as any).lastAutoTable.finalY + 8;
-
-  y = novaPaginaSeNecessario(doc, y, 40);
-  y = tituloSecao(doc, y, "7. Resultado — Valor de Mercado Estimado");
-  y = caixasValor(doc, y, resultado?.valor_minimo, resultado?.valor_central, resultado?.valor_maximo);
-
-  y = tituloSecao(doc, y, "8. Campo de Arbítrio (±15%)");
-  const central = Number(resultado?.valor_central ?? 0);
-  const arbMin = central * 0.85;
-  const arbMax = central * 1.15;
-  y = paragrafo(doc, y,
-    `Conforme item 9.2.3 da ABNT NBR 14653-2, aplicando-se o campo de arbítrio de ±15% sobre o valor central, ` +
-    `obtém-se a faixa entre ${fmtBRL(arbMin)} e ${fmtBRL(arbMax)}.`,
-  );
-
-  y = novaPaginaSeNecessario(doc, y, 30);
-  y = tituloSecao(doc, y, "9. Ressalvas e Limitações Técnicas");
-  y = paragrafo(doc, y,
-    "Esta avaliação tem caráter mercadológico e foi elaborada com base nos dados informados pelo solicitante e " +
-    "em pesquisa de elementos comparáveis disponíveis no mercado. Não substitui laudo técnico assinado por " +
-    "profissional habilitado (CNAI/IBAPE). O valor apurado é válido para a data de referência indicada e considera " +
-    "as condições normais de mercado, não contemplando vícios construtivos, pendências jurídicas, documentais ou " +
-    "registrais que possam afetar o imóvel.",
-  );
-
-  const dicasPrec = rel.dicas_precificacao || rel.precificacao;
-  if (dicasPrec) {
-    y = novaPaginaSeNecessario(doc, y, 30);
-    y = tituloSecao(doc, y, "10. Dicas de Precificação");
-    y = listaNumerada(doc, y, Array.isArray(dicasPrec) ? dicasPrec : [String(dicasPrec)]);
-  }
-
-  const estrategias = rel.estrategias_venda || rel.estrategias;
-  if (estrategias) {
-    y = novaPaginaSeNecessario(doc, y, 30);
-    y = tituloSecao(doc, y, "11. Estratégias de Venda");
-    y = listaNumerada(doc, y, Array.isArray(estrategias) ? estrategias : [String(estrategias)]);
-  }
-
-  const divulgacao = rel.dicas_anuncio || rel.dicas || rel.recomendacoes;
-  if (divulgacao) {
-    y = novaPaginaSeNecessario(doc, y, 30);
-    y = tituloSecao(doc, y, "12. Dicas de Divulgação e Anúncio");
-    y = listaNumerada(doc, y, Array.isArray(divulgacao) ? divulgacao : [String(divulgacao)]);
-  }
-
-  y = novaPaginaSeNecessario(doc, y, 20);
-  y = tituloSecao(doc, y, "13. Identificação do Sistema");
-  paragrafo(doc, y, "Avaliação gerada pela plataforma A8 Investimentos Imobiliários.");
-
-  marcaDagua(doc, corretor.nome);
-  desenharRodape(doc, corretor);
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
+  paginaSumario(doc, ["O Imóvel", "Análise do Bairro", "Anúncios na Região", "Valor do Imóvel", "Contato"]);
+  paginaImovel(doc, avaliacao, rel, corretor);
+  paginaBairro(doc, avaliacao, rel, corretor);
+  paginaAnuncios(doc, comparaveis, corretor);
+  paginaValor(doc, resultado, corretor);
+  paginaContato(doc, corretor);
+  rodape(doc);
   return doc;
 }
 
-// ------------------------------------------------------------
-// Entry point
-// ------------------------------------------------------------
+function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const rel = resultado?.relatorio_json || {};
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
+  paginaSumario(doc, ["O Imóvel", "Análise do Bairro", "Perfil do Público", "Anúncios na Região", "Valor do Imóvel", "Contato"]);
+  paginaImovel(doc, avaliacao, rel, corretor);
+  paginaBairro(doc, avaliacao, rel, corretor);
+  paginaPerfil(doc, rel, corretor);
+  paginaAnuncios(doc, comparaveis, corretor);
+  paginaValor(doc, resultado, corretor);
+  paginaContato(doc, corretor);
+  rodape(doc);
+  return doc;
+}
+
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const rel = resultado?.relatorio_json || {};
+  paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação");
+  paginaSumario(doc, [
+    "O Imóvel",
+    "Análise do Bairro",
+    "Perfil do Público",
+    "Anúncios na Região",
+    "Homogeneização",
+    "Tratamento Estatístico",
+    "Campo de Arbítrio",
+    "Valor do Imóvel",
+    "Contato",
+  ]);
+  paginaImovel(doc, avaliacao, rel, corretor);
+  paginaBairro(doc, avaliacao, rel, corretor);
+  paginaPerfil(doc, rel, corretor);
+  paginaAnuncios(doc, comparaveis, corretor);
+  paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
+  paginaEstatistica(doc, comparaveis, corretor);
+  paginaArbitrio(doc, resultado, corretor);
+  paginaValor(doc, resultado, corretor);
+  paginaContato(doc, corretor);
+  rodape(doc);
+  return doc;
+}
+
 export function gerarPdfAvaliacao(
   avaliacao: any,
   resultado: any,
