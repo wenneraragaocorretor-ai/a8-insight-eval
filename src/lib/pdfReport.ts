@@ -512,7 +512,8 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
     const x = M + i * (cw + gap);
     card(doc, x, yRow, cw, ch);
     doc.setFillColor(...GOLD);
-    doc.circle(x + 10, y_ish(yRow) + 8, 2.4, "F");
+    doc.circle(x + 10, yRow + 8, 2.4, "F");
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(...GOLD);
@@ -729,7 +730,7 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // Orquestração dos modelos
 // ============================================================
 function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
-  const doc = new jsPDF({ unit: "mm", format: [PW, PH], orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
   paginaSumario(doc, ["O Imóvel", "Análise do Bairro", "Anúncios na Região", "Valor do Imóvel", "Contato"]);
@@ -743,7 +744,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
 }
 
 function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
-  const doc = new jsPDF({ unit: "mm", format: [PW, PH], orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
   paginaSumario(doc, ["O Imóvel", "Análise do Bairro", "Perfil do Público", "Anúncios na Região", "Valor do Imóvel", "Contato"]);
@@ -758,7 +759,7 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
 }
 
 function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
-  const doc = new jsPDF({ unit: "mm", format: [PW, PH], orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
   paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação");
   paginaSumario(doc, [
