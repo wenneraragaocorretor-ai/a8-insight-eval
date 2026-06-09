@@ -105,10 +105,12 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           posicao: data.imovel.posicao ?? null,
           caracteristicas: data.imovel.caracteristicas,
           observacoes: data.imovel.observacoes,
+          fotos: data.imovel.fotos ?? [],
           status: "concluido",
         })
         .select()
         .single();
+
 
       if (errA) throw errA;
 
