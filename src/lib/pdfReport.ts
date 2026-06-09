@@ -317,6 +317,74 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   });
 }
 
+// ---------- PAGE: FOTOS DO IMÓVEL ----------
+function paginaFotos(doc: jsPDF, rel: any, fotos: string[], corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Fotos do Imóvel");
+
+  const usable = PW - M * 2;
+  const gap = 6;
+  // Reserva área para análise abaixo das fotos (~55mm)
+  const analiseH = 55;
+  const topY = 50;
+  const fotosH = PH - topY - analiseH - 18;
+  const n = Math.min(fotos.length, 3);
+
+  const drawImg = (src: string, x: number, y: number, w: number, h: number) => {
+    try {
+      // detect type from dataURL
+      const match = /^data:image\/(jpe?g|png|webp);base64,/i.exec(src);
+      const fmt = match && match[1].toLowerCase().startsWith("png") ? "PNG"
+        : match && match[1].toLowerCase() === "webp" ? "WEBP" : "JPEG";
+      // fundo card
+      doc.setFillColor(...CARD_BLUE);
+      doc.roundedRect(x, y, w, h, 2, 2, "F");
+      doc.addImage(src, fmt as any, x + 1, y + 1, w - 2, h - 2, undefined, "FAST");
+    } catch (e) {
+      console.error("Falha ao desenhar foto:", e);
+      doc.setFillColor(...CARD_BLUE);
+      doc.roundedRect(x, y, w, h, 2, 2, "F");
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(...GRAY);
+      doc.text("Foto indisponível", x + w / 2, y + h / 2, { align: "center" });
+    }
+  };
+
+  if (n === 1) {
+    drawImg(fotos[0], M, topY, usable, fotosH);
+  } else if (n === 2) {
+    const w = (usable - gap) / 2;
+    drawImg(fotos[0], M, topY, w, fotosH);
+    drawImg(fotos[1], M + w + gap, topY, w, fotosH);
+  } else {
+    // 3 fotos: 1 grande à esquerda + 2 menores à direita
+    const wLeft = (usable - gap) * 0.6;
+    const wRight = usable - gap - wLeft;
+    const hRight = (fotosH - gap) / 2;
+    drawImg(fotos[0], M, topY, wLeft, fotosH);
+    drawImg(fotos[1], M + wLeft + gap, topY, wRight, hRight);
+    drawImg(fotos[2], M + wLeft + gap, topY + hRight + gap, wRight, hRight);
+  }
+
+  // Caixa de análise
+  const yAn = topY + fotosH + 6;
+  card(doc, M, yAn, usable, analiseH - 12, { variant: "white", border: "gold" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...BLUE);
+  doc.text("Análise Visual (IA)", M + 8, yAn + 10);
+  const analiseTxt =
+    typeof rel?.analise_fotos === "string" && rel.analise_fotos.trim().length > 0
+      ? rel.analise_fotos
+      : "Análise visual das imagens não disponível.";
+  textoMultilinha(doc, analiseTxt, M + 8, yAn + 18, usable - 16, {
+    size: 10, color: TEXT, lineHeight: 4.6,
+  });
+}
+
+
 // ---------- PAGE: ANÁLISE DO BAIRRO ----------
 function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   novaPagina(doc);
