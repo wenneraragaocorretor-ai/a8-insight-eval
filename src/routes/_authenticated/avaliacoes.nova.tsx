@@ -198,7 +198,86 @@ function NovaAvaliacao() {
     novoComparavel(3),
   ]);
 
+  type FotoItem = { path: string; previewUrl: string; uploading?: boolean };
+  const [fotos, setFotos] = useState<FotoItem[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Limpa as object URLs ao desmontar
+  useEffect(() => {
+    return () => {
+      fotos.forEach((f) => {
+        if (f.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(f.previewUrl);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const ACEITOS = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+  const MAX_BYTES = 5 * 1024 * 1024;
+
+  const handleFotosSelected = async (filesList: FileList | null) => {
+    if (!filesList) return;
+    const files = Array.from(filesList);
+    const disponivel = 3 - fotos.length;
+    if (disponivel <= 0) {
+      toast.error("Limite de 3 fotos atingido.");
+      return;
+    }
+    const aProcessar = files.slice(0, disponivel);
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) {
+      toast.error("Sessão expirada. Faça login novamente.");
+      return;
+    }
+    for (const file of aProcessar) {
+      if (!ACEITOS.includes(file.type)) {
+        toast.error(`${file.name}: formato inválido (use JPG, PNG ou WEBP).`);
+        continue;
+      }
+      if (file.size > MAX_BYTES) {
+        toast.error(`${file.name}: maior que 5MB.`);
+        continue;
+      }
+      const previewUrl = URL.createObjectURL(file);
+      const tempItem: FotoItem = { path: "", previewUrl, uploading: true };
+      setFotos((prev) => [...prev, tempItem]);
+      try {
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage
+          .from("avaliacoes-fotos")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (error) throw error;
+        setFotos((prev) =>
+          prev.map((f) => (f.previewUrl === previewUrl ? { ...f, path, uploading: false } : f)),
+        );
+      } catch (err: any) {
+        console.error("Erro no upload:", err);
+        toast.error(`Falha ao enviar ${file.name}: ${err.message || "erro desconhecido"}`);
+        setFotos((prev) => prev.filter((f) => f.previewUrl !== previewUrl));
+        URL.revokeObjectURL(previewUrl);
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removerFoto = async (idx: number) => {
+    const alvo = fotos[idx];
+    if (!alvo) return;
+    setFotos((prev) => prev.filter((_, i) => i !== idx));
+    if (alvo.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(alvo.previewUrl);
+    if (alvo.path) {
+      try {
+        await supabase.storage.from("avaliacoes-fotos").remove([alvo.path]);
+      } catch (e) {
+        console.error("Falha ao remover do storage:", e);
+      }
+    }
+  };
+
   const campos = camposDoTipo(imovel.tipo);
+
 
   const setImovelField = <K extends keyof typeof imovel>(key: K, value: (typeof imovel)[K]) => {
     safe(() => setImovel((prev) => ({ ...prev, [key]: value })));
