@@ -24,6 +24,7 @@ export type Database = {
           conservacao: string | null
           created_at: string | null
           finalidade: string
+          fotos: Json
           id: string
           localizacao: string
           observacoes: string | null
@@ -46,6 +47,7 @@ export type Database = {
           conservacao?: string | null
           created_at?: string | null
           finalidade: string
+          fotos?: Json
           id?: string
           localizacao: string
           observacoes?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           conservacao?: string | null
           created_at?: string | null
           finalidade?: string
+          fotos?: Json
           id?: string
           localizacao?: string
           observacoes?: string | null
