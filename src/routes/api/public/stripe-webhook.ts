@@ -56,16 +56,16 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
 
         const event = JSON.parse(payload);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { stripeRequest } = await import("@/lib/stripe.server");
+        const { stripeRequest, PLANS } = await import("@/lib/stripe.server");
 
-        async function applySubscription(sub: any) {
-          const userId = sub.metadata?.user_id;
+        async function applySubscription(sub: any, session?: any) {
+          const userId = sub.metadata?.user_id ?? session?.metadata?.user_id;
           if (!userId) {
             console.warn("Subscription sem metadata.user_id", sub.id);
             return;
           }
           let plano: "user" | "pro" | "expert" | null = null;
-          const planCode = sub.metadata?.plan_code as string | undefined;
+          const planCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as string | undefined;
           if (planCode === "basico") plano = "user";
           else if (planCode === "profissional") plano = "pro";
           else if (planCode === "expert") plano = "expert";
@@ -80,8 +80,16 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           }
 
           const isActive = sub.status === "active" || sub.status === "trialing";
+          const { data: existing } = await supabaseAdmin
+            .from("profiles")
+            .select("nome")
+            .eq("id", userId)
+            .maybeSingle();
+          const nome = existing?.nome || session?.customer_details?.name || session?.customer_details?.email?.split("@")[0] || "Usuário";
 
-          await supabaseAdmin.from("profiles").update({
+          const { data: updatedProfile, error } = await supabaseAdmin.from("profiles").upsert({
+            id: userId,
+            nome,
             plano: isActive ? plano ?? "user" : "user",
             stripe_subscription_id: sub.id,
             stripe_customer_id: sub.customer,
@@ -90,7 +98,16 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
               ? new Date(sub.current_period_end * 1000).toISOString()
               : null,
             plan_price_id: sub.items?.data?.[0]?.price?.id ?? null,
-          }).eq("id", userId);
+          }, { onConflict: "id" }).select("plano, subscription_status, plan_price_id").single();
+
+          if (error) throw error;
+          console.log("[stripe-webhook] Perfil atualizado com sucesso", {
+            userId,
+            subscriptionId: sub.id,
+            plano: updatedProfile?.plano,
+            planoDetectado: Object.values(PLANS).find((plan) => plan.db_plan === updatedProfile?.plano)?.code,
+            priceId: updatedProfile?.plan_price_id,
+          });
         }
 
         try {
@@ -102,7 +119,7 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                 if (!sub.metadata?.user_id && session.metadata?.user_id) {
                   sub.metadata = { ...sub.metadata, ...session.metadata };
                 }
-                await applySubscription(sub);
+                await applySubscription(sub, session);
               }
               break;
             }
