@@ -27,10 +27,11 @@ const PLANOS = [
     destaque: false,
     db: "user",
     features: [
-      "Até 3 avaliações por mês",
+      "3 avaliações por mês",
       "Estudo de mercado simplificado",
-      "Geração de PDF",
-      "Suporte por e-mail",
+      "Valor mín/central/máx",
+      "PDF para download",
+      "Histórico de avaliações",
     ],
   },
   {
@@ -42,9 +43,11 @@ const PLANOS = [
     features: [
       "Avaliações ilimitadas",
       "Estudo de mercado completo",
-      "Comparativos com IA avançada",
-      "Geração de PDF",
-      "Suporte prioritário",
+      "Análise de mercado local",
+      "Dicas de precificação",
+      "8 estratégias de venda",
+      "Dicas de divulgação e anúncio",
+      "PDF profissional",
     ],
   },
   {
@@ -55,9 +58,12 @@ const PLANOS = [
     db: "expert",
     features: [
       "Tudo do Profissional",
-      "Laudo NBR 14.653",
-      "Homogeneização avançada",
-      "Suporte dedicado",
+      "Laudo NBR 14653-2 completo",
+      "Homogeneização e estatística",
+      "Campo de arbítrio ±15%",
+      "PDF técnico formal",
+      "Marca d'água personalizada",
+      "Selo Avaliador Expert",
     ],
   },
 ];
