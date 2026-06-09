@@ -17,25 +17,34 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
     const plan = PLANS[data.plano];
     const priceId = await ensurePrice(plan);
 
-    // Garante stripe_customer_id no profile
+    // Garante profile + stripe_customer_id (upsert cria a linha se faltar)
     const { data: profile } = await supabase
       .from("profiles")
       .select("stripe_customer_id, nome")
       .eq("id", userId)
       .maybeSingle();
 
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData.user?.email;
+    const nome =
+      profile?.nome ||
+      (userData.user?.user_metadata as any)?.nome ||
+      email?.split("@")[0] ||
+      "Usuário";
+
     let customerId = profile?.stripe_customer_id ?? null;
     if (!customerId) {
-      const { data: userData } = await supabase.auth.getUser();
-      const email = userData.user?.email;
       const customer = await stripeRequest("POST", "/customers", {
         email,
-        name: profile?.nome ?? undefined,
+        name: nome,
         metadata: { user_id: userId },
       });
       customerId = customer.id;
-      await supabase.from("profiles").update({ stripe_customer_id: customerId }).eq("id", userId);
     }
+
+    await supabase
+      .from("profiles")
+      .upsert({ id: userId, nome, stripe_customer_id: customerId }, { onConflict: "id" });
 
     const session = await stripeRequest("POST", "/checkout/sessions", {
       mode: "subscription",
@@ -112,16 +121,34 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
     const planCode = (session.metadata?.plan_code ?? "basico") as keyof typeof PLANS;
     const dbPlan = PLANS[planCode]?.db_plan ?? "user";
 
-    await supabase.from("profiles").update({
-      plano: dbPlan,
-      stripe_subscription_id: sub.id,
-      subscription_status: sub.status,
-      subscription_current_period_end: sub.current_period_end
-        ? new Date(sub.current_period_end * 1000).toISOString()
-        : null,
-      plan_price_id: sub.items?.data?.[0]?.price?.id ?? null,
-      stripe_customer_id: sub.customer,
-    }).eq("id", userId);
+    // Busca nome existente (necessário para upsert pois é NOT NULL)
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("id", userId)
+      .maybeSingle();
+    const { data: userData } = await supabase.auth.getUser();
+    const nome =
+      existing?.nome ||
+      (userData.user?.user_metadata as any)?.nome ||
+      userData.user?.email?.split("@")[0] ||
+      "Usuário";
+
+    await supabase.from("profiles").upsert(
+      {
+        id: userId,
+        nome,
+        plano: dbPlan,
+        stripe_subscription_id: sub.id,
+        subscription_status: sub.status,
+        subscription_current_period_end: sub.current_period_end
+          ? new Date(sub.current_period_end * 1000).toISOString()
+          : null,
+        plan_price_id: sub.items?.data?.[0]?.price?.id ?? null,
+        stripe_customer_id: sub.customer,
+      },
+      { onConflict: "id" },
+    );
 
     return { ok: true, plano: dbPlan };
   });
