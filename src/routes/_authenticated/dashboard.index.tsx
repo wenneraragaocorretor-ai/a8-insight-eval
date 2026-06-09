@@ -1,14 +1,22 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRouteContext } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { FileText, Plus, History, Trophy, Eye, Sparkles } from "lucide-react";
+import { FileText, Plus, History, Trophy, Eye, Sparkles, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
-import { getStatusAssinatura } from "../../lib/stripe.functions";
+import { getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
+
+type DashboardSearch = { pagamento?: string; session_id?: string };
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
+  validateSearch: (s: Record<string, unknown>): DashboardSearch => ({
+    pagamento: s.pagamento as string | undefined,
+    session_id: s.session_id as string | undefined,
+  }),
   component: Dashboard,
 });
 
@@ -24,16 +32,55 @@ const PLAN_LABEL: Record<string, string> = {
 function Dashboard() {
   const context = useRouteContext({ from: "/_authenticated" });
   const user = (context as any)?.user;
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const fetchList = useServerFn(listarAvaliacoes);
   const fetchStatus = useServerFn(getStatusAssinatura);
+  const confirmFn = useServerFn(confirmarCheckout);
+  const [welcomePlano, setWelcomePlano] = useState<string | null>(null);
+  const confirmedRef = useRef(false);
+
   const { data: avaliacoes = [], isLoading } = useQuery({
     queryKey: ["avaliacoes-list"],
     queryFn: () => fetchList(),
   });
-  const { data: status } = useQuery({
+  const { data: status, refetch: refetchStatus } = useQuery({
     queryKey: ["assinatura-status"],
     queryFn: () => fetchStatus(),
   });
+
+  useEffect(() => {
+    if (search.pagamento !== "sucesso" || confirmedRef.current) return;
+    confirmedRef.current = true;
+
+    const run = async () => {
+      if (search.session_id) {
+        try {
+          await confirmFn({ data: { session_id: search.session_id } });
+        } catch (e) {
+          console.error("[confirmarCheckout]", e);
+        }
+      }
+      // Poll status until plano != "user" or timeout (webhook pode atrasar)
+      let attempts = 0;
+      let plano = "user";
+      while (attempts < 10) {
+        const r = await refetchStatus();
+        plano = r.data?.plano ?? "user";
+        if (r.data?.assinaturaAtiva) break;
+        attempts++;
+        await new Promise((res) => setTimeout(res, 1500));
+      }
+      const label = PLAN_LABEL[plano] ?? "Básico";
+      setWelcomePlano(label);
+      toast.success(`Pagamento confirmado! Bem-vindo ao Plano ${label}.`);
+      queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
+      // Limpa query params
+      navigate({ to: "/dashboard", search: {}, replace: true });
+    };
+    void run();
+  }, [search.pagamento, search.session_id]);
 
   if (!user) return null;
   const nome = user.user_metadata?.nome || user.email?.split("@")[0];
@@ -64,6 +111,23 @@ function Dashboard() {
           </Link>
         </div>
       </div>
+
+      {welcomePlano && (
+        <Card className="premium-card border-2 border-brand-gold bg-brand-gold/5">
+          <CardContent className="flex items-center gap-3 py-4">
+            <CheckCircle2 className="h-6 w-6 text-brand-gold shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold text-brand-blue">Pagamento confirmado!</p>
+              <p className="text-sm text-muted-foreground">
+                Sua assinatura do Plano {welcomePlano} está ativa. Aproveite!
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setWelcomePlano(null)}>Fechar</Button>
+          </CardContent>
+        </Card>
+      )}
+
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="premium-card">
