@@ -66,10 +66,16 @@ function Dashboard() {
           console.error("[confirmarCheckout]", e);
         }
       }
+      // Força refetch imediato do perfil
+      await queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
       // Poll para garantir consistência (webhook pode chegar depois)
       let attempts = 0;
       while (attempts < 8) {
         const r = await refetchStatus();
+        if (r.data?.plano && r.data.plano !== "user") {
+          plano = r.data.plano;
+          break;
+        }
         if (r.data?.assinaturaAtiva) {
           plano = r.data.plano ?? plano;
           break;
@@ -79,8 +85,9 @@ function Dashboard() {
       }
       const label = PLAN_LABEL[plano] ?? "Básico";
       setWelcomePlano(label);
-      toast.success("Plano ativado com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
+      toast.success(`Plano ${label} ativado com sucesso!`);
+      await queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
+      await refetchStatus();
       navigate({ to: "/dashboard", search: {}, replace: true });
     };
     void run();
@@ -144,7 +151,7 @@ function Dashboard() {
               {usadas}{limite != null ? ` / ${limite}` : ""}
             </div>
             <p className="text-xs text-muted-foreground">
-              {limite == null ? "Ilimitado" : limiteAtingido ? "Limite atingido" : "Renova no início do mês"}
+              Plano {planoLabel}
             </p>
           </CardContent>
         </Card>
