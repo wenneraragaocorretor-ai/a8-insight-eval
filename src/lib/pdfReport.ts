@@ -232,14 +232,18 @@ function novaPaginaSeNecessario(doc: jsPDF, y: number, espacoRequerido = 30) {
 // Coletor de campos
 // ------------------------------------------------------------
 function dadosBasicos(a: any): [string, string][] {
+  const carac = Array.isArray(a.caracteristicas) ? a.caracteristicas.join(", ") : "";
   return [
     ["Tipo do imóvel", String(a.tipo_imovel ?? "—")],
     ["Localização", String(a.localizacao ?? "—")],
     ["Área total", a.area_total ? `${a.area_total} m²` : "—"],
-    ["Quartos", String(a.quartos ?? "—")],
-    ["Vagas", String(a.vagas ?? "—")],
+    ["Área privativa", a.area_privativa ? `${a.area_privativa} m²` : "—"],
+    ["Quartos / Suítes", `${a.quartos ?? "—"} / ${a.suites ?? "—"}`],
+    ["Banheiros / Vagas", `${a.banheiros ?? "—"} / ${a.vagas ?? "—"}`],
     ["Padrão", String(a.padrao ?? "—")],
     ["Conservação", String(a.conservacao ?? "—")],
+    ["Posição", String(a.posicao ?? "—")],
+    ["Características", carac || "—"],
   ];
 }
 
