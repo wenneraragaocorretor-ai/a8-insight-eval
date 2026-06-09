@@ -716,14 +716,14 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   ];
   items.forEach(([l, v], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch, { border: i === 1 ? "gold" : "soft" });
-    doc.setFont("helvetica", "normal");
+    card(doc, x, yRow, cw, ch, { variant: i === 1 ? "darkblue" : "white", border: i === 1 ? "gold" : "soft" });
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...GRAY_DIM);
+    doc.setTextColor(...(i === 1 ? GOLD : BLUE));
     doc.text(l, x + cw / 2, yRow + 18, { align: "center" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(i === 1 ? 26 : 20);
-    doc.setTextColor(...(i === 1 ? GOLD : WHITE));
+    doc.setTextColor(...(i === 1 ? WHITE : BLUE));
     doc.text(v, x + cw / 2, yRow + 42, { align: "center" });
   });
 
@@ -733,7 +733,7 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
     M,
     yRow + ch + 18,
     usable,
-    { size: 11, color: WHITE, lineHeight: 5.4 },
+    { size: 11, color: TEXT, lineHeight: 5.4 },
   );
 }
 
