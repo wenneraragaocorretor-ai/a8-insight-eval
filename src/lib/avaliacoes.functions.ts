@@ -48,14 +48,14 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
     console.log("Iniciando processamento no servidor para o usuário:", userId);
 
     try {
-      // Enforça limite mensal para Plano Básico (plano = 'user')
+      // Enforça limite mensal para Plano Básico.
       const { data: profile } = await supabase
         .from("profiles")
         .select("plano")
         .eq("id", userId)
         .maybeSingle();
-      const plano = (profile?.plano ?? "user") as "user" | "pro" | "expert";
-      if (plano === "user") {
+      const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
+      if (plano === "basico" || plano === "user") {
         const inicioMes = new Date();
         inicioMes.setDate(1);
         inicioMes.setHours(0, 0, 0, 0);

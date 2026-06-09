@@ -24,6 +24,8 @@ const fmtBRL = (v: number | null | undefined) =>
   v == null ? "—" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 const PLAN_LABEL: Record<string, string> = {
+  basico: "Básico",
+  profissional: "Profissional",
   user: "Básico",
   pro: "Profissional",
   expert: "Expert",
@@ -57,7 +59,7 @@ function Dashboard() {
     confirmedRef.current = true;
 
     const run = async () => {
-      let plano = "user";
+      let plano = "basico";
       if (sid) {
         try {
           const res = await confirmFn({ data: { session_id: sid } });
@@ -65,7 +67,7 @@ function Dashboard() {
           queryClient.setQueryData(["assinatura-status"], (current: any) => ({
             ...(current ?? {}),
             plano,
-            assinaturaAtiva: plano !== "user",
+            assinaturaAtiva: plano !== "basico" && plano !== "user",
           }));
           console.log("[confirmarCheckout] Plano atualizado com sucesso no dashboard", {
             sessionId: sid,
@@ -81,7 +83,7 @@ function Dashboard() {
       let attempts = 0;
       while (attempts < 8) {
         const r = await refetchStatus();
-        if (r.data?.plano && r.data.plano !== "user") {
+        if (r.data?.plano && r.data.plano !== "basico" && r.data.plano !== "user") {
           plano = r.data.plano;
           break;
         }

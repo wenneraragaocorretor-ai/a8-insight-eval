@@ -52,7 +52,7 @@ export const PLANS = {
     price_cents: 9990,
     lookup_key: "a8_basico_monthly",
     description: "Até 3 avaliações/mês",
-    db_plan: "user" as const,
+    db_plan: "basico" as const,
     limit: 3,
   },
   profissional: {
@@ -61,7 +61,7 @@ export const PLANS = {
     price_cents: 15990,
     lookup_key: "a8_profissional_monthly",
     description: "Avaliações ilimitadas",
-    db_plan: "pro" as const,
+    db_plan: "profissional" as const,
     limit: null as number | null,
   },
   expert: {

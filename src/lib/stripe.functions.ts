@@ -83,8 +83,8 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       .eq("user_id", userId)
       .gte("created_at", inicioMes.toISOString());
 
-    const plano = (profile?.plano ?? "user") as "user" | "pro" | "expert";
-    const limite = plano === "user" ? 3 : null;
+    const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
+    const limite = plano === "basico" || plano === "user" ? 3 : null;
     const ativa = profile?.subscription_status === "active" || profile?.subscription_status === "trialing";
 
     return {
@@ -151,7 +151,7 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       {
         id: userId,
         nome,
-        plano: dbPlan,
+        plano: dbPlan as any,
         stripe_subscription_id: sub.id,
         subscription_status: sub.status,
         subscription_current_period_end: sub.current_period_end
