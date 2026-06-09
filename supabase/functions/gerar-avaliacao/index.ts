@@ -21,6 +21,33 @@ serve(async (req) => {
 
     console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
 
+    // Baixa as fotos do imóvel (caminhos no bucket privado) usando service role
+    const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 3) : []
+    const fotosImagens: Array<{ mediaType: string; base64: string }> = []
+    if (fotosPaths.length > 0) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      if (supabaseUrl && serviceKey) {
+        const supa = createClient(supabaseUrl, serviceKey)
+        for (const p of fotosPaths) {
+          try {
+            const { data: blob, error } = await supa.storage.from('avaliacoes-fotos').download(p)
+            if (error || !blob) continue
+            const buf = new Uint8Array(await blob.arrayBuffer())
+            // base64 encode
+            let bin = ''
+            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i])
+            const base64 = btoa(bin)
+            const mediaType = blob.type || (p.toLowerCase().endsWith('.png') ? 'image/png' : p.toLowerCase().endsWith('.webp') ? 'image/webp' : 'image/jpeg')
+            fotosImagens.push({ mediaType, base64 })
+          } catch (e) {
+            console.error('Falha ao baixar foto', p, e)
+          }
+        }
+      }
+    }
+
+
     // ABNT NBR 14653-2 — área base do cálculo conforme tipo de imóvel
     const pick = (priv: any, total: any) => {
       const p = Number(priv); const t = Number(total)
