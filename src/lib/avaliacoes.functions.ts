@@ -19,6 +19,7 @@ const evaluationSchema = z.object({
     posicao: z.string().optional(),
     caracteristicas: z.array(z.string()),
     observacoes: z.string().optional(),
+    fotos: z.array(z.string()).max(3).optional().default([]),
   }),
   comparaveis: z.array(z.object({
     fonte: z.string(),
@@ -39,6 +40,7 @@ const evaluationSchema = z.object({
     valor: z.number(),
   })).min(3),
 });
+
 
 export const processarAvaliacaoIA = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
