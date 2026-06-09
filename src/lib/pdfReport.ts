@@ -484,12 +484,32 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   autoTable(doc, {
     startY: y,
     head: [["#", "F. Oferta", "F. Área", "F. Padrão", "F. Conserv.", "F. Localiz.", "F. Total"]],
-    body: comparaveis.map((_c, i) => {
+    body: comparaveis.map((c, i) => {
+      const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+      const ordemPadrao = ["baixo", "simples", "popular", "medio", "médio", "normal", "alto", "luxo", "alto luxo"];
+      const ordemConserv = ["ruim", "regular", "bom", "novo", "reformado"];
+      const rank = (lista: string[], v: string) => {
+        const i = lista.indexOf(v);
+        return i === -1 ? 0 : i;
+      };
       const fOferta = 0.9;
-      const fArea = 1.0;
-      const fPadrao = 1.0;
-      const fConserv = 1.0;
-      const fLocal = 1.0;
+      const areaA = Number(avaliacao?.area_total) || 0;
+      const areaC = Number(c.area) || 0;
+      let fArea = 1.0;
+      if (areaA > 0 && areaC > 0) {
+        // Fator de área (Heidecke/equivalente simplificado): limita entre 0,80 e 1,20
+        fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
+      }
+      const pA = rank(ordemPadrao, norm(avaliacao?.padrao));
+      const pC = rank(ordemPadrao, norm(c.padrao));
+      const fPadrao = pC === pA ? 1.0 : pC < pA ? 1.1 : 0.9;
+      const cA = rank(ordemConserv, norm(avaliacao?.conservacao));
+      const cC = rank(ordemConserv, norm(c.conservacao));
+      const fConserv = cC === cA ? 1.0 : cC < cA ? 1.08 : 0.95;
+      // Fator de localização: mesma localização → 1,0; bairro diferente → leve ajuste
+      const locA = norm(avaliacao?.localizacao);
+      const locC = norm(c.localizacao);
+      const fLocal = !locA || !locC ? 1.0 : locA === locC ? 1.0 : locA.split(",")[0] === locC.split(",")[0] ? 0.98 : 0.95;
       const total = fOferta * fArea * fPadrao * fConserv * fLocal;
       return [
         String(i + 1),
