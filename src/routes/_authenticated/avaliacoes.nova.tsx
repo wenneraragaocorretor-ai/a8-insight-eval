@@ -319,7 +319,7 @@ function NovaAvaliacao() {
       {step === 1 && (
         <Card className="premium-card">
           <CardHeader><CardTitle>Dados do Imóvel</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent key={imovel.tipo} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Tipo do Imóvel</Label>
               <Select value={imovel.tipo} onValueChange={onTipoChange}>
