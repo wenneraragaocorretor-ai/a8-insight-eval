@@ -268,7 +268,7 @@ function dadosCompletos(a: any): [string, string][] {
 // ------------------------------------------------------------
 // MODELO 1 — Plano Básico
 // ------------------------------------------------------------
-function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: string) {
+function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const ref = numeroReferencia(avaliacao?.id ?? "");
   desenharCabecalho(doc, ref);
@@ -316,7 +316,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
 // ------------------------------------------------------------
 // MODELO 2 — Plano Profissional
 // ------------------------------------------------------------
-function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: string) {
+function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const rel = resultado?.relatorio_json || {};
   const ref = numeroReferencia(avaliacao?.id ?? "");
@@ -419,7 +419,7 @@ function calcEstatisticas(comparaveis: any[]) {
   return { media, mediana, desvio, cv, n: unit.length };
 }
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: string) {
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const rel = resultado?.relatorio_json || {};
   const ref = numeroReferencia(avaliacao?.id ?? "");
@@ -435,7 +435,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   y = tituloSecao(doc, y, "1. Identificação e Objetivo da Avaliação");
   y = paragrafo(doc, y,
     `Avaliação mercadológica do imóvel localizado em ${avaliacao?.localizacao ?? "—"}, com finalidade de ${avaliacao?.finalidade ?? "—"}. ` +
-    `Referência: ${ref}. Solicitante: ${corretor}.`,
+    `Referência: ${ref}. Solicitante: ${corretor.nome}${corretor.creci ? ` (CRECI ${corretor.creci})` : ""}.`,
   );
 
   y = tituloSecao(doc, y, "2. Caracterização do Imóvel Avaliando");
@@ -553,7 +553,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   y = tituloSecao(doc, y, "10. Identificação do Sistema");
   paragrafo(doc, y, "Avaliação gerada pela plataforma A8 Investimentos Imobiliários.");
 
-  marcaDagua(doc, corretor);
+  marcaDagua(doc, corretor.nome);
   desenharRodape(doc, corretor);
   return doc;
 }
@@ -565,9 +565,13 @@ export function gerarPdfAvaliacao(
   avaliacao: any,
   resultado: any,
   comparaveis: any[],
-  opts: { modelo: ModeloPdf; plano: PlanoUsuario; corretor?: string },
+  opts: { modelo: ModeloPdf; plano: PlanoUsuario; corretor?: CorretorInfo | string },
 ) {
-  const { modelo, plano, corretor = "Corretor não identificado" } = opts;
+  const { modelo, plano } = opts;
+  const corretor: CorretorInfo =
+    typeof opts.corretor === "string"
+      ? { nome: opts.corretor || "Corretor não identificado" }
+      : opts.corretor ?? { nome: "Corretor não identificado" };
   if (!podeGerarModelo(plano, modelo)) {
     throw new Error("Faça upgrade para acessar este relatório");
   }
