@@ -168,6 +168,13 @@ Comparável #${i + 1} (${c.fonte}):
     const jsonText = jsonMatch ? jsonMatch[1].trim() : content.trim()
     const result = JSON.parse(jsonText)
 
+    // Garante que a área base do cálculo sempre vai no resultado
+    result.area_base_calculo = result.area_base_calculo ?? baseImovel.area
+    result.area_base_tipo = result.area_base_tipo ?? baseImovel.label
+    result.area_base_descricao = result.area_base_descricao ?? areaBaseDescricao
+
+
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
