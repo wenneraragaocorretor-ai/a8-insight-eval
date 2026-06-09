@@ -162,7 +162,7 @@ function Dashboard() {
               {usadas}{limite != null ? ` / ${limite}` : ""}
             </div>
             <p className="text-xs text-muted-foreground">
-              Plano {planoLabel}
+              Mês atual
             </p>
           </CardContent>
         </Card>
