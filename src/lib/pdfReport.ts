@@ -279,7 +279,11 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
 
   // pros / cons
   const pos: string[] = Array.isArray(rel?.pontos_positivos) ? rel.pontos_positivos : [];
-  const neg: string[] = Array.isArray(rel?.pontos_negativos) ? rel.pontos_negativos : [];
+  const neg: string[] = Array.isArray(rel?.pontos_atencao)
+    ? rel.pontos_atencao
+    : Array.isArray(rel?.pontos_negativos)
+    ? rel.pontos_negativos
+    : [];
   const yPN = yLoc + 22;
   const colW = (usable - gap) / 2;
   const colH = PH - yPN - 18;
@@ -344,10 +348,10 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   doc.setTextColor(...BLUE);
   doc.text("Potencial de Valorização", M + 8, yRow + 12);
   doc.text("Tendências de Mercado", M + colW + gap + 8, yRow + 12);
-  textoMultilinha(doc, String(ab.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
+  textoMultilinha(doc, String(ab.potencial_valorizacao ?? rel?.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
     size: 10, color: TEXT, lineHeight: 4.6,
   });
-  textoMultilinha(doc, String(ab.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
+  textoMultilinha(doc, String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
     size: 10, color: TEXT, lineHeight: 4.6,
   });
 
@@ -371,10 +375,10 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 
   const pp = rel?.perfil_publico ?? {};
   const items: Array<[string, string]> = [
-    ["Profissão Predominante", String(pp.profissao ?? "—")],
-    ["Renda Média", String(pp.renda_media ?? "—")],
-    ["Preferências", String(pp.preferencias ?? "—")],
-    ["Interesses", String(pp.interesses ?? "—")],
+    ["Profissão Predominante", String(pp.profissao ?? rel?.perfil_profissao ?? "—")],
+    ["Renda Média", String(pp.renda_media ?? rel?.perfil_renda ?? "—")],
+    ["Preferências", String(pp.preferencias ?? rel?.perfil_preferencias ?? "—")],
+    ["Interesses", String(pp.interesses ?? rel?.perfil_interesses ?? "—")],
   ];
   const usable = PW - M * 2;
   const gap = 6;
