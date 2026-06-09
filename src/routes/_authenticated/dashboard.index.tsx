@@ -112,6 +112,23 @@ function Dashboard() {
         </div>
       </div>
 
+      {welcomePlano && (
+        <Card className="premium-card border-2 border-brand-gold bg-brand-gold/5">
+          <CardContent className="flex items-center gap-3 py-4">
+            <CheckCircle2 className="h-6 w-6 text-brand-gold shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold text-brand-blue">Pagamento confirmado!</p>
+              <p className="text-sm text-muted-foreground">
+                Sua assinatura do Plano {welcomePlano} está ativa. Aproveite!
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setWelcomePlano(null)}>Fechar</Button>
+          </CardContent>
+        </Card>
+      )}
+
+
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="premium-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
