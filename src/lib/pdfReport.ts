@@ -521,8 +521,6 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
     textoMultilinha(doc, d, x + 8, yRow + 24, cw - 16, { size: 10, color: WHITE, lineHeight: 4.8 });
   });
 }
-// helper to satisfy y_ish refer
-function y_ish(y: number) { return y; }
 
 // ---------- PAGE: CONTATO ----------
 function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
