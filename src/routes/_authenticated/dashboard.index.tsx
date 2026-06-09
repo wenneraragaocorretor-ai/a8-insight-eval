@@ -62,6 +62,15 @@ function Dashboard() {
         try {
           const res = await confirmFn({ data: { session_id: sid } });
           if (res?.plano) plano = res.plano;
+          queryClient.setQueryData(["assinatura-status"], (current: any) => ({
+            ...(current ?? {}),
+            plano,
+            assinaturaAtiva: plano !== "user",
+          }));
+          console.log("[confirmarCheckout] Plano atualizado com sucesso no dashboard", {
+            sessionId: sid,
+            plano,
+          });
         } catch (e) {
           console.error("[confirmarCheckout]", e);
         }
