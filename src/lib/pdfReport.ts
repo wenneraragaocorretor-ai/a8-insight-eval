@@ -635,9 +635,9 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
     head: [["#", "Fonte", "F. Oferta", "F. Área", "F. Padrão", "F. Conserv.", "F. Localiz.", "F. Total"]],
     body,
     theme: "grid",
-    headStyles: { fillColor: GOLD, textColor: [10, 15, 30], fontSize: 10, halign: "center" },
-    bodyStyles: { fillColor: CARD_TOP, textColor: WHITE, fontSize: 10, halign: "center", lineColor: [40, 50, 70] },
-    alternateRowStyles: { fillColor: CARD_BOTTOM },
+    headStyles: { fillColor: BLUE, textColor: WHITE, fontSize: 10, halign: "center" },
+    bodyStyles: { fillColor: WHITE, textColor: TEXT, fontSize: 10, halign: "center", lineColor: BORDER },
+    alternateRowStyles: { fillColor: BG_SOFT },
     margin: { left: M, right: M },
   });
 }
