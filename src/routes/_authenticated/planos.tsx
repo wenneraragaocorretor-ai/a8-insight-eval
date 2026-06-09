@@ -25,7 +25,7 @@ const PLANOS = [
     nome: "Básico",
     preco: "R$ 99,90",
     destaque: false,
-    db: "user",
+    db: "basico",
     features: [
       "3 avaliações por mês",
       "Estudo de mercado simplificado",
@@ -39,7 +39,7 @@ const PLANOS = [
     nome: "Profissional",
     preco: "R$ 159,90",
     destaque: true,
-    db: "pro",
+    db: "profissional",
     features: [
       "Avaliações ilimitadas",
       "Estudo de mercado completo",

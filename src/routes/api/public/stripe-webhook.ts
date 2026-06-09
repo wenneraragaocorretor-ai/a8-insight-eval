@@ -33,9 +33,9 @@ async function verifyStripeSignature(payload: string, header: string | null, sec
   return diff === 0;
 }
 
-const PLAN_BY_PRICE_LOOKUP: Record<string, "user" | "pro" | "expert"> = {
-  a8_basico_monthly: "user",
-  a8_profissional_monthly: "pro",
+const PLAN_BY_PRICE_LOOKUP: Record<string, "basico" | "profissional" | "expert"> = {
+  a8_basico_monthly: "basico",
+  a8_profissional_monthly: "profissional",
   a8_expert_monthly: "expert",
 };
 
@@ -64,10 +64,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             console.warn("Subscription sem metadata.user_id", sub.id);
             return;
           }
-          let plano: "user" | "pro" | "expert" | null = null;
+          let plano: "basico" | "profissional" | "expert" | null = null;
           const planCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as string | undefined;
-          if (planCode === "basico") plano = "user";
-          else if (planCode === "profissional") plano = "pro";
+          if (planCode === "basico") plano = "basico";
+          else if (planCode === "profissional") plano = "profissional";
           else if (planCode === "expert") plano = "expert";
 
           if (!plano) {
@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           const { data: updatedProfile, error } = await supabaseAdmin.from("profiles").upsert({
             id: userId,
             nome,
-            plano: isActive ? plano ?? "user" : "user",
+            plano: (isActive ? plano ?? "basico" : "basico") as any,
             stripe_subscription_id: sub.id,
             stripe_customer_id: sub.customer,
             subscription_status: sub.status,
