@@ -253,21 +253,21 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const yRow = 50;
   items.forEach(([label, value], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch);
-    doc.setFont("helvetica", "normal");
+    card(doc, x, yRow, cw, ch, { variant: "blue", border: "soft" });
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(...GRAY_DIM);
+    doc.setTextColor(...BLUE);
     doc.text(label, x + cw / 2, yRow + 10, { align: "center" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.setTextColor(...WHITE);
+    doc.setTextColor(...BLUE);
     const val = value.length > 14 ? value.slice(0, 13) + "…" : value;
     doc.text(val, x + cw / 2, yRow + 22, { align: "center" });
   });
 
   // location bar
   const yLoc = yRow + ch + 6;
-  card(doc, M, yLoc, usable, 14);
+  card(doc, M, yLoc, usable, 14, { variant: "darkblue" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(...GOLD);
@@ -283,14 +283,14 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const yPN = yLoc + 22;
   const colW = (usable - gap) / 2;
   const colH = PH - yPN - 18;
-  card(doc, M, yPN, colW, colH);
-  card(doc, M + colW + gap, yPN, colW, colH);
+  card(doc, M, yPN, colW, colH, { variant: "white", border: "soft" });
+  card(doc, M + colW + gap, yPN, colW, colH, { variant: "white", border: "soft" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text("Pontos Positivos", M + 8, yPN + 12);
-  doc.setTextColor(255, 120, 120);
+  doc.setTextColor(190, 50, 50);
   doc.text("Pontos de Atenção", M + colW + gap + 8, yPN + 12);
 
   let yp = yPN + 22;
@@ -299,16 +299,16 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc.setFontSize(10);
     doc.setTextColor(...GOLD);
     doc.text("•", M + 8, yp);
-    yp = textoMultilinha(doc, p, M + 12, yp, colW - 18, { size: 10, color: WHITE, lineHeight: 4.5 });
+    yp = textoMultilinha(doc, p, M + 12, yp, colW - 18, { size: 10, color: TEXT, lineHeight: 4.5 });
     yp += 3;
   });
   let yn = yPN + 22;
   neg.slice(0, 6).forEach((p) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(255, 120, 120);
+    doc.setTextColor(190, 50, 50);
     doc.text("•", M + colW + gap + 8, yn);
-    yn = textoMultilinha(doc, p, M + colW + gap + 12, yn, colW - 18, { size: 10, color: WHITE, lineHeight: 4.5 });
+    yn = textoMultilinha(doc, p, M + colW + gap + 12, yn, colW - 18, { size: 10, color: TEXT, lineHeight: 4.5 });
     yn += 3;
   });
 }
