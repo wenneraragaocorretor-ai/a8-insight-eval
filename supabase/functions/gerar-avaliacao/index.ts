@@ -21,24 +21,65 @@ serve(async (req) => {
 
     console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
 
-    const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653).
+    // ABNT NBR 14653-2 — área base do cálculo conforme tipo de imóvel
+    const pick = (priv: any, total: any) => {
+      const p = Number(priv); const t = Number(total)
+      if (Number.isFinite(p) && p > 0) return { area: p, fonte: 'privativa' as const }
+      return { area: Number.isFinite(t) ? t : 0, fonte: 'total' as const }
+    }
+    const areaBaseDe = (im: any, tipoRef?: string) => {
+      const tn = String(tipoRef ?? im.tipo ?? '').toLowerCase()
+      const total = im.area_total ?? im.area
+      if (tn.includes('apart')) {
+        const r = pick(im.area_privativa, total)
+        return { ...r, label: r.fonte === 'privativa' ? 'área privativa' : 'área total' }
+      }
+      if (tn.includes('casa')) {
+        const r = pick(im.area_privativa, total)
+        return { ...r, label: r.fonte === 'privativa' ? 'área construída' : 'área total' }
+      }
+      if (tn.includes('terreno')) {
+        return { area: Number(total) || 0, fonte: 'total' as const, label: 'área total do terreno' }
+      }
+      const r = pick(im.area_privativa, total)
+      return { ...r, label: r.fonte === 'privativa' ? 'área privativa/útil' : 'área total' }
+    }
+
+    const baseImovel = areaBaseDe(imovel)
+    const basesComparaveis = comparaveis.map((c: any) => areaBaseDe(c, imovel.tipo))
+    const areaBaseDescricao = `Cálculo baseado em ${baseImovel.label}: ${baseImovel.area}m²`
+
+    const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653-2).
 Faça a HOMOGENEIZAÇÃO dos comparáveis em relação ao imóvel avaliando, considerando:
-área total/privativa, quartos, suítes, banheiros, vagas, padrão construtivo,
+área (conforme regra abaixo), quartos, suítes, banheiros, vagas, padrão construtivo,
 estado de conservação, posição (esquina, meio de quadra, encravado, gleba),
 andar (se apartamento), idade aproximada, condomínio e características presentes
 (piscina, churrasqueira, elevador, condomínio fechado, área de lazer, etc.).
-Calcule o valor unitário homogeneizado (R$/m²) e aplique ao imóvel alvo,
+
+REGRA DE ÁREA BASE (ABNT NBR 14653-2) — OBRIGATÓRIA para R$/m²:
+- Apartamento: usar a ÁREA PRIVATIVA. Se ausente, usar área total.
+- Casa: usar a ÁREA CONSTRUÍDA (edificada). Se ausente, usar área total.
+- Terreno: usar a ÁREA TOTAL do terreno.
+- Sala Comercial / Galpão: usar a ÁREA PRIVATIVA/ÚTIL. Se ausente, usar área total.
+A mesma regra se aplica a cada comparável (use a área privativa quando disponível).
+O "valor_unitario_medio" DEVE ser calculado sobre a área base — NÃO use área total quando houver privativa.
+
+Para este imóvel, a área base já está determinada: "${baseImovel.label}" = ${baseImovel.area}m².
+Para cada comparável, use o campo "area_base" indicado no input.
+
+Calcule o valor unitário homogeneizado (R$/m² sobre a área base) e aplique ao imóvel alvo,
 gerando faixa mínima, central e máxima (intervalo de confiança).
-Além da avaliação, gere conteúdo qualitativo personalizado para o imóvel e a região,
-com base no tipo de imóvel, localização (bairro/cidade) e características informadas.
-Retorne APENAS um JSON estruturado (sem comentários, sem markdown) conforme o exemplo.
-TODOS os campos abaixo são OBRIGATÓRIOS e devem ser preenchidos com base nas características
-reais do imóvel e da localização. NÃO retorne strings vazias, "—" ou "Informação não disponível":
+Além da avaliação, gere conteúdo qualitativo personalizado para o imóvel e a região.
+Retorne APENAS um JSON estruturado (sem comentários, sem markdown). TODOS os campos abaixo são OBRIGATÓRIOS
+e devem ser preenchidos com base nas características reais — NÃO retorne strings vazias, "—" ou "Informação não disponível":
 {
   "valor_minimo": 450000,
   "valor_central": 500000,
   "valor_maximo": 550000,
   "valor_unitario_medio": 5000,
+  "area_base_calculo": ${baseImovel.area},
+  "area_base_tipo": "${baseImovel.label}",
+  "area_base_descricao": "${areaBaseDescricao}",
   "resumo_texto": "O imóvel apresenta excelente conservação...",
   "pontos_positivos": ["2 vagas de garagem, diferencial valorizado", "Condomínio fechado com área de lazer", "Bom estado de conservação"],
   "pontos_atencao": ["1º andar pode ter menor valorização", "Área total superior à privativa indica áreas comuns proporcionalmente altas"],
@@ -72,7 +113,8 @@ reais do imóvel e da localização. NÃO retorne strings vazias, "—" ou "Info
 - Finalidade: ${imovel.finalidade}
 - Localização: ${imovel.localizacao}
 - Área total: ${imovel.area_total}m²
-- Área privativa: ${fmt(imovel.area_privativa)}m²
+- Área privativa/construída: ${fmt(imovel.area_privativa)}m²
+- ÁREA BASE DO CÁLCULO (NBR 14653-2): ${baseImovel.area}m² (${baseImovel.label})
 - Quartos: ${imovel.quartos} | Suítes: ${fmt(imovel.suites)} | Banheiros: ${imovel.banheiros} | Vagas: ${imovel.vagas}
 - Andar: ${fmt(imovel.andar)}
 - Padrão: ${imovel.padrao} | Conservação: ${imovel.conservacao} | Posição: ${fmt(imovel.posicao)}
@@ -80,16 +122,22 @@ reais do imóvel e da localização. NÃO retorne strings vazias, "—" ou "Info
 - Observações: ${fmt(imovel.observacoes)}
 
 COMPARÁVEIS (${comparaveis.length}):
-${comparaveis.map((c: any, i: number) => `
+${comparaveis.map((c: any, i: number) => {
+  const b = basesComparaveis[i]
+  const vu = b.area > 0 ? (Number(c.valor) / b.area).toFixed(2) : '-'
+  return `
 Comparável #${i + 1} (${c.fonte}):
   - Localização: ${fmt(c.localizacao)}
   - Área total: ${c.area}m² | Privativa: ${fmt(c.area_privativa)}m²
-  - Valor anunciado: R$ ${c.valor}
+  - area_base: ${b.area}m² (${b.label})
+  - Valor anunciado: R$ ${c.valor} | R$/m² sobre área base: ${vu}
   - Quartos: ${fmt(c.quartos)} | Suítes: ${fmt(c.suites)} | Banheiros: ${fmt(c.banheiros)} | Vagas: ${fmt(c.vagas)}
   - Padrão: ${fmt(c.padrao)} | Conservação: ${fmt(c.conservacao)} | Posição: ${fmt(c.posicao)}
   - Andar: ${fmt(c.andar)} | Idade: ${fmt(c.idade)} anos | Condomínio: R$ ${fmt(c.condominio)}
-  - Características: ${(c.caracteristicas || []).join(", ") || "-"}`).join("\n")}
+  - Características: ${(c.caracteristicas || []).join(", ") || "-"}`
+}).join("\n")}
 `
+
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -119,6 +167,13 @@ Comparável #${i + 1} (${c.fonte}):
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/)
     const jsonText = jsonMatch ? jsonMatch[1].trim() : content.trim()
     const result = JSON.parse(jsonText)
+
+    // Garante que a área base do cálculo sempre vai no resultado
+    result.area_base_calculo = result.area_base_calculo ?? baseImovel.area
+    result.area_base_tipo = result.area_base_tipo ?? baseImovel.label
+    result.area_base_descricao = result.area_base_descricao ?? areaBaseDescricao
+
+
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
