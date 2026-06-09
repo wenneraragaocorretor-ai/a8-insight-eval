@@ -279,7 +279,11 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
 
   // pros / cons
   const pos: string[] = Array.isArray(rel?.pontos_positivos) ? rel.pontos_positivos : [];
-  const neg: string[] = Array.isArray(rel?.pontos_negativos) ? rel.pontos_negativos : [];
+  const neg: string[] = Array.isArray(rel?.pontos_atencao)
+    ? rel.pontos_atencao
+    : Array.isArray(rel?.pontos_negativos)
+    ? rel.pontos_negativos
+    : [];
   const yPN = yLoc + 22;
   const colW = (usable - gap) / 2;
   const colH = PH - yPN - 18;
