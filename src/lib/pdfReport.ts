@@ -675,14 +675,14 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   const yRow = 60;
   items.forEach(([l, v], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch);
-    doc.setFont("helvetica", "normal");
+    card(doc, x, yRow, cw, ch, { variant: "blue", border: "soft" });
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...GRAY_DIM);
+    doc.setTextColor(...BLUE);
     doc.text(l, x + cw / 2, yRow + 14, { align: "center" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.setTextColor(...GOLD);
+    doc.setTextColor(...BLUE);
     doc.text(v, x + cw / 2, yRow + 30, { align: "center" });
   });
 
@@ -690,7 +690,7 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
   const t = "Tratamento por fatores de homogeneização (ABNT NBR 14653-2:2011). A média dos valores unitários, ponderada pela qualidade da amostra, fundamenta o valor central apurado.";
-  textoMultilinha(doc, t, M, yRow + ch + 14, usable, { size: 11, color: WHITE, lineHeight: 5.2 });
+  textoMultilinha(doc, t, M, yRow + ch + 14, usable, { size: 11, color: TEXT, lineHeight: 5.2 });
 }
 
 // ---------- EXPERT EXTRA: CAMPO DE ARBÍTRIO ----------
