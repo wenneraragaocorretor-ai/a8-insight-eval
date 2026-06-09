@@ -435,9 +435,11 @@ function NovaAvaliacao() {
                 <div className="flex flex-wrap gap-4">
                   {CARACTERISTICAS_OPCOES.map((opcao) => (
                     <label key={opcao} className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
+                      <input
+                        type="checkbox"
                         checked={imovel.caracteristicas.includes(opcao)}
-                        onCheckedChange={() => toggleCaracteristica(opcao)}
+                        onChange={() => toggleCaracteristica(opcao)}
+                        className="h-4 w-4 shrink-0 cursor-pointer rounded-sm accent-brand-blue"
                       />
                       <span className="text-sm">{opcao}</span>
                     </label>
@@ -536,32 +538,17 @@ function NovaAvaliacao() {
                 )}
                 <div className="space-y-2">
                   <Label>Padrão Construtivo</Label>
-                  <Select value={c.padrao} onValueChange={(v) => updateComp(index, { padrao: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PADROES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <NativeSelect value={c.padrao} options={PADROES} onChange={(v) => updateComp(index, { padrao: v })} />
                 </div>
                 {campos.conservacao && (
                   <div className="space-y-2">
                     <Label>Estado de Conservação</Label>
-                    <Select value={c.conservacao} onValueChange={(v) => updateComp(index, { conservacao: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {CONSERVACOES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <NativeSelect value={c.conservacao} options={CONSERVACOES} onChange={(v) => updateComp(index, { conservacao: v })} />
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Posição</Label>
-                  <Select value={c.posicao} onValueChange={(v) => updateComp(index, { posicao: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {POSICOES_COMPARAVEL.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <NativeSelect value={c.posicao} options={POSICOES_COMPARAVEL} onChange={(v) => updateComp(index, { posicao: v })} />
                 </div>
                 {campos.andar && (
                   <div className="space-y-2">
@@ -586,9 +573,11 @@ function NovaAvaliacao() {
                     <div className="flex flex-wrap gap-4">
                       {CARACTERISTICAS_COMPARAVEL.map((opcao) => (
                         <label key={opcao} className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox
+                          <input
+                            type="checkbox"
                             checked={c.caracteristicas.includes(opcao)}
-                            onCheckedChange={() => toggleCompCaracteristica(index, opcao)}
+                            onChange={() => toggleCompCaracteristica(index, opcao)}
+                            className="h-4 w-4 shrink-0 cursor-pointer rounded-sm accent-brand-blue"
                           />
                           <span className="text-sm">{opcao}</span>
                         </label>
