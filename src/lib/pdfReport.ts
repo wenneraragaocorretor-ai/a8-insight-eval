@@ -322,7 +322,7 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const ab = rel?.analise_bairro ?? {};
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text(`◉ ${ab.bairro || a.localizacao || "—"}`, M, 46);
   if (ab.cidade) {
     doc.setFont("helvetica", "normal");
@@ -336,30 +336,30 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const colW = (usable - gap) / 2;
   const yRow = 62;
   const ch = 56;
-  card(doc, M, yRow, colW, ch);
-  card(doc, M + colW + gap, yRow, colW, ch);
+  card(doc, M, yRow, colW, ch, { variant: "white", border: "gold" });
+  card(doc, M + colW + gap, yRow, colW, ch, { variant: "white", border: "gold" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text("Potencial de Valorização", M + 8, yRow + 12);
   doc.text("Tendências de Mercado", M + colW + gap + 8, yRow + 12);
   textoMultilinha(doc, String(ab.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
-    size: 10, color: WHITE, lineHeight: 4.6,
+    size: 10, color: TEXT, lineHeight: 4.6,
   });
   textoMultilinha(doc, String(ab.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
-    size: 10, color: WHITE, lineHeight: 4.6,
+    size: 10, color: TEXT, lineHeight: 4.6,
   });
 
   // descrição
   const yDesc = yRow + ch + 8;
-  card(doc, M, yDesc, usable, PH - yDesc - 18);
+  card(doc, M, yDesc, usable, PH - yDesc - 18, { variant: "white", border: "gold" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text("Sobre a Região", M + 8, yDesc + 12);
   textoMultilinha(doc, String(ab.descricao ?? rel?.resumo_texto ?? ""), M + 8, yDesc + 22, usable - 16, {
-    size: 11, color: WHITE, lineHeight: 5.2,
+    size: 11, color: TEXT, lineHeight: 5.2,
   });
 }
 
@@ -386,8 +386,7 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
     const row = Math.floor(i / 2);
     const x = M + col * (cw + gap);
     const y = yStart + row * (ch + gap);
-    card(doc, x, y, cw, ch);
-    // icon dot
+    card(doc, x, y, cw, ch, { variant: "darkblue" });
     doc.setFillColor(...GOLD);
     doc.circle(x + 12, y + 12, 3, "F");
     doc.setFont("helvetica", "bold");
