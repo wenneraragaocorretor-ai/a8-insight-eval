@@ -707,7 +707,7 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   ];
   items.forEach(([l, v], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch, { border: i === 1 });
+    card(doc, x, yRow, cw, ch, { border: i === 1 ? "gold" : "soft" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...GRAY_DIM);
