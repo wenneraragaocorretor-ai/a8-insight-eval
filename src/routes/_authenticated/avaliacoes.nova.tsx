@@ -8,6 +8,7 @@ import { Label } from "../../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Checkbox } from "../../components/ui/checkbox";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2 } from "lucide-react";
 
@@ -33,6 +34,54 @@ const POSICOES_IMOVEL = ["Meio de quadra", "Esquina", "Encravado", "Gleba"];
 const POSICOES_COMPARAVEL = ["Meio de quadra", "Esquina", "Encravado"];
 const PADROES = ["Simples", "Normal", "Alto", "Luxo"];
 const CONSERVACOES = ["Novo", "Bom", "Regular", "Ruim"];
+
+const TIPOS_IMOVEL = ["Apartamento", "Casa", "Terreno", "Sala Comercial", "Galpão"] as const;
+type TipoImovel = typeof TIPOS_IMOVEL[number];
+
+// Regras de campos condicionais por tipo de imóvel
+const camposDoTipo = (tipo: string) => {
+  const base = {
+    quartos: true,
+    suites: true,
+    banheiros: true,
+    vagas: true,
+    andar: false,
+    areaPrivativa: true,
+    conservacao: true,
+    caracteristicas: true,
+  };
+  switch (tipo) {
+    case "Apartamento":
+      return { ...base, andar: true };
+    case "Casa":
+      return { ...base, andar: false };
+    case "Terreno":
+      return {
+        ...base,
+        quartos: false,
+        suites: false,
+        banheiros: false,
+        vagas: false,
+        andar: false,
+        areaPrivativa: false,
+        conservacao: false,
+        caracteristicas: false,
+      };
+    case "Sala Comercial":
+      return { ...base, quartos: false, suites: false, andar: true };
+    case "Galpão":
+      return {
+        ...base,
+        quartos: false,
+        suites: false,
+        banheiros: true,
+        andar: false,
+        areaPrivativa: false,
+      };
+    default:
+      return base;
+  }
+};
 
 type Comparavel = {
   id: number;
@@ -75,8 +124,27 @@ const novoComparavel = (id: number): Comparavel => ({
 });
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/nova")({
-  component: NovaAvaliacao,
+  component: () => (
+    <ErrorBoundary fallbackTitle="Erro no formulário de Nova Avaliação">
+      <NovaAvaliacao />
+    </ErrorBoundary>
+  ),
 });
+
+const safe = <T,>(fn: () => T, fallback?: T): T | undefined => {
+  try {
+    return fn();
+  } catch (err) {
+    console.error("Handler error:", err);
+    toast.error("Não foi possível atualizar este campo.");
+    return fallback;
+  }
+};
+
+const toNum = (v: string) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
 
 function NovaAvaliacao() {
   const [step, setStep] = useState(1);
@@ -85,7 +153,7 @@ function NovaAvaliacao() {
   const processarIA = useServerFn(processarAvaliacaoIA);
 
   const [imovel, setImovel] = useState({
-    tipo: "Apartamento",
+    tipo: "Apartamento" as string,
     finalidade: "Venda",
     localizacao: "",
     area_total: 0,
@@ -108,65 +176,112 @@ function NovaAvaliacao() {
     novoComparavel(3),
   ]);
 
+  const campos = camposDoTipo(imovel.tipo);
+
+  const setImovelField = <K extends keyof typeof imovel>(key: K, value: (typeof imovel)[K]) => {
+    safe(() => setImovel((prev) => ({ ...prev, [key]: value })));
+  };
+
+  const onTipoChange = (v: string) => {
+    safe(() => {
+      const novoCampos = camposDoTipo(v);
+      setImovel((prev) => ({
+        ...prev,
+        tipo: v,
+        // Zera campos irrelevantes para evitar enviar lixo
+        quartos: novoCampos.quartos ? prev.quartos : 0,
+        suites: novoCampos.suites ? prev.suites : 0,
+        banheiros: novoCampos.banheiros ? prev.banheiros : 0,
+        vagas: novoCampos.vagas ? prev.vagas : 0,
+        andar: novoCampos.andar ? prev.andar : 0,
+        area_privativa: novoCampos.areaPrivativa ? prev.area_privativa : 0,
+        conservacao: novoCampos.conservacao ? prev.conservacao : "Bom",
+        caracteristicas: novoCampos.caracteristicas ? prev.caracteristicas : [],
+      }));
+    });
+  };
+
   const addComparavel = () => {
-    if (comparaveis.length < 12) setComparaveis([...comparaveis, novoComparavel(Date.now())]);
+    safe(() => {
+      if (comparaveis.length < 12) {
+        setComparaveis((prev) => [...prev, novoComparavel(Date.now())]);
+      }
+    });
   };
 
   const removeComparavel = (id: number) => {
-    if (comparaveis.length > 3) setComparaveis(comparaveis.filter(c => c.id !== id));
+    safe(() => {
+      if (comparaveis.length > 3) {
+        setComparaveis((prev) => prev.filter((c) => c.id !== id));
+      }
+    });
   };
 
   const updateComp = (index: number, patch: Partial<Comparavel>) => {
-    const newC = [...comparaveis];
-    newC[index] = { ...newC[index], ...patch };
-    setComparaveis(newC);
+    safe(() => {
+      setComparaveis((prev) => {
+        const next = [...prev];
+        if (!next[index]) return prev;
+        next[index] = { ...next[index], ...patch };
+        return next;
+      });
+    });
   };
 
   const toggleCaracteristica = (opcao: string) => {
-    setImovel(prev => ({
-      ...prev,
-      caracteristicas: prev.caracteristicas.includes(opcao)
-        ? prev.caracteristicas.filter(c => c !== opcao)
-        : [...prev.caracteristicas, opcao],
-    }));
+    safe(() => {
+      setImovel((prev) => ({
+        ...prev,
+        caracteristicas: prev.caracteristicas.includes(opcao)
+          ? prev.caracteristicas.filter((c) => c !== opcao)
+          : [...prev.caracteristicas, opcao],
+      }));
+    });
   };
 
   const toggleCompCaracteristica = (index: number, opcao: string) => {
-    const cur = comparaveis[index].caracteristicas;
-    updateComp(index, {
-      caracteristicas: cur.includes(opcao) ? cur.filter(c => c !== opcao) : [...cur, opcao],
+    safe(() => {
+      const cur = comparaveis[index]?.caracteristicas ?? [];
+      updateComp(index, {
+        caracteristicas: cur.includes(opcao) ? cur.filter((c) => c !== opcao) : [...cur, opcao],
+      });
     });
   };
 
   const handleProcessar = async () => {
     setIsLoading(true);
     try {
-      const isApto = imovel.tipo === "Apartamento";
+      const c = camposDoTipo(imovel.tipo);
       const payload = {
         data: {
           imovel: {
             ...imovel,
-            area_privativa: imovel.area_privativa || undefined,
-            suites: imovel.suites || undefined,
-            andar: isApto ? imovel.andar || undefined : undefined,
+            area_privativa: c.areaPrivativa ? imovel.area_privativa || undefined : undefined,
+            quartos: c.quartos ? imovel.quartos : 0,
+            suites: c.suites ? imovel.suites || undefined : undefined,
+            banheiros: c.banheiros ? imovel.banheiros : 0,
+            vagas: c.vagas ? imovel.vagas : 0,
+            andar: c.andar ? imovel.andar || undefined : undefined,
+            conservacao: c.conservacao ? imovel.conservacao : "Bom",
+            caracteristicas: c.caracteristicas ? imovel.caracteristicas : [],
           },
-          comparaveis: comparaveis.map(({ id, ...c }) => ({
-            fonte: c.fonte,
-            localizacao: c.localizacao,
-            area: c.area,
-            area_privativa: c.area_privativa || undefined,
-            quartos: c.quartos || undefined,
-            suites: c.suites || undefined,
-            banheiros: c.banheiros || undefined,
-            vagas: c.vagas || undefined,
-            padrao: c.padrao,
-            conservacao: c.conservacao,
-            posicao: c.posicao,
-            andar: isApto ? c.andar || undefined : undefined,
-            idade: c.idade || undefined,
-            condominio: c.condominio || undefined,
-            caracteristicas: c.caracteristicas,
-            valor: c.valor,
+          comparaveis: comparaveis.map(({ id, ...c2 }) => ({
+            fonte: c2.fonte,
+            localizacao: c2.localizacao,
+            area: c2.area,
+            area_privativa: c.areaPrivativa ? c2.area_privativa || undefined : undefined,
+            quartos: c.quartos ? c2.quartos || undefined : undefined,
+            suites: c.suites ? c2.suites || undefined : undefined,
+            banheiros: c.banheiros ? c2.banheiros || undefined : undefined,
+            vagas: c.vagas ? c2.vagas || undefined : undefined,
+            padrao: c2.padrao,
+            conservacao: c.conservacao ? c2.conservacao : undefined,
+            posicao: c2.posicao,
+            andar: c.andar ? c2.andar || undefined : undefined,
+            idade: c2.idade || undefined,
+            condominio: c2.condominio || undefined,
+            caracteristicas: c.caracteristicas ? c2.caracteristicas : [],
+            valor: c2.valor,
           })),
         },
       };
@@ -182,8 +297,6 @@ function NovaAvaliacao() {
       setIsLoading(false);
     }
   };
-
-  const isApto = imovel.tipo === "Apartamento";
 
   return (
     <div className="max-w-4xl mx-auto py-8">
@@ -205,100 +318,150 @@ function NovaAvaliacao() {
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Tipo do Imóvel</Label>
-              <Select value={imovel.tipo} onValueChange={(v) => setImovel({...imovel, tipo: v})}>
+              <Select value={imovel.tipo} onValueChange={onTipoChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Apartamento">Apartamento</SelectItem>
-                  <SelectItem value="Casa">Casa</SelectItem>
-                  <SelectItem value="Terreno">Terreno</SelectItem>
-                  <SelectItem value="Sala Comercial">Sala Comercial</SelectItem>
+                  {TIPOS_IMOVEL.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Localização (Bairro/Cidade)</Label>
-              <Input placeholder="Ex: Itaim Bibi, São Paulo" value={imovel.localizacao} onChange={(e) => setImovel({...imovel, localizacao: e.target.value})} />
+              <Input
+                placeholder="Ex: Itaim Bibi, São Paulo"
+                value={imovel.localizacao}
+                onChange={(e) => setImovelField("localizacao", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Área Total (m²)</Label>
-              <Input type="number" value={imovel.area_total} onChange={(e) => setImovel({...imovel, area_total: Number(e.target.value)})} />
+              <Input
+                type="number"
+                value={imovel.area_total}
+                onChange={(e) => setImovelField("area_total", toNum(e.target.value))}
+              />
             </div>
-            <div className="space-y-2">
-              <Label>Área Privativa (m²)</Label>
-              <Input type="number" value={imovel.area_privativa || ""} placeholder="Opcional" onChange={(e) => setImovel({...imovel, area_privativa: Number(e.target.value) || 0})} />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:col-span-2">
+            {campos.areaPrivativa && (
               <div className="space-y-2">
-                <Label>Quartos</Label>
-                <Input type="number" value={imovel.quartos} onChange={(e) => setImovel({...imovel, quartos: Number(e.target.value)})} />
-              </div>
-              <div className="space-y-2">
-                <Label>Suítes</Label>
-                <Input type="number" value={imovel.suites} onChange={(e) => setImovel({...imovel, suites: Number(e.target.value)})} />
-              </div>
-              <div className="space-y-2">
-                <Label>Banheiros</Label>
-                <Input type="number" value={imovel.banheiros} onChange={(e) => setImovel({...imovel, banheiros: Number(e.target.value)})} />
-              </div>
-              <div className="space-y-2">
-                <Label>Vagas</Label>
-                <Input type="number" value={imovel.vagas} onChange={(e) => setImovel({...imovel, vagas: Number(e.target.value)})} />
-              </div>
-            </div>
-            {isApto && (
-              <div className="space-y-2">
-                <Label>Andar</Label>
-                <Input type="number" value={imovel.andar || ""} placeholder="Opcional" onChange={(e) => setImovel({...imovel, andar: Number(e.target.value) || 0})} />
+                <Label>Área Privativa (m²)</Label>
+                <Input
+                  type="number"
+                  value={imovel.area_privativa || ""}
+                  placeholder="Opcional"
+                  onChange={(e) => setImovelField("area_privativa", toNum(e.target.value))}
+                />
               </div>
             )}
+
+            {(campos.quartos || campos.suites || campos.banheiros || campos.vagas) && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:col-span-2">
+                {campos.quartos && (
+                  <div className="space-y-2">
+                    <Label>Quartos</Label>
+                    <Input type="number" value={imovel.quartos}
+                      onChange={(e) => setImovelField("quartos", toNum(e.target.value))} />
+                  </div>
+                )}
+                {campos.suites && (
+                  <div className="space-y-2">
+                    <Label>Suítes</Label>
+                    <Input type="number" value={imovel.suites}
+                      onChange={(e) => setImovelField("suites", toNum(e.target.value))} />
+                  </div>
+                )}
+                {campos.banheiros && (
+                  <div className="space-y-2">
+                    <Label>Banheiros</Label>
+                    <Input type="number" value={imovel.banheiros}
+                      onChange={(e) => setImovelField("banheiros", toNum(e.target.value))} />
+                  </div>
+                )}
+                {campos.vagas && (
+                  <div className="space-y-2">
+                    <Label>Vagas</Label>
+                    <Input type="number" value={imovel.vagas}
+                      onChange={(e) => setImovelField("vagas", toNum(e.target.value))} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {campos.andar && (
+              <div className="space-y-2">
+                <Label>Andar {imovel.tipo === "Apartamento" ? "*" : ""}</Label>
+                <Input
+                  type="number"
+                  value={imovel.andar || ""}
+                  placeholder={imovel.tipo === "Apartamento" ? "Obrigatório" : "Opcional"}
+                  onChange={(e) => setImovelField("andar", toNum(e.target.value))}
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Posição do terreno/imóvel</Label>
-              <Select value={imovel.posicao} onValueChange={(v) => setImovel({...imovel, posicao: v})}>
+              <Select value={imovel.posicao} onValueChange={(v) => setImovelField("posicao", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {POSICOES_IMOVEL.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  {POSICOES_IMOVEL.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label>Padrão Construtivo</Label>
-              <Select value={imovel.padrao} onValueChange={(v) => setImovel({...imovel, padrao: v})}>
+              <Select value={imovel.padrao} onValueChange={(v) => setImovelField("padrao", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PADROES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  {PADROES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Estado de Conservação</Label>
-              <Select value={imovel.conservacao} onValueChange={(v) => setImovel({...imovel, conservacao: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CONSERVACOES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-3 md:col-span-2">
-              <Label>Características Adicionais</Label>
-              <div className="flex flex-wrap gap-4">
-                {CARACTERISTICAS_OPCOES.map((opcao) => (
-                  <label key={opcao} className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox
-                      checked={imovel.caracteristicas.includes(opcao)}
-                      onCheckedChange={() => toggleCaracteristica(opcao)}
-                    />
-                    <span className="text-sm">{opcao}</span>
-                  </label>
-                ))}
+
+            {campos.conservacao && (
+              <div className="space-y-2">
+                <Label>Estado de Conservação</Label>
+                <Select value={imovel.conservacao} onValueChange={(v) => setImovelField("conservacao", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CONSERVACOES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
+            )}
+
+            {campos.caracteristicas && (
+              <div className="space-y-3 md:col-span-2">
+                <Label>Características Adicionais</Label>
+                <div className="flex flex-wrap gap-4">
+                  {CARACTERISTICAS_OPCOES.map((opcao) => (
+                    <label key={opcao} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={imovel.caracteristicas.includes(opcao)}
+                        onCheckedChange={() => toggleCaracteristica(opcao)}
+                      />
+                      <span className="text-sm">{opcao}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2 md:col-span-2">
               <Label>Observações</Label>
-              <Input placeholder="Informações complementares..." value={imovel.observacoes} onChange={(e) => setImovel({...imovel, observacoes: e.target.value})} />
+              <Input
+                placeholder="Informações complementares..."
+                value={imovel.observacoes}
+                onChange={(e) => setImovelField("observacoes", e.target.value)}
+              />
             </div>
           </CardContent>
           <div className="p-6 border-t flex justify-end">
-            <Button onClick={() => setStep(2)} className="bg-brand-blue gap-2">Próximo <ChevronRight size={18} /></Button>
+            <Button onClick={() => setStep(2)} className="bg-brand-blue gap-2">
+              Próximo <ChevronRight size={18} />
+            </Button>
           </div>
         </Card>
       )}
@@ -310,7 +473,13 @@ function NovaAvaliacao() {
             <Card key={c.id} className="premium-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base">Comparável #{index + 1}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => removeComparavel(c.id)} className="text-destructive" disabled={comparaveis.length <= 3}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeComparavel(c.id)}
+                  className="text-destructive"
+                  disabled={comparaveis.length <= 3}
+                >
                   <Trash2 size={18} />
                 </Button>
               </CardHeader>
@@ -325,89 +494,129 @@ function NovaAvaliacao() {
                 </div>
                 <div className="space-y-2">
                   <Label>Área Total (m²)</Label>
-                  <Input type="number" value={c.area} onChange={(e) => updateComp(index, { area: Number(e.target.value) })} />
+                  <Input type="number" value={c.area}
+                    onChange={(e) => updateComp(index, { area: toNum(e.target.value) })} />
                 </div>
-                <div className="space-y-2">
-                  <Label>Área Privativa (m²)</Label>
-                  <Input type="number" value={c.area_privativa || ""} placeholder="Opcional" onChange={(e) => updateComp(index, { area_privativa: Number(e.target.value) || 0 })} />
-                </div>
+                {campos.areaPrivativa && (
+                  <div className="space-y-2">
+                    <Label>Área Privativa (m²)</Label>
+                    <Input type="number" value={c.area_privativa || ""} placeholder="Opcional"
+                      onChange={(e) => updateComp(index, { area_privativa: toNum(e.target.value) })} />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label>Valor Anunciado (R$)</Label>
-                  <Input type="number" value={c.valor} onChange={(e) => updateComp(index, { valor: Number(e.target.value) })} />
+                  <Input type="number" value={c.valor}
+                    onChange={(e) => updateComp(index, { valor: toNum(e.target.value) })} />
                 </div>
-                <div className="space-y-2">
-                  <Label>Quartos</Label>
-                  <Input type="number" value={c.quartos} onChange={(e) => updateComp(index, { quartos: Number(e.target.value) })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Suítes</Label>
-                  <Input type="number" value={c.suites} onChange={(e) => updateComp(index, { suites: Number(e.target.value) })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Banheiros</Label>
-                  <Input type="number" value={c.banheiros} onChange={(e) => updateComp(index, { banheiros: Number(e.target.value) })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Vagas</Label>
-                  <Input type="number" value={c.vagas} onChange={(e) => updateComp(index, { vagas: Number(e.target.value) })} />
-                </div>
+                {campos.quartos && (
+                  <div className="space-y-2">
+                    <Label>Quartos</Label>
+                    <Input type="number" value={c.quartos}
+                      onChange={(e) => updateComp(index, { quartos: toNum(e.target.value) })} />
+                  </div>
+                )}
+                {campos.suites && (
+                  <div className="space-y-2">
+                    <Label>Suítes</Label>
+                    <Input type="number" value={c.suites}
+                      onChange={(e) => updateComp(index, { suites: toNum(e.target.value) })} />
+                  </div>
+                )}
+                {campos.banheiros && (
+                  <div className="space-y-2">
+                    <Label>Banheiros</Label>
+                    <Input type="number" value={c.banheiros}
+                      onChange={(e) => updateComp(index, { banheiros: toNum(e.target.value) })} />
+                  </div>
+                )}
+                {campos.vagas && (
+                  <div className="space-y-2">
+                    <Label>Vagas</Label>
+                    <Input type="number" value={c.vagas}
+                      onChange={(e) => updateComp(index, { vagas: toNum(e.target.value) })} />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label>Padrão Construtivo</Label>
                   <Select value={c.padrao} onValueChange={(v) => updateComp(index, { padrao: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{PADROES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {PADROES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Estado de Conservação</Label>
-                  <Select value={c.conservacao} onValueChange={(v) => updateComp(index, { conservacao: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{CONSERVACOES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
+                {campos.conservacao && (
+                  <div className="space-y-2">
+                    <Label>Estado de Conservação</Label>
+                    <Select value={c.conservacao} onValueChange={(v) => updateComp(index, { conservacao: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {CONSERVACOES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label>Posição</Label>
                   <Select value={c.posicao} onValueChange={(v) => updateComp(index, { posicao: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{POSICOES_COMPARAVEL.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {POSICOES_COMPARAVEL.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 </div>
-                {isApto && (
+                {campos.andar && (
                   <div className="space-y-2">
                     <Label>Andar</Label>
-                    <Input type="number" value={c.andar || ""} placeholder="Opcional" onChange={(e) => updateComp(index, { andar: Number(e.target.value) || 0 })} />
+                    <Input type="number" value={c.andar || ""} placeholder="Opcional"
+                      onChange={(e) => updateComp(index, { andar: toNum(e.target.value) })} />
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Idade aprox. (anos)</Label>
-                  <Input type="number" value={c.idade || ""} placeholder="Opcional" onChange={(e) => updateComp(index, { idade: Number(e.target.value) || 0 })} />
+                  <Input type="number" value={c.idade || ""} placeholder="Opcional"
+                    onChange={(e) => updateComp(index, { idade: toNum(e.target.value) })} />
                 </div>
                 <div className="space-y-2">
                   <Label>Condomínio mensal (R$)</Label>
-                  <Input type="number" value={c.condominio || ""} placeholder="Opcional" onChange={(e) => updateComp(index, { condominio: Number(e.target.value) || 0 })} />
+                  <Input type="number" value={c.condominio || ""} placeholder="Opcional"
+                    onChange={(e) => updateComp(index, { condominio: toNum(e.target.value) })} />
                 </div>
-                <div className="space-y-3 md:col-span-3">
-                  <Label>Características presentes</Label>
-                  <div className="flex flex-wrap gap-4">
-                    {CARACTERISTICAS_COMPARAVEL.map((opcao) => (
-                      <label key={opcao} className="flex items-center gap-2 cursor-pointer">
-                        <Checkbox
-                          checked={c.caracteristicas.includes(opcao)}
-                          onCheckedChange={() => toggleCompCaracteristica(index, opcao)}
-                        />
-                        <span className="text-sm">{opcao}</span>
-                      </label>
-                    ))}
+                {campos.caracteristicas && (
+                  <div className="space-y-3 md:col-span-3">
+                    <Label>Características presentes</Label>
+                    <div className="flex flex-wrap gap-4">
+                      {CARACTERISTICAS_COMPARAVEL.map((opcao) => (
+                        <label key={opcao} className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox
+                            checked={c.caracteristicas.includes(opcao)}
+                            onCheckedChange={() => toggleCompCaracteristica(index, opcao)}
+                          />
+                          <span className="text-sm">{opcao}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           ))}
           <div className="flex justify-between items-center">
-            <Button variant="outline" onClick={() => addComparavel()} className="gap-2"><Plus size={18} /> Adicionar outro</Button>
+            <Button variant="outline" onClick={() => addComparavel()} className="gap-2">
+              <Plus size={18} /> Adicionar outro
+            </Button>
             <div className="flex gap-4">
-              <Button variant="ghost" onClick={() => setStep(1)} className="gap-2"><ChevronLeft size={18} /> Voltar</Button>
-              <Button onClick={() => setStep(3)} className="bg-brand-blue" disabled={comparaveis.some(c => !c.fonte || !c.area || !c.valor)}>Próximo</Button>
+              <Button variant="ghost" onClick={() => setStep(1)} className="gap-2">
+                <ChevronLeft size={18} /> Voltar
+              </Button>
+              <Button
+                onClick={() => setStep(3)}
+                className="bg-brand-blue"
+                disabled={comparaveis.some((c) => !c.fonte || !c.area || !c.valor)}
+              >
+                Próximo
+              </Button>
             </div>
           </div>
         </div>
