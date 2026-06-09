@@ -413,7 +413,8 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
     pageItems.forEach((c, idx) => {
       const i = p * PER_PAGE + idx;
       const y = yStart + idx * (ch + gap);
-      card(doc, M, y, usable, ch);
+      const alt = idx % 2 === 1;
+      card(doc, M, y, usable, ch, { variant: alt ? "blue" : "white", border: "soft" });
       // number badge
       doc.setFillColor(...BLUE);
       doc.circle(M + 10, y + ch / 2, 6, "F");
@@ -428,7 +429,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
       // col 1: local + quartos
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
-      doc.setTextColor(...WHITE);
+      doc.setTextColor(...BLUE);
       const loc = doc.splitTextToSize(String(c.localizacao ?? "—").toUpperCase(), colW - 4);
       doc.text(loc.slice(0, 2), x0, y + 10);
       doc.setFont("helvetica", "normal");
@@ -444,7 +445,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
       doc.setTextColor(...GRAY);
       doc.text(`Metragem: ${c.area ?? "—"} m²`, x1, y + 10);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...WHITE);
+      doc.setTextColor(...BLUE);
       doc.text(`Valor: ${fmtBRL(Number(c.valor_anunciado))}`, x1, y + 17);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
@@ -469,7 +470,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
       doc.setTextColor(...GRAY);
       doc.text("Estado de conservação", x3, y + 10);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...WHITE);
+      doc.setTextColor(...BLUE);
       const cons = doc.splitTextToSize(String(c.conservacao ?? "—"), colW - 4);
       doc.text(cons.slice(0, 2), x3, y + 17);
     });
