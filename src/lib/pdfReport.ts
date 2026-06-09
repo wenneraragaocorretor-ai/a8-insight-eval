@@ -7,15 +7,18 @@ import { COVER_BG_BASE64 } from "../assets/cover-bg";
 // 297mm x 210mm | Fundo escuro | Dourado #C8A951 | Azul #0F2D5C
 // ============================================================
 
-const BG: [number, number, number] = [10, 15, 30];        // #0A0F1E
-const BG_SOFT: [number, number, number] = [15, 25, 35];   // #0F1923
-const CARD_TOP: [number, number, number] = [26, 37, 64];  // #1A2540
-const CARD_BOTTOM: [number, number, number] = [15, 25, 35];
-const GOLD: [number, number, number] = [200, 169, 81];    // #C8A951
-const BLUE: [number, number, number] = [15, 45, 92];      // #0F2D5C
+const BG: [number, number, number] = [255, 255, 255];        // #FFFFFF
+const BG_SOFT: [number, number, number] = [247, 248, 250];   // #F7F8FA
+const CARD_TOP: [number, number, number] = [255, 255, 255];  // white card
+const CARD_BOTTOM: [number, number, number] = [247, 248, 250];
+const CARD_BLUE: [number, number, number] = [230, 241, 251]; // #E6F1FB light blue
+const BORDER: [number, number, number] = [232, 232, 232];    // #E8E8E8
+const GOLD: [number, number, number] = [200, 169, 81];       // #C8A951
+const BLUE: [number, number, number] = [15, 45, 92];         // #0F2D5C
 const WHITE: [number, number, number] = [255, 255, 255];
-const GRAY: [number, number, number] = [180, 188, 200];
-const GRAY_DIM: [number, number, number] = [130, 140, 156];
+const TEXT: [number, number, number] = [44, 44, 42];         // #2C2C2A
+const GRAY: [number, number, number] = [90, 95, 105];
+const GRAY_DIM: [number, number, number] = [140, 145, 155];
 
 const PW = 297; // page width landscape
 const PH = 210; // page height landscape
@@ -70,34 +73,32 @@ function card(
   y: number,
   w: number,
   h: number,
-  opts: { radius?: number; border?: boolean } = {},
+  opts: { radius?: number; variant?: "white" | "blue" | "darkblue"; border?: "gold" | "soft" | "none" } = {},
 ) {
-  const radius = opts.radius ?? 4;
-  // gradient simulation: top half slightly lighter
-  doc.setFillColor(...CARD_TOP);
+  const radius = opts.radius ?? 3;
+  const variant = opts.variant ?? "white";
+  const fill: [number, number, number] =
+    variant === "darkblue" ? BLUE : variant === "blue" ? CARD_BLUE : WHITE;
+  doc.setFillColor(...fill);
   doc.roundedRect(x, y, w, h, radius, radius, "F");
-  doc.setFillColor(...CARD_BOTTOM);
-  doc.roundedRect(x, y + h * 0.55, w, h * 0.45, radius, radius, "F");
-  // top accent overlay (rounded again to cover bottom rect corners cleanly)
-  doc.setFillColor(...CARD_TOP);
-  doc.roundedRect(x, y, w, h * 0.55, radius, radius, "F");
-  doc.setFillColor(...CARD_BOTTOM);
-  doc.rect(x, y + h * 0.55, w, h * 0.45 - radius, "F");
-  doc.setFillColor(...CARD_BOTTOM);
-  doc.roundedRect(x, y + h * 0.55, w, h * 0.45, radius, radius, "F");
-  if (opts.border) {
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.2);
+  const border = opts.border ?? (variant === "white" ? "soft" : "none");
+  if (border !== "none") {
+    if (border === "gold") {
+      doc.setDrawColor(...GOLD);
+      doc.setLineWidth(0.4);
+    } else {
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.2);
+    }
     doc.roundedRect(x, y, w, h, radius, radius, "S");
   }
 }
 
-function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, number] = WHITE) {
+function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, number] = BLUE) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(36);
   doc.setTextColor(...cor);
   doc.text(texto, M, y);
-  // gold underline accent
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(1.2);
   doc.line(M, y + 3, M + 24, y + 3);
@@ -106,7 +107,7 @@ function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, n
 function microHeader(doc: jsPDF, corretor: CorretorInfo) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.setTextColor(...GRAY);
+  doc.setTextColor(...BLUE);
   doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW - M, 10, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
@@ -118,15 +119,18 @@ function rodape(doc: jsPDF) {
   const total = doc.getNumberOfPages();
   for (let i = 2; i <= total; i++) {
     doc.setPage(i);
+    // strip
+    doc.setFillColor(...BLUE);
+    doc.rect(0, PH - 12, PW, 12, "F");
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.2);
-    doc.line(M, PH - 10, PW - M, PH - 10);
+    doc.setLineWidth(0.6);
+    doc.line(0, PH - 12, PW, PH - 12);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(7);
-    doc.setTextColor(...GRAY_DIM);
-    doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", M, PH - 6);
+    doc.setTextColor(...WHITE);
+    doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", M, PH - 5);
     doc.setFont("helvetica", "normal");
-    doc.text(`${i} / ${total}  •  ${hoje()}`, PW - M, PH - 6, { align: "right" });
+    doc.text(`${i} / ${total}  •  ${hoje()}`, PW - M, PH - 5, { align: "right" });
   }
 }
 
@@ -151,35 +155,39 @@ function textoMultilinha(
 // ---------- PAGE 1: COVER ----------
 function paginaCapa(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, titulo: string) {
   pintarFundo(doc);
-  // background image (full page) then dark overlay
   try {
     doc.addImage(COVER_BG_BASE64, "JPEG", 0, 0, PW, PH, undefined, "FAST");
   } catch {
-    /* ignore if image fails */
+    /* ignore */
   }
-  // dark gradient overlay (left → right): solid left, fade right
-  doc.setFillColor(...BG);
-  doc.rect(0, 0, PW, PH, "F"); // start with full bg
-  doc.addImage(COVER_BG_BASE64, "JPEG", 0, 0, PW, PH, undefined, "FAST");
-  // overlay
+  // semi-transparent BLUE overlay
   doc.saveGraphicsState();
   // @ts-ignore
-  doc.setGState(new (doc as any).GState({ opacity: 0.65 }));
-  doc.setFillColor(...BG);
+  doc.setGState(new (doc as any).GState({ opacity: 0.7 }));
+  doc.setFillColor(...BLUE);
   doc.rect(0, 0, PW, PH, "F");
   doc.restoreGraphicsState();
 
-  // top-right brand
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(...WHITE);
-  doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW - M, 20, { align: "right" });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...GOLD);
-  doc.text(corretor.nome.toUpperCase(), PW - M, 27, { align: "right" });
+  // top white header bar with logo text
+  doc.setFillColor(...WHITE);
+  doc.rect(0, 0, PW, 18, "F");
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(0, 18, PW, 18);
 
-  // big title bottom-left
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...BLUE);
+  doc.text("A8 INVESTIMENTOS", M, 11);
+  doc.setTextColor(...GOLD);
+  doc.text(" IMOBILIÁRIOS", M + doc.getTextWidth("A8 INVESTIMENTOS"), 11);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...BLUE);
+  doc.text(corretor.nome.toUpperCase(), PW - M, 11, { align: "right" });
+
+  // big title bottom-left over overlay
   doc.setFont("helvetica", "bold");
   doc.setFontSize(64);
   doc.setTextColor(...WHITE);
@@ -191,10 +199,9 @@ function paginaCapa(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, titulo: 
   doc.setTextColor(...GOLD);
   doc.text(linha2.toUpperCase(), M, PH - 22);
 
-  // small ref
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(...GRAY);
+  doc.setTextColor(...WHITE);
   doc.text(`${avaliacao?.localizacao ?? ""}  •  ${hoje()}`, M, PH - 10);
 }
 
@@ -203,7 +210,7 @@ function paginaSumario(doc: jsPDF, sec: string[]) {
   novaPagina(doc);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(54);
-  doc.setTextColor(...WHITE);
+  doc.setTextColor(...BLUE);
   doc.text("Sumário", M, 70);
 
   const xCard = PW / 2 + 4;
@@ -212,15 +219,15 @@ function paginaSumario(doc: jsPDF, sec: string[]) {
   const gap = 4;
   let y = 30;
   sec.forEach((nome, i) => {
-    card(doc, xCard, y, wCard, hCard);
+    card(doc, xCard, y, wCard, hCard, { variant: "darkblue" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor(...GOLD);
-    doc.text(String(i + 3).padStart(1, "0"), xCard + 6, y + 9);
+    doc.text(String(i + 3).padStart(2, "0"), xCard + 6, y + 9);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...WHITE);
-    doc.text(nome.toUpperCase(), xCard + 22, y + 9);
+    doc.text(nome.toUpperCase(), xCard + 24, y + 9);
     y += hCard + gap;
   });
 }
@@ -246,21 +253,21 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const yRow = 50;
   items.forEach(([label, value], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch);
-    doc.setFont("helvetica", "normal");
+    card(doc, x, yRow, cw, ch, { variant: "blue", border: "soft" });
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(...GRAY_DIM);
+    doc.setTextColor(...BLUE);
     doc.text(label, x + cw / 2, yRow + 10, { align: "center" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.setTextColor(...WHITE);
+    doc.setTextColor(...BLUE);
     const val = value.length > 14 ? value.slice(0, 13) + "…" : value;
     doc.text(val, x + cw / 2, yRow + 22, { align: "center" });
   });
 
   // location bar
   const yLoc = yRow + ch + 6;
-  card(doc, M, yLoc, usable, 14);
+  card(doc, M, yLoc, usable, 14, { variant: "darkblue" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(...GOLD);
@@ -276,14 +283,14 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const yPN = yLoc + 22;
   const colW = (usable - gap) / 2;
   const colH = PH - yPN - 18;
-  card(doc, M, yPN, colW, colH);
-  card(doc, M + colW + gap, yPN, colW, colH);
+  card(doc, M, yPN, colW, colH, { variant: "white", border: "soft" });
+  card(doc, M + colW + gap, yPN, colW, colH, { variant: "white", border: "soft" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text("Pontos Positivos", M + 8, yPN + 12);
-  doc.setTextColor(255, 120, 120);
+  doc.setTextColor(190, 50, 50);
   doc.text("Pontos de Atenção", M + colW + gap + 8, yPN + 12);
 
   let yp = yPN + 22;
@@ -292,16 +299,16 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc.setFontSize(10);
     doc.setTextColor(...GOLD);
     doc.text("•", M + 8, yp);
-    yp = textoMultilinha(doc, p, M + 12, yp, colW - 18, { size: 10, color: WHITE, lineHeight: 4.5 });
+    yp = textoMultilinha(doc, p, M + 12, yp, colW - 18, { size: 10, color: TEXT, lineHeight: 4.5 });
     yp += 3;
   });
   let yn = yPN + 22;
   neg.slice(0, 6).forEach((p) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(255, 120, 120);
+    doc.setTextColor(190, 50, 50);
     doc.text("•", M + colW + gap + 8, yn);
-    yn = textoMultilinha(doc, p, M + colW + gap + 12, yn, colW - 18, { size: 10, color: WHITE, lineHeight: 4.5 });
+    yn = textoMultilinha(doc, p, M + colW + gap + 12, yn, colW - 18, { size: 10, color: TEXT, lineHeight: 4.5 });
     yn += 3;
   });
 }
@@ -315,7 +322,7 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const ab = rel?.analise_bairro ?? {};
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text(`◉ ${ab.bairro || a.localizacao || "—"}`, M, 46);
   if (ab.cidade) {
     doc.setFont("helvetica", "normal");
@@ -329,30 +336,30 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const colW = (usable - gap) / 2;
   const yRow = 62;
   const ch = 56;
-  card(doc, M, yRow, colW, ch);
-  card(doc, M + colW + gap, yRow, colW, ch);
+  card(doc, M, yRow, colW, ch, { variant: "white", border: "gold" });
+  card(doc, M + colW + gap, yRow, colW, ch, { variant: "white", border: "gold" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text("Potencial de Valorização", M + 8, yRow + 12);
   doc.text("Tendências de Mercado", M + colW + gap + 8, yRow + 12);
   textoMultilinha(doc, String(ab.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
-    size: 10, color: WHITE, lineHeight: 4.6,
+    size: 10, color: TEXT, lineHeight: 4.6,
   });
   textoMultilinha(doc, String(ab.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
-    size: 10, color: WHITE, lineHeight: 4.6,
+    size: 10, color: TEXT, lineHeight: 4.6,
   });
 
   // descrição
   const yDesc = yRow + ch + 8;
-  card(doc, M, yDesc, usable, PH - yDesc - 18);
+  card(doc, M, yDesc, usable, PH - yDesc - 18, { variant: "white", border: "gold" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text("Sobre a Região", M + 8, yDesc + 12);
   textoMultilinha(doc, String(ab.descricao ?? rel?.resumo_texto ?? ""), M + 8, yDesc + 22, usable - 16, {
-    size: 11, color: WHITE, lineHeight: 5.2,
+    size: 11, color: TEXT, lineHeight: 5.2,
   });
 }
 
@@ -379,8 +386,7 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
     const row = Math.floor(i / 2);
     const x = M + col * (cw + gap);
     const y = yStart + row * (ch + gap);
-    card(doc, x, y, cw, ch);
-    // icon dot
+    card(doc, x, y, cw, ch, { variant: "darkblue" });
     doc.setFillColor(...GOLD);
     doc.circle(x + 12, y + 12, 3, "F");
     doc.setFont("helvetica", "bold");
@@ -407,7 +413,8 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
     pageItems.forEach((c, idx) => {
       const i = p * PER_PAGE + idx;
       const y = yStart + idx * (ch + gap);
-      card(doc, M, y, usable, ch);
+      const alt = idx % 2 === 1;
+      card(doc, M, y, usable, ch, { variant: alt ? "blue" : "white", border: "soft" });
       // number badge
       doc.setFillColor(...BLUE);
       doc.circle(M + 10, y + ch / 2, 6, "F");
@@ -422,7 +429,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
       // col 1: local + quartos
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
-      doc.setTextColor(...WHITE);
+      doc.setTextColor(...BLUE);
       const loc = doc.splitTextToSize(String(c.localizacao ?? "—").toUpperCase(), colW - 4);
       doc.text(loc.slice(0, 2), x0, y + 10);
       doc.setFont("helvetica", "normal");
@@ -438,7 +445,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
       doc.setTextColor(...GRAY);
       doc.text(`Metragem: ${c.area ?? "—"} m²`, x1, y + 10);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...WHITE);
+      doc.setTextColor(...BLUE);
       doc.text(`Valor: ${fmtBRL(Number(c.valor_anunciado))}`, x1, y + 17);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
@@ -463,7 +470,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
       doc.setTextColor(...GRAY);
       doc.text("Estado de conservação", x3, y + 10);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...WHITE);
+      doc.setTextColor(...BLUE);
       const cons = doc.splitTextToSize(String(c.conservacao ?? "—"), colW - 4);
       doc.text(cons.slice(0, 2), x3, y + 17);
     });
@@ -488,13 +495,13 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(58);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text(fmtBRL(central), PW / 2, 88, { align: "center" });
 
   // min / max range
   doc.setFont("helvetica", "normal");
   doc.setFontSize(12);
-  doc.setTextColor(...WHITE);
+  doc.setTextColor(...GOLD);
   doc.text(`Faixa sugerida:  ${fmtBRL(minV)}   —   ${fmtBRL(maxV)}`, PW / 2, 102, { align: "center" });
 
   // 3 tip cards
@@ -510,7 +517,7 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   const yRow = 120;
   tips.forEach(([t, d], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch);
+    card(doc, x, yRow, cw, ch, { variant: "darkblue" });
     doc.setFillColor(...GOLD);
     doc.circle(x + 10, yRow + 8, 2.4, "F");
 
@@ -525,9 +532,13 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // ---------- PAGE: CONTATO ----------
 function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   novaPagina(doc);
+  // full BLUE background
+  doc.setFillColor(...BLUE);
+  doc.rect(0, 0, PW, PH, "F");
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.setTextColor(...GRAY);
+  doc.setTextColor(...WHITE);
   doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW / 2, 40, { align: "center" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
@@ -539,10 +550,10 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   doc.setTextColor(...WHITE);
   doc.text("Obrigado!", PW / 2, 110, { align: "center" });
 
-  // contact pills
+  // contact pills (outlined gold)
   const items = [
-    corretor.telefone ? `☎  ${corretor.telefone}` : null,
-    corretor.email ? `✉  ${corretor.email}` : null,
+    corretor.telefone ? `Tel  ${corretor.telefone}` : null,
+    corretor.email ? `Email  ${corretor.email}` : null,
     corretor.creci ? `CRECI ${corretor.creci}` : null,
   ].filter(Boolean) as string[];
 
@@ -560,16 +571,18 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   const y = 140;
   items.forEach((t, i) => {
     const w = pads[i];
-    doc.setFillColor(...GOLD);
-    doc.roundedRect(x, y, w, 14, 7, 7, "F");
-    doc.setTextColor(15, 15, 30);
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.8);
+    doc.setFillColor(...BLUE);
+    doc.roundedRect(x, y, w, 14, 7, 7, "FD");
+    doc.setTextColor(...WHITE);
     doc.text(t, x + w / 2, y + 9.2, { align: "center" });
     x += w + 6;
   });
 
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
-  doc.setTextColor(...GRAY_DIM);
+  doc.setTextColor(...GOLD);
   doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", PW / 2, PH - 18, { align: "center" });
 }
 
@@ -622,9 +635,9 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
     head: [["#", "Fonte", "F. Oferta", "F. Área", "F. Padrão", "F. Conserv.", "F. Localiz.", "F. Total"]],
     body,
     theme: "grid",
-    headStyles: { fillColor: GOLD, textColor: [10, 15, 30], fontSize: 10, halign: "center" },
-    bodyStyles: { fillColor: CARD_TOP, textColor: WHITE, fontSize: 10, halign: "center", lineColor: [40, 50, 70] },
-    alternateRowStyles: { fillColor: CARD_BOTTOM },
+    headStyles: { fillColor: BLUE, textColor: WHITE, fontSize: 10, halign: "center" },
+    bodyStyles: { fillColor: WHITE, textColor: TEXT, fontSize: 10, halign: "center", lineColor: BORDER },
+    alternateRowStyles: { fillColor: BG_SOFT },
     margin: { left: M, right: M },
   });
 }
@@ -662,14 +675,14 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   const yRow = 60;
   items.forEach(([l, v], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch);
-    doc.setFont("helvetica", "normal");
+    card(doc, x, yRow, cw, ch, { variant: "blue", border: "soft" });
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...GRAY_DIM);
+    doc.setTextColor(...BLUE);
     doc.text(l, x + cw / 2, yRow + 14, { align: "center" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.setTextColor(...GOLD);
+    doc.setTextColor(...BLUE);
     doc.text(v, x + cw / 2, yRow + 30, { align: "center" });
   });
 
@@ -677,7 +690,7 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
   const t = "Tratamento por fatores de homogeneização (ABNT NBR 14653-2:2011). A média dos valores unitários, ponderada pela qualidade da amostra, fundamenta o valor central apurado.";
-  textoMultilinha(doc, t, M, yRow + ch + 14, usable, { size: 11, color: WHITE, lineHeight: 5.2 });
+  textoMultilinha(doc, t, M, yRow + ch + 14, usable, { size: 11, color: TEXT, lineHeight: 5.2 });
 }
 
 // ---------- EXPERT EXTRA: CAMPO DE ARBÍTRIO ----------
@@ -703,14 +716,14 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   ];
   items.forEach(([l, v], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch, { border: i === 1 });
-    doc.setFont("helvetica", "normal");
+    card(doc, x, yRow, cw, ch, { variant: i === 1 ? "darkblue" : "white", border: i === 1 ? "gold" : "soft" });
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...GRAY_DIM);
+    doc.setTextColor(...(i === 1 ? GOLD : BLUE));
     doc.text(l, x + cw / 2, yRow + 18, { align: "center" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(i === 1 ? 26 : 20);
-    doc.setTextColor(...(i === 1 ? GOLD : WHITE));
+    doc.setTextColor(...(i === 1 ? WHITE : BLUE));
     doc.text(v, x + cw / 2, yRow + 42, { align: "center" });
   });
 
@@ -720,7 +733,7 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
     M,
     yRow + ch + 18,
     usable,
-    { size: 11, color: WHITE, lineHeight: 5.4 },
+    { size: 11, color: TEXT, lineHeight: 5.4 },
   );
 }
 
