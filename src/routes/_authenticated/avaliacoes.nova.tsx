@@ -36,6 +36,28 @@ const CONSERVACOES = ["Novo", "Bom", "Regular", "Ruim"];
 const TIPOS_IMOVEL = ["Apartamento", "Casa", "Terreno", "Sala Comercial", "Galpão"] as const;
 type TipoImovel = typeof TIPOS_IMOVEL[number];
 
+type NativeSelectProps = {
+  value: string;
+  options: readonly string[];
+  onChange: (value: string) => void;
+};
+
+function NativeSelect({ value, options, onChange }: NativeSelectProps) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => safe(() => onChange(event.currentTarget.value))}
+      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm outline-none ring-offset-background focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 // Regras de campos condicionais por tipo de imóvel
 const camposDoTipo = (tipo: string) => {
   const base = {
@@ -181,26 +203,21 @@ function NovaAvaliacao() {
   };
 
   const onTipoChange = (v: string) => {
-    // Diferimos a atualização para depois do fechamento do popover do Radix Select.
-    // Sem isso, o React tenta remover do DOM nós que o Radix Portal já desmontou,
-    // causando "Failed to execute 'removeChild' on 'Node'".
-    setTimeout(() => {
-      safe(() => {
-        const novoCampos = camposDoTipo(v);
-        setImovel((prev) => ({
-          ...prev,
-          tipo: v,
-          quartos: novoCampos.quartos ? prev.quartos : 0,
-          suites: novoCampos.suites ? prev.suites : 0,
-          banheiros: novoCampos.banheiros ? prev.banheiros : 0,
-          vagas: novoCampos.vagas ? prev.vagas : 0,
-          andar: novoCampos.andar ? prev.andar : 0,
-          area_privativa: novoCampos.areaPrivativa ? prev.area_privativa : 0,
-          conservacao: novoCampos.conservacao ? prev.conservacao : "Bom",
-          caracteristicas: novoCampos.caracteristicas ? prev.caracteristicas : [],
-        }));
-      });
-    }, 0);
+    safe(() => {
+      const novoCampos = camposDoTipo(v);
+      setImovel((prev) => ({
+        ...prev,
+        tipo: v,
+        quartos: novoCampos.quartos ? prev.quartos : 0,
+        suites: novoCampos.suites ? prev.suites : 0,
+        banheiros: novoCampos.banheiros ? prev.banheiros : 0,
+        vagas: novoCampos.vagas ? prev.vagas : 0,
+        andar: novoCampos.andar ? prev.andar : 0,
+        area_privativa: novoCampos.areaPrivativa ? prev.area_privativa : 0,
+        conservacao: novoCampos.conservacao ? prev.conservacao : "Bom",
+        caracteristicas: novoCampos.caracteristicas ? prev.caracteristicas : [],
+      }));
+    });
   };
 
   const addComparavel = () => {
