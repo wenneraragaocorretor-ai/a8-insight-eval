@@ -1,9 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
 import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
+import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock } from "lucide-react";
+
 
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
