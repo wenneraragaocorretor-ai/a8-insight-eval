@@ -539,6 +539,66 @@ function NovaAvaliacao() {
                 onChange={(e) => setImovelField("observacoes", e.target.value)}
               />
             </div>
+
+            <div className="space-y-3 md:col-span-2">
+              <div className="flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <Label className="text-base">Fotos do Imóvel</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Até 3 fotos · JPG, PNG ou WEBP · máx. 5MB cada · usadas pela IA na análise visual e no PDF.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2"
+                  disabled={fotos.length >= 3}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImagePlus size={16} /> Adicionar foto
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => safe(() => handleFotosSelected(e.target.files))}
+                />
+              </div>
+
+              {fotos.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-border rounded-lg py-8 flex flex-col items-center gap-2 text-muted-foreground hover:border-brand-gold hover:text-brand-gold transition-colors"
+                >
+                  <Upload size={28} />
+                  <span className="text-sm">Clique para enviar fotos do imóvel</span>
+                </button>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {fotos.map((f, i) => (
+                    <div key={f.previewUrl} className="relative group rounded-lg overflow-hidden border border-border aspect-[4/3] bg-muted">
+                      <img src={f.previewUrl} alt={`Foto ${i + 1} do imóvel`} className="w-full h-full object-cover" />
+                      {f.uploading && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs">
+                          Enviando…
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => safe(() => removerFoto(i))}
+                        className="absolute top-2 right-2 bg-black/70 hover:bg-destructive text-white rounded-full p-1.5 opacity-90"
+                        aria-label="Remover foto"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardContent>
           <div className="p-6 border-t flex justify-end">
             <Button onClick={() => setStep(2)} className="bg-brand-blue gap-2">
