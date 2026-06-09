@@ -131,8 +131,12 @@ e devem ser preenchidos com base nas características reais — NÃO retorne str
   },
   "dicas_precificacao": ["Iniciar 5% acima do valor central", "Ajustar após 30 dias"],
   "estrategias_venda": ["Tour virtual em alta", "Parceria com home staging"],
-  "dicas_anuncio": ["Destaque a vista livre", "Enfatize a proximidade com o metrô"]
-}`
+  "dicas_anuncio": ["Destaque a vista livre", "Enfatize a proximidade com o metrô"],
+  "analise_fotos": "${fotosImagens.length > 0 ? 'Análise visual das fotos enviadas: padrão construtivo aparente, estado de conservação real, acabamentos visíveis (piso, esquadrias, bancadas, pintura), pontos positivos e pontos de atenção observados nas imagens. Se houver discrepância entre as fotos e os dados informados pelo corretor, mencione-a explicitamente. 4-6 frases.' : ''}"
+}
+
+${fotosImagens.length > 0 ? `ANÁLISE DAS FOTOS (OBRIGATÓRIO): As imagens em anexo são fotos reais do imóvel avaliando. Analise-as e identifique: padrão construtivo (simples/normal/alto/luxo), estado de conservação real, acabamentos visíveis, pontos positivos e pontos de atenção baseados nas imagens. Se as fotos contradizerem os dados informados pelo corretor (padrão, conservação), mencione a discrepância no campo "analise_fotos" e ajuste o valor estimado conforme o que as fotos efetivamente mostram.` : ''}`
+
 
     const fmt = (v: any) => (v === undefined || v === null || v === "" ? "-" : v);
     const userPrompt = `DADOS DO IMÓVEL AVALIANDO:
