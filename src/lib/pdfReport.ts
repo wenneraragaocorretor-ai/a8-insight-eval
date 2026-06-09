@@ -155,35 +155,39 @@ function textoMultilinha(
 // ---------- PAGE 1: COVER ----------
 function paginaCapa(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, titulo: string) {
   pintarFundo(doc);
-  // background image (full page) then dark overlay
   try {
     doc.addImage(COVER_BG_BASE64, "JPEG", 0, 0, PW, PH, undefined, "FAST");
   } catch {
-    /* ignore if image fails */
+    /* ignore */
   }
-  // dark gradient overlay (left → right): solid left, fade right
-  doc.setFillColor(...BG);
-  doc.rect(0, 0, PW, PH, "F"); // start with full bg
-  doc.addImage(COVER_BG_BASE64, "JPEG", 0, 0, PW, PH, undefined, "FAST");
-  // overlay
+  // semi-transparent BLUE overlay
   doc.saveGraphicsState();
   // @ts-ignore
-  doc.setGState(new (doc as any).GState({ opacity: 0.65 }));
-  doc.setFillColor(...BG);
+  doc.setGState(new (doc as any).GState({ opacity: 0.7 }));
+  doc.setFillColor(...BLUE);
   doc.rect(0, 0, PW, PH, "F");
   doc.restoreGraphicsState();
 
-  // top-right brand
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(...WHITE);
-  doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW - M, 20, { align: "right" });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...GOLD);
-  doc.text(corretor.nome.toUpperCase(), PW - M, 27, { align: "right" });
+  // top white header bar with logo text
+  doc.setFillColor(...WHITE);
+  doc.rect(0, 0, PW, 18, "F");
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(0, 18, PW, 18);
 
-  // big title bottom-left
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...BLUE);
+  doc.text("A8 INVESTIMENTOS", M, 11);
+  doc.setTextColor(...GOLD);
+  doc.text(" IMOBILIÁRIOS", M + doc.getTextWidth("A8 INVESTIMENTOS"), 11);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...BLUE);
+  doc.text(corretor.nome.toUpperCase(), PW - M, 11, { align: "right" });
+
+  // big title bottom-left over overlay
   doc.setFont("helvetica", "bold");
   doc.setFontSize(64);
   doc.setTextColor(...WHITE);
@@ -195,10 +199,9 @@ function paginaCapa(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, titulo: 
   doc.setTextColor(...GOLD);
   doc.text(linha2.toUpperCase(), M, PH - 22);
 
-  // small ref
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(...GRAY);
+  doc.setTextColor(...WHITE);
   doc.text(`${avaliacao?.localizacao ?? ""}  •  ${hoje()}`, M, PH - 10);
 }
 
