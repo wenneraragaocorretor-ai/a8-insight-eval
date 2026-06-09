@@ -171,16 +171,18 @@ export const getAvaliacaoDetalhe = createServerFn({ method: "GET" })
       throw new Error("Você não tem permissão para visualizar esta avaliação");
     }
 
-    const [{ data: resultado, error: errR }, { data: comparaveis, error: errC }] = await Promise.all([
+    const [{ data: resultado, error: errR }, { data: comparaveis, error: errC }, { data: profile }] = await Promise.all([
       supabase.from("resultados").select("*").eq("avaliacao_id", data.id).maybeSingle(),
       supabase.from("comparaveis").select("*").eq("avaliacao_id", data.id),
+      supabase.from("profiles").select("nome, plano, creci, telefone, cidade, estado").eq("id", userId).maybeSingle(),
     ]);
 
     if (errR) throw new Error("Erro ao carregar resultado");
     if (errC) throw new Error("Erro ao carregar comparáveis");
 
-    return { avaliacao, resultado: resultado ?? null, comparaveis: comparaveis ?? [] };
+    return { avaliacao, resultado: resultado ?? null, comparaveis: comparaveis ?? [], profile: profile ?? null };
   });
+
 
 export const listarAvaliacoes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
