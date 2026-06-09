@@ -569,8 +569,29 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
     "registrais que possam afetar o imóvel.",
   );
 
+  const dicasPrec = rel.dicas_precificacao || rel.precificacao;
+  if (dicasPrec) {
+    y = novaPaginaSeNecessario(doc, y, 30);
+    y = tituloSecao(doc, y, "10. Dicas de Precificação");
+    y = listaNumerada(doc, y, Array.isArray(dicasPrec) ? dicasPrec : [String(dicasPrec)]);
+  }
+
+  const estrategias = rel.estrategias_venda || rel.estrategias;
+  if (estrategias) {
+    y = novaPaginaSeNecessario(doc, y, 30);
+    y = tituloSecao(doc, y, "11. Estratégias de Venda");
+    y = listaNumerada(doc, y, Array.isArray(estrategias) ? estrategias : [String(estrategias)]);
+  }
+
+  const divulgacao = rel.dicas_anuncio || rel.dicas || rel.recomendacoes;
+  if (divulgacao) {
+    y = novaPaginaSeNecessario(doc, y, 30);
+    y = tituloSecao(doc, y, "12. Dicas de Divulgação e Anúncio");
+    y = listaNumerada(doc, y, Array.isArray(divulgacao) ? divulgacao : [String(divulgacao)]);
+  }
+
   y = novaPaginaSeNecessario(doc, y, 20);
-  y = tituloSecao(doc, y, "10. Identificação do Sistema");
+  y = tituloSecao(doc, y, "13. Identificação do Sistema");
   paragrafo(doc, y, "Avaliação gerada pela plataforma A8 Investimentos Imobiliários.");
 
   marcaDagua(doc, corretor.nome);
