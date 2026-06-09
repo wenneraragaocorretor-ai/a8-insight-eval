@@ -210,7 +210,7 @@ function paginaSumario(doc: jsPDF, sec: string[]) {
   novaPagina(doc);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(54);
-  doc.setTextColor(...WHITE);
+  doc.setTextColor(...BLUE);
   doc.text("Sumário", M, 70);
 
   const xCard = PW / 2 + 4;
@@ -219,15 +219,15 @@ function paginaSumario(doc: jsPDF, sec: string[]) {
   const gap = 4;
   let y = 30;
   sec.forEach((nome, i) => {
-    card(doc, xCard, y, wCard, hCard);
+    card(doc, xCard, y, wCard, hCard, { variant: "darkblue" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor(...GOLD);
-    doc.text(String(i + 3).padStart(1, "0"), xCard + 6, y + 9);
+    doc.text(String(i + 3).padStart(2, "0"), xCard + 6, y + 9);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...WHITE);
-    doc.text(nome.toUpperCase(), xCard + 22, y + 9);
+    doc.text(nome.toUpperCase(), xCard + 24, y + 9);
     y += hCard + gap;
   });
 }
