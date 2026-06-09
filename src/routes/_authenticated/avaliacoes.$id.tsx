@@ -78,6 +78,7 @@ function AvaliacaoDetalhe() {
         telefone: profile?.telefone ?? null,
         cidade: profile?.cidade ?? null,
         estado: profile?.estado ?? null,
+        email: (profile as any)?.email ?? null,
       },
     });
   };
