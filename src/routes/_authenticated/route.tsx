@@ -28,7 +28,7 @@ function AuthenticatedLayout() {
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
               activeProps={{ className: "text-sm font-medium text-brand-blue" }}
             >
-              Dashboard
+              Painel
             </Link>
             <Link
               to="/planos"
