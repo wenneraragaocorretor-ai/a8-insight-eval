@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { FileText, Plus, History, Trophy, Eye, Sparkles, CheckCircle2 } from "lucide-react";
+import { FileText, Plus, History, Trophy, Eye, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
 import { getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
@@ -122,7 +122,7 @@ function Dashboard() {
         <div className="flex gap-2">
           <Link to="/planos">
             <Button variant="outline" className="gap-2 h-12 px-5 rounded-xl">
-              <Sparkles size={18} /> Planos
+              Planos
             </Button>
           </Link>
           <Link to="/avaliacoes/nova">
@@ -162,7 +162,7 @@ function Dashboard() {
               {usadas}{limite != null ? ` / ${limite}` : ""}
             </div>
             <p className="text-xs text-muted-foreground">
-              Plano {planoLabel}
+              Mês atual
             </p>
           </CardContent>
         </Card>
