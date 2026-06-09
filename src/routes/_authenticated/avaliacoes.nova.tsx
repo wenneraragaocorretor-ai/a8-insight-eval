@@ -183,22 +183,26 @@ function NovaAvaliacao() {
   };
 
   const onTipoChange = (v: string) => {
-    safe(() => {
-      const novoCampos = camposDoTipo(v);
-      setImovel((prev) => ({
-        ...prev,
-        tipo: v,
-        // Zera campos irrelevantes para evitar enviar lixo
-        quartos: novoCampos.quartos ? prev.quartos : 0,
-        suites: novoCampos.suites ? prev.suites : 0,
-        banheiros: novoCampos.banheiros ? prev.banheiros : 0,
-        vagas: novoCampos.vagas ? prev.vagas : 0,
-        andar: novoCampos.andar ? prev.andar : 0,
-        area_privativa: novoCampos.areaPrivativa ? prev.area_privativa : 0,
-        conservacao: novoCampos.conservacao ? prev.conservacao : "Bom",
-        caracteristicas: novoCampos.caracteristicas ? prev.caracteristicas : [],
-      }));
-    });
+    // Diferimos a atualização para depois do fechamento do popover do Radix Select.
+    // Sem isso, o React tenta remover do DOM nós que o Radix Portal já desmontou,
+    // causando "Failed to execute 'removeChild' on 'Node'".
+    setTimeout(() => {
+      safe(() => {
+        const novoCampos = camposDoTipo(v);
+        setImovel((prev) => ({
+          ...prev,
+          tipo: v,
+          quartos: novoCampos.quartos ? prev.quartos : 0,
+          suites: novoCampos.suites ? prev.suites : 0,
+          banheiros: novoCampos.banheiros ? prev.banheiros : 0,
+          vagas: novoCampos.vagas ? prev.vagas : 0,
+          andar: novoCampos.andar ? prev.andar : 0,
+          area_privativa: novoCampos.areaPrivativa ? prev.area_privativa : 0,
+          conservacao: novoCampos.conservacao ? prev.conservacao : "Bom",
+          caracteristicas: novoCampos.caracteristicas ? prev.caracteristicas : [],
+        }));
+      });
+    }, 0);
   };
 
   const addComparavel = () => {
@@ -315,7 +319,7 @@ function NovaAvaliacao() {
       {step === 1 && (
         <Card className="premium-card">
           <CardHeader><CardTitle>Dados do Imóvel</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent key={imovel.tipo} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Tipo do Imóvel</Label>
               <Select value={imovel.tipo} onValueChange={onTipoChange}>
