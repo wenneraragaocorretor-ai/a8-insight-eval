@@ -19,7 +19,7 @@ function Index() {
         </div>
         <div className="flex gap-4">
           <Link to="/auth" className="px-4 py-2 text-sm font-medium text-brand-blue">Entrar</Link>
-          <Link to="/auth" className="px-4 py-2 text-sm font-medium bg-brand-blue text-white rounded-lg hover:opacity-90 transition-opacity">Começar grátis</Link>
+          <Link to="/planos" className="px-4 py-2 text-sm font-medium bg-brand-blue text-white rounded-lg hover:opacity-90 transition-opacity">Assinar</Link>
         </div>
       </nav>
       <main className="flex-1 flex flex-col items-center justify-center text-center px-6 py-20">
@@ -29,8 +29,8 @@ function Index() {
         <p className="text-xl text-muted-foreground max-w-2xl mb-10">
           Plataforma SaaS para corretores e avaliadores de imóveis realizarem avaliações mercadológicas de alta precisão com auxílio de inteligência artificial.
         </p>
-        <Link to="/auth" className="px-8 py-4 bg-brand-gold text-primary-foreground rounded-xl text-lg font-bold hover:opacity-90 transition-all hover:scale-105 shadow-lg">
-          Começar Avaliação Grátis
+        <Link to="/planos" className="px-8 py-4 bg-brand-gold text-primary-foreground rounded-xl text-lg font-bold hover:opacity-90 transition-all hover:scale-105 shadow-lg">
+          Assinar e Começar
         </Link>
       </main>
     </div>
