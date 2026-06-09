@@ -182,10 +182,20 @@ Comparável #${i + 1} (${c.fonte}):
         max_tokens: 4096,
         system: systemPrompt,
         messages: [
-          { role: 'user', content: userPrompt }
+          {
+            role: 'user',
+            content: [
+              ...fotosImagens.map((img) => ({
+                type: 'image',
+                source: { type: 'base64', media_type: img.mediaType, data: img.base64 },
+              })),
+              { type: 'text', text: userPrompt },
+            ],
+          },
         ],
       }),
     })
+
 
     if (!response.ok) {
       const error = await response.text()
