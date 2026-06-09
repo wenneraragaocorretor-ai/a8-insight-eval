@@ -122,7 +122,7 @@ function Dashboard() {
         <div className="flex gap-2">
           <Link to="/planos">
             <Button variant="outline" className="gap-2 h-12 px-5 rounded-xl">
-              <Sparkles size={18} /> Planos
+              Planos
             </Button>
           </Link>
           <Link to="/avaliacoes/nova">
