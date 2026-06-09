@@ -93,10 +93,28 @@ function PlanosPage() {
   async function assinar(plano: "basico" | "profissional" | "expert") {
     try {
       setLoading(plano);
-      const { url } = await startCheckout({ data: { plano, origin: window.location.origin } });
-      window.location.href = url;
+      const origin =
+        (window.top && window.top !== window.self ? window.top.location.origin : null) ??
+        window.location.origin;
+      const { url } = await startCheckout({ data: { plano, origin } });
+      if (!url) throw new Error("URL de checkout não recebida");
+
+      // Em iframes (ex.: preview do Lovable) navegar window.location pode falhar
+      // silenciosamente. Tentamos abrir em nova aba primeiro; se bloqueado,
+      // caímos para navegação top-level.
+      const win = window.open(url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        try {
+          if (window.top) window.top.location.href = url;
+          else window.location.href = url;
+        } catch {
+          window.location.href = url;
+        }
+      }
+      setLoading(null);
     } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao iniciar checkout");
+      console.error("[checkout]", e);
+      toast.error(e?.message ?? "Erro ao iniciar checkout. Tente novamente.");
       setLoading(null);
     }
   }
