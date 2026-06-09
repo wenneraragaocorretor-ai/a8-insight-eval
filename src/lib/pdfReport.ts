@@ -495,13 +495,13 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(58);
-  doc.setTextColor(...GOLD);
+  doc.setTextColor(...BLUE);
   doc.text(fmtBRL(central), PW / 2, 88, { align: "center" });
 
   // min / max range
   doc.setFont("helvetica", "normal");
   doc.setFontSize(12);
-  doc.setTextColor(...WHITE);
+  doc.setTextColor(...GOLD);
   doc.text(`Faixa sugerida:  ${fmtBRL(minV)}   —   ${fmtBRL(maxV)}`, PW / 2, 102, { align: "center" });
 
   // 3 tip cards
@@ -517,7 +517,7 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   const yRow = 120;
   tips.forEach(([t, d], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch);
+    card(doc, x, yRow, cw, ch, { variant: "darkblue" });
     doc.setFillColor(...GOLD);
     doc.circle(x + 10, yRow + 8, 2.4, "F");
 
@@ -532,9 +532,13 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // ---------- PAGE: CONTATO ----------
 function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   novaPagina(doc);
+  // full BLUE background
+  doc.setFillColor(...BLUE);
+  doc.rect(0, 0, PW, PH, "F");
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.setTextColor(...GRAY);
+  doc.setTextColor(...WHITE);
   doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW / 2, 40, { align: "center" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
@@ -546,10 +550,10 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   doc.setTextColor(...WHITE);
   doc.text("Obrigado!", PW / 2, 110, { align: "center" });
 
-  // contact pills
+  // contact pills (outlined gold)
   const items = [
-    corretor.telefone ? `☎  ${corretor.telefone}` : null,
-    corretor.email ? `✉  ${corretor.email}` : null,
+    corretor.telefone ? `Tel  ${corretor.telefone}` : null,
+    corretor.email ? `Email  ${corretor.email}` : null,
     corretor.creci ? `CRECI ${corretor.creci}` : null,
   ].filter(Boolean) as string[];
 
@@ -567,16 +571,18 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   const y = 140;
   items.forEach((t, i) => {
     const w = pads[i];
-    doc.setFillColor(...GOLD);
-    doc.roundedRect(x, y, w, 14, 7, 7, "F");
-    doc.setTextColor(15, 15, 30);
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.8);
+    doc.setFillColor(...BLUE);
+    doc.roundedRect(x, y, w, 14, 7, 7, "FD");
+    doc.setTextColor(...WHITE);
     doc.text(t, x + w / 2, y + 9.2, { align: "center" });
     x += w + 6;
   });
 
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
-  doc.setTextColor(...GRAY_DIM);
+  doc.setTextColor(...GOLD);
   doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", PW / 2, PH - 18, { align: "center" });
 }
 
