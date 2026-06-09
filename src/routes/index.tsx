@@ -29,8 +29,8 @@ function Index() {
         <p className="text-xl text-muted-foreground max-w-2xl mb-10">
           Plataforma SaaS para corretores e avaliadores de imóveis realizarem avaliações mercadológicas de alta precisão com auxílio de inteligência artificial.
         </p>
-        <Link to="/auth" className="px-8 py-4 bg-brand-gold text-primary-foreground rounded-xl text-lg font-bold hover:opacity-90 transition-all hover:scale-105 shadow-lg">
-          Começar Avaliação Grátis
+        <Link to="/planos" className="px-8 py-4 bg-brand-gold text-primary-foreground rounded-xl text-lg font-bold hover:opacity-90 transition-all hover:scale-105 shadow-lg">
+          Assinar e Começar
         </Link>
       </main>
     </div>
