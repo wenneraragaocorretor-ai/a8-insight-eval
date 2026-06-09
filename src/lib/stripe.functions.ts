@@ -118,8 +118,21 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       ? await stripeRequest("GET", `/subscriptions/${session.subscription}`)
       : session.subscription;
 
-    const planCode = (session.metadata?.plan_code ?? "basico") as keyof typeof PLANS;
-    const dbPlan = PLANS[planCode]?.db_plan ?? "user";
+    const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
+    let planCode = session.metadata?.plan_code as keyof typeof PLANS | undefined;
+
+    if (priceId) {
+      const price = await stripeRequest("GET", `/prices/${encodeURIComponent(priceId)}`);
+      const lookupKey = price.lookup_key as string | undefined;
+      const byLookup = Object.values(PLANS).find((plan) => plan.lookup_key === lookupKey);
+      if (byLookup) planCode = byLookup.code as keyof typeof PLANS;
+    }
+
+    if (!planCode || !PLANS[planCode]) {
+      throw new Error("Não foi possível identificar o plano comprado no checkout");
+    }
+
+    const dbPlan = PLANS[planCode].db_plan;
 
     // Busca nome existente (necessário para upsert pois é NOT NULL)
     const { data: existing } = await supabase
@@ -134,7 +147,7 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       userData.user?.email?.split("@")[0] ||
       "Usuário";
 
-    await supabase.from("profiles").upsert(
+    const { data: updatedProfile, error } = await supabase.from("profiles").upsert(
       {
         id: userId,
         nome,
@@ -144,11 +157,19 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
         subscription_current_period_end: sub.current_period_end
           ? new Date(sub.current_period_end * 1000).toISOString()
           : null,
-        plan_price_id: sub.items?.data?.[0]?.price?.id ?? null,
+        plan_price_id: priceId ?? null,
         stripe_customer_id: sub.customer,
       },
       { onConflict: "id" },
-    );
+    ).select("plano, subscription_status, plan_price_id").single();
+
+    if (error) throw new Error(`Falha ao atualizar plano no perfil: ${error.message}`);
+    console.log("[confirmarCheckout] Perfil atualizado com sucesso", {
+      userId,
+      sessionId: data.session_id,
+      plano: updatedProfile?.plano,
+      priceId: updatedProfile?.plan_price_id,
+    });
 
     return { ok: true, plano: dbPlan };
   });
