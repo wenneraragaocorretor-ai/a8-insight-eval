@@ -31,27 +31,35 @@ Calcule o valor unitário homogeneizado (R$/m²) e aplique ao imóvel alvo,
 gerando faixa mínima, central e máxima (intervalo de confiança).
 Além da avaliação, gere conteúdo qualitativo personalizado para o imóvel e a região,
 com base no tipo de imóvel, localização (bairro/cidade) e características informadas.
-Retorne APENAS um JSON estruturado (sem comentários, sem markdown) conforme o exemplo:
+Retorne APENAS um JSON estruturado (sem comentários, sem markdown) conforme o exemplo.
+TODOS os campos abaixo são OBRIGATÓRIOS e devem ser preenchidos com base nas características
+reais do imóvel e da localização. NÃO retorne strings vazias, "—" ou "Informação não disponível":
 {
   "valor_minimo": 450000,
   "valor_central": 500000,
   "valor_maximo": 550000,
   "valor_unitario_medio": 5000,
   "resumo_texto": "O imóvel apresenta excelente conservação...",
-  "pontos_positivos": ["Localização privilegiada", "Boa metragem", "Bem conservado"],
-  "pontos_negativos": ["Sem vaga coberta", "Andar baixo"],
+  "pontos_positivos": ["2 vagas de garagem, diferencial valorizado", "Condomínio fechado com área de lazer", "Bom estado de conservação"],
+  "pontos_atencao": ["1º andar pode ter menor valorização", "Área total superior à privativa indica áreas comuns proporcionalmente altas"],
+  "potencial_valorizacao": "Texto curto (2-3 frases) sobre o potencial de valorização do bairro/cidade nos próximos anos.",
+  "tendencias_mercado": "Texto curto (2-3 frases) sobre tendências imobiliárias locais atuais.",
+  "perfil_profissao": "Profissão predominante na região (ex: profissionais liberais, executivos, servidores públicos).",
+  "perfil_renda": "Faixa de renda média estimada (ex: R$ 8.000 a R$ 15.000).",
+  "perfil_preferencias": "O que esse público busca em um imóvel (1-2 frases).",
+  "perfil_interesses": "Hábitos e interesses culturais/de lazer típicos (1-2 frases).",
   "analise_bairro": {
     "bairro": "Nome do bairro",
     "cidade": "Cidade/UF",
-    "potencial_valorizacao": "Texto sobre o potencial de valorização da região, 2-3 frases.",
-    "tendencias_mercado": "Texto sobre tendências atuais do mercado local, 2-3 frases.",
+    "potencial_valorizacao": "Mesmo conteúdo do campo potencial_valorizacao acima.",
+    "tendencias_mercado": "Mesmo conteúdo do campo tendencias_mercado acima.",
     "descricao": "Resumo da região (infraestrutura, lazer, mobilidade), 3-4 frases."
   },
   "perfil_publico": {
-    "profissao": "Profissão predominante dos moradores da região.",
-    "renda_media": "Faixa de renda média estimada.",
-    "preferencias": "O que esse público busca em um imóvel.",
-    "interesses": "Hábitos e interesses culturais/de lazer."
+    "profissao": "Mesmo conteúdo de perfil_profissao.",
+    "renda_media": "Mesmo conteúdo de perfil_renda.",
+    "preferencias": "Mesmo conteúdo de perfil_preferencias.",
+    "interesses": "Mesmo conteúdo de perfil_interesses."
   },
   "dicas_precificacao": ["Iniciar 5% acima do valor central", "Ajustar após 30 dias"],
   "estrategias_venda": ["Tour virtual em alta", "Parceria com home staging"],
