@@ -32,16 +32,55 @@ const PLAN_LABEL: Record<string, string> = {
 function Dashboard() {
   const context = useRouteContext({ from: "/_authenticated" });
   const user = (context as any)?.user;
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const fetchList = useServerFn(listarAvaliacoes);
   const fetchStatus = useServerFn(getStatusAssinatura);
+  const confirmFn = useServerFn(confirmarCheckout);
+  const [welcomePlano, setWelcomePlano] = useState<string | null>(null);
+  const confirmedRef = useRef(false);
+
   const { data: avaliacoes = [], isLoading } = useQuery({
     queryKey: ["avaliacoes-list"],
     queryFn: () => fetchList(),
   });
-  const { data: status } = useQuery({
+  const { data: status, refetch: refetchStatus } = useQuery({
     queryKey: ["assinatura-status"],
     queryFn: () => fetchStatus(),
   });
+
+  useEffect(() => {
+    if (search.pagamento !== "sucesso" || confirmedRef.current) return;
+    confirmedRef.current = true;
+
+    const run = async () => {
+      if (search.session_id) {
+        try {
+          await confirmFn({ data: { session_id: search.session_id } });
+        } catch (e) {
+          console.error("[confirmarCheckout]", e);
+        }
+      }
+      // Poll status until plano != "user" or timeout (webhook pode atrasar)
+      let attempts = 0;
+      let plano = "user";
+      while (attempts < 10) {
+        const r = await refetchStatus();
+        plano = r.data?.plano ?? "user";
+        if (r.data?.assinaturaAtiva) break;
+        attempts++;
+        await new Promise((res) => setTimeout(res, 1500));
+      }
+      const label = PLAN_LABEL[plano] ?? "Básico";
+      setWelcomePlano(label);
+      toast.success(`Pagamento confirmado! Bem-vindo ao Plano ${label}.`);
+      queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
+      // Limpa query params
+      navigate({ to: "/dashboard", search: {}, replace: true });
+    };
+    void run();
+  }, [search.pagamento, search.session_id]);
 
   if (!user) return null;
   const nome = user.user_metadata?.nome || user.email?.split("@")[0];
