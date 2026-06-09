@@ -42,7 +42,7 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
       customer: customerId,
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": 1,
-      success_url: `${data.origin}/planos?success=1&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${data.origin}/dashboard?pagamento=sucesso&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${data.origin}/planos?canceled=1`,
       "metadata[user_id]": userId,
       "metadata[plan_code]": data.plano,
