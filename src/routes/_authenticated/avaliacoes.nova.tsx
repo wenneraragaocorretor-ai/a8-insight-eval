@@ -364,7 +364,9 @@ function NovaAvaliacao() {
             andar: c.andar ? imovel.andar || undefined : undefined,
             conservacao: c.conservacao ? imovel.conservacao : "Bom",
             caracteristicas: c.caracteristicas ? imovel.caracteristicas : [],
+            fotos: fotos.filter((f) => f.path && !f.uploading).map((f) => f.path),
           },
+
           comparaveis: comparaveis.map(({ id, ...c2 }) => ({
             fonte: c2.fonte,
             localizacao: c2.localizacao,
