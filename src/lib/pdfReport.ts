@@ -18,6 +18,13 @@ const MARGIN = 20; // mm
 
 export type PlanoUsuario = "basico" | "profissional" | "expert" | "user" | "pro" | string;
 export type ModeloPdf = 1 | 2 | 3;
+export type CorretorInfo = {
+  nome: string;
+  creci?: string | null;
+  telefone?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+};
 
 const fmtBRL = (v: number | null | undefined) =>
   v == null || isNaN(Number(v))
