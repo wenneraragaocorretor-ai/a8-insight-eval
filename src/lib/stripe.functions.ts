@@ -121,16 +121,34 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
     const planCode = (session.metadata?.plan_code ?? "basico") as keyof typeof PLANS;
     const dbPlan = PLANS[planCode]?.db_plan ?? "user";
 
-    await supabase.from("profiles").update({
-      plano: dbPlan,
-      stripe_subscription_id: sub.id,
-      subscription_status: sub.status,
-      subscription_current_period_end: sub.current_period_end
-        ? new Date(sub.current_period_end * 1000).toISOString()
-        : null,
-      plan_price_id: sub.items?.data?.[0]?.price?.id ?? null,
-      stripe_customer_id: sub.customer,
-    }).eq("id", userId);
+    // Busca nome existente (necessário para upsert pois é NOT NULL)
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("id", userId)
+      .maybeSingle();
+    const { data: userData } = await supabase.auth.getUser();
+    const nome =
+      existing?.nome ||
+      (userData.user?.user_metadata as any)?.nome ||
+      userData.user?.email?.split("@")[0] ||
+      "Usuário";
+
+    await supabase.from("profiles").upsert(
+      {
+        id: userId,
+        nome,
+        plano: dbPlan,
+        stripe_subscription_id: sub.id,
+        subscription_status: sub.status,
+        subscription_current_period_end: sub.current_period_end
+          ? new Date(sub.current_period_end * 1000).toISOString()
+          : null,
+        plan_price_id: sub.items?.data?.[0]?.price?.id ?? null,
+        stripe_customer_id: sub.customer,
+      },
+      { onConflict: "id" },
+    );
 
     return { ok: true, plano: dbPlan };
   });
