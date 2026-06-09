@@ -48,12 +48,37 @@ const fmtBRL = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function AvaliacaoDetalhe() {
-  const { avaliacao, resultado, comparaveis } = Route.useLoaderData();
+  const { avaliacao, resultado, comparaveis, profile } = Route.useLoaderData();
   const rel = resultado?.relatorio_json || {};
+  const navigate = useNavigate();
+
+  const plano = (profile?.plano ?? "basico") as string;
+  const disponiveis = modelosDisponiveis(plano);
+  const todosModelos: { id: ModeloPdf; nome: string }[] = [
+    { id: 1, nome: "Modelo 1 — Estudo Simplificado" },
+    { id: 2, nome: "Modelo 2 — Estudo Completo" },
+    { id: 3, nome: "Modelo 3 — Laudo ABNT NBR 14653-2" },
+  ];
+  const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
+
+  const handleDownload = async () => {
+    if (!disponiveis.includes(modelo)) {
+      toast.error("Faça upgrade para acessar este relatório", {
+        action: { label: "Ver planos", onClick: () => navigate({ to: "/planos" }) },
+      });
+      return;
+    }
+    const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
+    gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
+      modelo,
+      plano,
+      corretor: profile?.nome ?? "Corretor",
+    });
+  };
 
   return (
     <div className="max-w-5xl mx-auto py-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
             <ChevronLeft size={16} /> Dashboard
@@ -63,13 +88,30 @@ function AvaliacaoDetalhe() {
             {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {avaliacao?.area_total} m²
           </p>
         </div>
-        <Button onClick={async () => {
-          const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
-          gerarPdfAvaliacao(avaliacao, resultado, comparaveis);
-        }} className="gap-2 bg-brand-gold text-primary-foreground">
-          <Download size={16} /> Baixar PDF
-        </Button>
+        <div className="flex items-end gap-2">
+          <Select value={String(modelo)} onValueChange={(v) => setModelo(Number(v) as ModeloPdf)}>
+            <SelectTrigger className="w-[260px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {todosModelos.map((m) => {
+                const bloqueado = !disponiveis.includes(m.id);
+                return (
+                  <SelectItem key={m.id} value={String(m.id)} disabled={bloqueado}>
+                    <span className="flex items-center gap-2">
+                      {bloqueado && <Lock size={12} />} {m.nome}
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleDownload} className="gap-2 bg-brand-gold text-primary-foreground">
+            <Download size={16} /> Baixar PDF
+          </Button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="premium-card">
