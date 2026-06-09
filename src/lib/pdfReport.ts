@@ -812,12 +812,17 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // ============================================================
 // Orquestração dos modelos
 // ============================================================
-function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
+function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
+  const temFotos = fotos.length > 0;
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
-  paginaSumario(doc, ["O Imóvel", "Análise do Bairro", "Anúncios na Região", "Valor do Imóvel", "Contato"]);
+  paginaSumario(
+    doc,
+    ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Anúncios na Região", "Valor do Imóvel", "Contato"],
+  );
   paginaImovel(doc, avaliacao, rel, corretor);
+  if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor);
   paginaValor(doc, resultado, corretor);
@@ -826,12 +831,17 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
-function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
+function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
+  const temFotos = fotos.length > 0;
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
-  paginaSumario(doc, ["O Imóvel", "Análise do Bairro", "Perfil do Público", "Anúncios na Região", "Valor do Imóvel", "Contato"]);
+  paginaSumario(
+    doc,
+    ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Perfil do Público", "Anúncios na Região", "Valor do Imóvel", "Contato"],
+  );
   paginaImovel(doc, avaliacao, rel, corretor);
+  if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor);
@@ -841,12 +851,14 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
+  const temFotos = fotos.length > 0;
   paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação");
   paginaSumario(doc, [
     "O Imóvel",
+    ...(temFotos ? ["Fotos do Imóvel"] : []),
     "Análise do Bairro",
     "Perfil do Público",
     "Anúncios na Região",
@@ -857,6 +869,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
     "Contato",
   ]);
   paginaImovel(doc, avaliacao, rel, corretor);
+  if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor);
@@ -873,9 +886,10 @@ export function gerarPdfAvaliacao(
   avaliacao: any,
   resultado: any,
   comparaveis: any[],
-  opts: { modelo: ModeloPdf; plano: PlanoUsuario; corretor?: CorretorInfo | string },
+  opts: { modelo: ModeloPdf; plano: PlanoUsuario; corretor?: CorretorInfo | string; fotosDataUrls?: string[] },
 ) {
   const { modelo, plano } = opts;
+  const fotos = Array.isArray(opts.fotosDataUrls) ? opts.fotosDataUrls.filter((s) => typeof s === "string" && s.length > 0) : [];
   const corretor: CorretorInfo =
     typeof opts.corretor === "string"
       ? { nome: opts.corretor || "Corretor não identificado" }
@@ -886,11 +900,12 @@ export function gerarPdfAvaliacao(
 
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos)
       : modelo === 2
-      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor)
-      : gerarModelo1(avaliacao, resultado, comparaveis, corretor);
+      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
+      : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);
 
   const nome = `A8-Avaliacao-M${modelo}-${(avaliacao?.id || "").slice(0, 8)}.pdf`;
   doc.save(nome);
 }
+
