@@ -19,7 +19,7 @@ function Index() {
         </div>
         <div className="flex gap-4">
           <Link to="/auth" className="px-4 py-2 text-sm font-medium text-brand-blue">Entrar</Link>
-          <Link to="/auth" className="px-4 py-2 text-sm font-medium bg-brand-blue text-white rounded-lg hover:opacity-90 transition-opacity">Começar grátis</Link>
+          <Link to="/planos" className="px-4 py-2 text-sm font-medium bg-brand-blue text-white rounded-lg hover:opacity-90 transition-opacity">Assinar</Link>
         </div>
       </nav>
       <main className="flex-1 flex flex-col items-center justify-center text-center px-6 py-20">
