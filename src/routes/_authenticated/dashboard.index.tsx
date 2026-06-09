@@ -1,14 +1,22 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRouteContext } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { FileText, Plus, History, Trophy, Eye, Sparkles } from "lucide-react";
+import { FileText, Plus, History, Trophy, Eye, Sparkles, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
-import { getStatusAssinatura } from "../../lib/stripe.functions";
+import { getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
+
+type DashboardSearch = { pagamento?: string; session_id?: string };
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
+  validateSearch: (s: Record<string, unknown>): DashboardSearch => ({
+    pagamento: s.pagamento as string | undefined,
+    session_id: s.session_id as string | undefined,
+  }),
   component: Dashboard,
 });
 
