@@ -7,15 +7,18 @@ import { COVER_BG_BASE64 } from "../assets/cover-bg";
 // 297mm x 210mm | Fundo escuro | Dourado #C8A951 | Azul #0F2D5C
 // ============================================================
 
-const BG: [number, number, number] = [10, 15, 30];        // #0A0F1E
-const BG_SOFT: [number, number, number] = [15, 25, 35];   // #0F1923
-const CARD_TOP: [number, number, number] = [26, 37, 64];  // #1A2540
-const CARD_BOTTOM: [number, number, number] = [15, 25, 35];
-const GOLD: [number, number, number] = [200, 169, 81];    // #C8A951
-const BLUE: [number, number, number] = [15, 45, 92];      // #0F2D5C
+const BG: [number, number, number] = [255, 255, 255];        // #FFFFFF
+const BG_SOFT: [number, number, number] = [247, 248, 250];   // #F7F8FA
+const CARD_TOP: [number, number, number] = [255, 255, 255];  // white card
+const CARD_BOTTOM: [number, number, number] = [247, 248, 250];
+const CARD_BLUE: [number, number, number] = [230, 241, 251]; // #E6F1FB light blue
+const BORDER: [number, number, number] = [232, 232, 232];    // #E8E8E8
+const GOLD: [number, number, number] = [200, 169, 81];       // #C8A951
+const BLUE: [number, number, number] = [15, 45, 92];         // #0F2D5C
 const WHITE: [number, number, number] = [255, 255, 255];
-const GRAY: [number, number, number] = [180, 188, 200];
-const GRAY_DIM: [number, number, number] = [130, 140, 156];
+const TEXT: [number, number, number] = [44, 44, 42];         // #2C2C2A
+const GRAY: [number, number, number] = [90, 95, 105];
+const GRAY_DIM: [number, number, number] = [140, 145, 155];
 
 const PW = 297; // page width landscape
 const PH = 210; // page height landscape
