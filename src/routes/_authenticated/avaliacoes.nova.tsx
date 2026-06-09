@@ -5,9 +5,7 @@ import { processarAvaliacaoIA } from "../../lib/avaliacoes.functions";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Checkbox } from "../../components/ui/checkbox";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2 } from "lucide-react";
@@ -37,6 +35,28 @@ const CONSERVACOES = ["Novo", "Bom", "Regular", "Ruim"];
 
 const TIPOS_IMOVEL = ["Apartamento", "Casa", "Terreno", "Sala Comercial", "Galpão"] as const;
 type TipoImovel = typeof TIPOS_IMOVEL[number];
+
+type NativeSelectProps = {
+  value: string;
+  options: readonly string[];
+  onChange: (value: string) => void;
+};
+
+function NativeSelect({ value, options, onChange }: NativeSelectProps) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => safe(() => onChange(event.currentTarget.value))}
+      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm outline-none ring-offset-background focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 // Regras de campos condicionais por tipo de imóvel
 const camposDoTipo = (tipo: string) => {
@@ -183,26 +203,21 @@ function NovaAvaliacao() {
   };
 
   const onTipoChange = (v: string) => {
-    // Diferimos a atualização para depois do fechamento do popover do Radix Select.
-    // Sem isso, o React tenta remover do DOM nós que o Radix Portal já desmontou,
-    // causando "Failed to execute 'removeChild' on 'Node'".
-    setTimeout(() => {
-      safe(() => {
-        const novoCampos = camposDoTipo(v);
-        setImovel((prev) => ({
-          ...prev,
-          tipo: v,
-          quartos: novoCampos.quartos ? prev.quartos : 0,
-          suites: novoCampos.suites ? prev.suites : 0,
-          banheiros: novoCampos.banheiros ? prev.banheiros : 0,
-          vagas: novoCampos.vagas ? prev.vagas : 0,
-          andar: novoCampos.andar ? prev.andar : 0,
-          area_privativa: novoCampos.areaPrivativa ? prev.area_privativa : 0,
-          conservacao: novoCampos.conservacao ? prev.conservacao : "Bom",
-          caracteristicas: novoCampos.caracteristicas ? prev.caracteristicas : [],
-        }));
-      });
-    }, 0);
+    safe(() => {
+      const novoCampos = camposDoTipo(v);
+      setImovel((prev) => ({
+        ...prev,
+        tipo: v,
+        quartos: novoCampos.quartos ? prev.quartos : 0,
+        suites: novoCampos.suites ? prev.suites : 0,
+        banheiros: novoCampos.banheiros ? prev.banheiros : 0,
+        vagas: novoCampos.vagas ? prev.vagas : 0,
+        andar: novoCampos.andar ? prev.andar : 0,
+        area_privativa: novoCampos.areaPrivativa ? prev.area_privativa : 0,
+        conservacao: novoCampos.conservacao ? prev.conservacao : "Bom",
+        caracteristicas: novoCampos.caracteristicas ? prev.caracteristicas : [],
+      }));
+    });
   };
 
   const addComparavel = () => {
@@ -319,17 +334,10 @@ function NovaAvaliacao() {
       {step === 1 && (
         <Card className="premium-card">
           <CardHeader><CardTitle>Dados do Imóvel</CardTitle></CardHeader>
-          <CardContent key={imovel.tipo} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Tipo do Imóvel</Label>
-              <Select value={imovel.tipo} onValueChange={onTipoChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {TIPOS_IMOVEL.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NativeSelect value={imovel.tipo} options={TIPOS_IMOVEL} onChange={onTipoChange} />
             </div>
             <div className="space-y-2">
               <Label>Localização (Bairro/Cidade)</Label>
@@ -406,33 +414,18 @@ function NovaAvaliacao() {
 
             <div className="space-y-2">
               <Label>Posição do terreno/imóvel</Label>
-              <Select value={imovel.posicao} onValueChange={(v) => setImovelField("posicao", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {POSICOES_IMOVEL.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <NativeSelect value={imovel.posicao} options={POSICOES_IMOVEL} onChange={(v) => setImovelField("posicao", v)} />
             </div>
 
             <div className="space-y-2">
               <Label>Padrão Construtivo</Label>
-              <Select value={imovel.padrao} onValueChange={(v) => setImovelField("padrao", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PADROES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <NativeSelect value={imovel.padrao} options={PADROES} onChange={(v) => setImovelField("padrao", v)} />
             </div>
 
             {campos.conservacao && (
               <div className="space-y-2">
                 <Label>Estado de Conservação</Label>
-                <Select value={imovel.conservacao} onValueChange={(v) => setImovelField("conservacao", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CONSERVACOES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <NativeSelect value={imovel.conservacao} options={CONSERVACOES} onChange={(v) => setImovelField("conservacao", v)} />
               </div>
             )}
 
@@ -442,9 +435,11 @@ function NovaAvaliacao() {
                 <div className="flex flex-wrap gap-4">
                   {CARACTERISTICAS_OPCOES.map((opcao) => (
                     <label key={opcao} className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
+                      <input
+                        type="checkbox"
                         checked={imovel.caracteristicas.includes(opcao)}
-                        onCheckedChange={() => toggleCaracteristica(opcao)}
+                        onChange={() => toggleCaracteristica(opcao)}
+                        className="h-4 w-4 shrink-0 cursor-pointer rounded-sm accent-brand-blue"
                       />
                       <span className="text-sm">{opcao}</span>
                     </label>
@@ -543,32 +538,17 @@ function NovaAvaliacao() {
                 )}
                 <div className="space-y-2">
                   <Label>Padrão Construtivo</Label>
-                  <Select value={c.padrao} onValueChange={(v) => updateComp(index, { padrao: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PADROES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <NativeSelect value={c.padrao} options={PADROES} onChange={(v) => updateComp(index, { padrao: v })} />
                 </div>
                 {campos.conservacao && (
                   <div className="space-y-2">
                     <Label>Estado de Conservação</Label>
-                    <Select value={c.conservacao} onValueChange={(v) => updateComp(index, { conservacao: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {CONSERVACOES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <NativeSelect value={c.conservacao} options={CONSERVACOES} onChange={(v) => updateComp(index, { conservacao: v })} />
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Posição</Label>
-                  <Select value={c.posicao} onValueChange={(v) => updateComp(index, { posicao: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {POSICOES_COMPARAVEL.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <NativeSelect value={c.posicao} options={POSICOES_COMPARAVEL} onChange={(v) => updateComp(index, { posicao: v })} />
                 </div>
                 {campos.andar && (
                   <div className="space-y-2">
@@ -593,9 +573,11 @@ function NovaAvaliacao() {
                     <div className="flex flex-wrap gap-4">
                       {CARACTERISTICAS_COMPARAVEL.map((opcao) => (
                         <label key={opcao} className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox
+                          <input
+                            type="checkbox"
                             checked={c.caracteristicas.includes(opcao)}
-                            onCheckedChange={() => toggleCompCaracteristica(index, opcao)}
+                            onChange={() => toggleCompCaracteristica(index, opcao)}
+                            className="h-4 w-4 shrink-0 cursor-pointer rounded-sm accent-brand-blue"
                           />
                           <span className="text-sm">{opcao}</span>
                         </label>
