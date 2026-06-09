@@ -10,12 +10,12 @@ import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
 import { getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
 
-type DashboardSearch = { pagamento?: string; session_id?: string };
+type DashboardSearch = { session_id?: string; pagamento?: string };
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   validateSearch: (s: Record<string, unknown>): DashboardSearch => ({
-    pagamento: s.pagamento as string | undefined,
     session_id: s.session_id as string | undefined,
+    pagamento: s.pagamento as string | undefined,
   }),
   component: Dashboard,
 });
@@ -51,36 +51,40 @@ function Dashboard() {
   });
 
   useEffect(() => {
-    if (search.pagamento !== "sucesso" || confirmedRef.current) return;
+    const sid = search.session_id;
+    const triggered = sid || search.pagamento === "sucesso";
+    if (!triggered || confirmedRef.current) return;
     confirmedRef.current = true;
 
     const run = async () => {
-      if (search.session_id) {
+      let plano = "user";
+      if (sid) {
         try {
-          await confirmFn({ data: { session_id: search.session_id } });
+          const res = await confirmFn({ data: { session_id: sid } });
+          if (res?.plano) plano = res.plano;
         } catch (e) {
           console.error("[confirmarCheckout]", e);
         }
       }
-      // Poll status until plano != "user" or timeout (webhook pode atrasar)
+      // Poll para garantir consistência (webhook pode chegar depois)
       let attempts = 0;
-      let plano = "user";
-      while (attempts < 10) {
+      while (attempts < 8) {
         const r = await refetchStatus();
-        plano = r.data?.plano ?? "user";
-        if (r.data?.assinaturaAtiva) break;
+        if (r.data?.assinaturaAtiva) {
+          plano = r.data.plano ?? plano;
+          break;
+        }
         attempts++;
-        await new Promise((res) => setTimeout(res, 1500));
+        await new Promise((res) => setTimeout(res, 1200));
       }
       const label = PLAN_LABEL[plano] ?? "Básico";
       setWelcomePlano(label);
-      toast.success(`Pagamento confirmado! Bem-vindo ao Plano ${label}.`);
+      toast.success("Plano ativado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
-      // Limpa query params
       navigate({ to: "/dashboard", search: {}, replace: true });
     };
     void run();
-  }, [search.pagamento, search.session_id]);
+  }, [search.session_id, search.pagamento]);
 
   if (!user) return null;
   const nome = user.user_metadata?.nome || user.email?.split("@")[0];
