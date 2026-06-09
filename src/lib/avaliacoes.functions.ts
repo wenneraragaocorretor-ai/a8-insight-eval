@@ -48,6 +48,27 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
     console.log("Iniciando processamento no servidor para o usuário:", userId);
 
     try {
+      // Enforça limite mensal para Plano Básico (plano = 'user')
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plano")
+        .eq("id", userId)
+        .maybeSingle();
+      const plano = (profile?.plano ?? "user") as "user" | "pro" | "expert";
+      if (plano === "user") {
+        const inicioMes = new Date();
+        inicioMes.setDate(1);
+        inicioMes.setHours(0, 0, 0, 0);
+        const { count } = await supabase
+          .from("avaliacoes")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("created_at", inicioMes.toISOString());
+        if ((count ?? 0) >= 3) {
+          throw new Error("Limite de 3 avaliações/mês do Plano Básico atingido. Faça upgrade em /planos.");
+        }
+      }
+
       const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
         body: data,
       });
@@ -60,6 +81,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       if (aiResult.error) {
         throw new Error(aiResult.error);
       }
+
 
       const { data: avaliacao, error: errA } = await supabase
         .from("avaliacoes")
