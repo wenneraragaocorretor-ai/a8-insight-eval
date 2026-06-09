@@ -375,10 +375,10 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 
   const pp = rel?.perfil_publico ?? {};
   const items: Array<[string, string]> = [
-    ["Profissão Predominante", String(pp.profissao ?? "—")],
-    ["Renda Média", String(pp.renda_media ?? "—")],
-    ["Preferências", String(pp.preferencias ?? "—")],
-    ["Interesses", String(pp.interesses ?? "—")],
+    ["Profissão Predominante", String(pp.profissao ?? rel?.perfil_profissao ?? "—")],
+    ["Renda Média", String(pp.renda_media ?? rel?.perfil_renda ?? "—")],
+    ["Preferências", String(pp.preferencias ?? rel?.perfil_preferencias ?? "—")],
+    ["Interesses", String(pp.interesses ?? rel?.perfil_interesses ?? "—")],
   ];
   const usable = PW - M * 2;
   const gap = 6;
