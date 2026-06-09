@@ -334,17 +334,10 @@ function NovaAvaliacao() {
       {step === 1 && (
         <Card className="premium-card">
           <CardHeader><CardTitle>Dados do Imóvel</CardTitle></CardHeader>
-          <CardContent key={imovel.tipo} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Tipo do Imóvel</Label>
-              <Select value={imovel.tipo} onValueChange={onTipoChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {TIPOS_IMOVEL.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NativeSelect value={imovel.tipo} options={TIPOS_IMOVEL} onChange={onTipoChange} />
             </div>
             <div className="space-y-2">
               <Label>Localização (Bairro/Cidade)</Label>
@@ -421,33 +414,18 @@ function NovaAvaliacao() {
 
             <div className="space-y-2">
               <Label>Posição do terreno/imóvel</Label>
-              <Select value={imovel.posicao} onValueChange={(v) => setImovelField("posicao", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {POSICOES_IMOVEL.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <NativeSelect value={imovel.posicao} options={POSICOES_IMOVEL} onChange={(v) => setImovelField("posicao", v)} />
             </div>
 
             <div className="space-y-2">
               <Label>Padrão Construtivo</Label>
-              <Select value={imovel.padrao} onValueChange={(v) => setImovelField("padrao", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PADROES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <NativeSelect value={imovel.padrao} options={PADROES} onChange={(v) => setImovelField("padrao", v)} />
             </div>
 
             {campos.conservacao && (
               <div className="space-y-2">
                 <Label>Estado de Conservação</Label>
-                <Select value={imovel.conservacao} onValueChange={(v) => setImovelField("conservacao", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CONSERVACOES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <NativeSelect value={imovel.conservacao} options={CONSERVACOES} onChange={(v) => setImovelField("conservacao", v)} />
               </div>
             )}
 
