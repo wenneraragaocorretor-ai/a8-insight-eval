@@ -24,7 +24,7 @@ const perfilSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF deve estar no formato 000.000.000-00"),
-  creci: z.string().trim().min(1, "CRECI obrigatório").max(40),
+  creci: z.string().trim().max(40).optional().or(z.literal("")),
   tipo: z.enum(["pessoa_fisica", "imobiliaria"]),
   nome_imobiliaria: z.string().trim().max(160).optional().or(z.literal("")),
   cidade: z.string().trim().min(1, "Cidade obrigatória").max(120),
@@ -59,7 +59,7 @@ export const salvarMeuPerfil = createServerFn({ method: "POST" })
       email: data.email || null,
       telefone: data.telefone,
       cpf: data.cpf,
-      creci: data.creci,
+      creci: data.creci || null,
       tipo: data.tipo,
       nome_imobiliaria: data.tipo === "imobiliaria" ? (data.nome_imobiliaria || null) : null,
       cidade: data.cidade,

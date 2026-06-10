@@ -195,8 +195,8 @@ function PerfilPage() {
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>CRECI *</Label>
-              <Input value={form.creci} onChange={(e) => set("creci", e.target.value)} required />
+              <Label>CRECI / CAU / CREA</Label>
+              <Input value={form.creci} onChange={(e) => set("creci", e.target.value)} placeholder="Ex: CRECI-SP 123456, CAU A12345-0, CREA-SP 123456" />
             </div>
             <div>
               <Label>Tipo *</Label>

@@ -655,7 +655,7 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   const items = [
     corretor.telefone ? `Tel  ${corretor.telefone}` : null,
     corretor.email ? `Email  ${corretor.email}` : null,
-    corretor.creci ? `CRECI ${corretor.creci}` : null,
+    corretor.creci ? `Registro Profissional  ${corretor.creci}` : null,
     localCidade ? `Local  ${localCidade}` : null,
   ].filter(Boolean) as string[];
 
