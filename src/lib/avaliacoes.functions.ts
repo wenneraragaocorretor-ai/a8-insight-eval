@@ -20,6 +20,16 @@ const evaluationSchema = z.object({
     caracteristicas: z.array(z.string()),
     observacoes: z.string().optional(),
     fotos: z.array(z.string()).max(3).optional().default([]),
+    // Ficha Técnica Detalhada (Plano Expert)
+    idade_real: z.number().optional(),
+    idade_aparente: z.string().optional(),
+    posicao_solar: z.string().optional(),
+    topografia: z.string().optional(),
+    zoneamento: z.string().optional(),
+    infraestrutura_lazer: z.array(z.string()).optional().default([]),
+    vagas_cobertas: z.number().optional(),
+    vagas_descobertas: z.number().optional(),
+    total_andares: z.number().optional(),
   }),
   comparaveis: z.array(z.object({
     fonte: z.string(),
