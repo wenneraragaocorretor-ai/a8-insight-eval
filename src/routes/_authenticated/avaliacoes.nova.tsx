@@ -62,7 +62,21 @@ const INFRA_LAZER_OPCOES = [
   "Nenhum",
 ];
 
-const TIPOS_IMOVEL = ["Apartamento", "Casa", "Terreno", "Sala Comercial", "Galpão"] as const;
+const TIPO_ACABAMENTO_OPCOES = [
+  "Mármore",
+  "Porcelanato",
+  "Cerâmica",
+  "Granito",
+  "Madeira",
+  "Laminado",
+  "Cimento Queimado",
+  "Pastilha",
+  "Tinta Simples",
+  "Alto Padrão Importado",
+];
+const NUMERO_PAVIMENTOS_OPCOES = ["1 pavimento", "2 pavimentos", "3 ou mais pavimentos"];
+
+const TIPOS_IMOVEL = ["Apartamento", "Casa", "Sobrado", "Terreno", "Sala Comercial", "Galpão"] as const;
 type TipoImovel = typeof TIPOS_IMOVEL[number];
 
 type NativeSelectProps = {
