@@ -116,6 +116,15 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           caracteristicas: data.imovel.caracteristicas,
           observacoes: data.imovel.observacoes,
           fotos: data.imovel.fotos ?? [],
+          idade_real: data.imovel.idade_real ?? null,
+          idade_aparente: data.imovel.idade_aparente ?? null,
+          posicao_solar: data.imovel.posicao_solar ?? null,
+          topografia: data.imovel.topografia ?? null,
+          zoneamento: data.imovel.zoneamento ?? null,
+          infraestrutura_lazer: data.imovel.infraestrutura_lazer ?? [],
+          vagas_cobertas: data.imovel.vagas_cobertas ?? null,
+          vagas_descobertas: data.imovel.vagas_descobertas ?? null,
+          total_andares: data.imovel.total_andares ?? null,
           status: "concluido",
         })
         .select()
