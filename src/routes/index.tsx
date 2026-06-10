@@ -276,6 +276,7 @@ function Planos() {
         "Textos prontos para portais",
         "QR Code de autenticidade (LAU-XXXXXX)",
         "PDF 15+ páginas premium",
+        "★ Chat com IA especialista integrado ao laudo",
         "Suporte prioritário",
       ],
       destaque: true,
@@ -321,12 +322,23 @@ function Planos() {
               </div>
               <span className="gold-divider mb-6" />
               <ul className="space-y-3 mb-10 flex-1">
-                {p.itens.map((it) => (
-                  <li key={it} className="flex items-start gap-3 text-sm text-[#0A1F44]">
-                    <Check size={16} className="text-[#C8A951] mt-0.5 shrink-0" />
-                    <span>{it}</span>
-                  </li>
-                ))}
+                {p.itens.map((it) => {
+                  const destaqueOuro = it.startsWith("★ ");
+                  const texto = destaqueOuro ? it.slice(2) : it;
+                  return (
+                    <li
+                      key={it}
+                      className={`flex items-start gap-3 text-sm text-[#0A1F44] ${destaqueOuro ? "font-semibold bg-[#C8A951]/10 -mx-2 px-2 py-1.5 rounded-md" : ""}`}
+                    >
+                      {destaqueOuro ? (
+                        <Sparkles size={16} className="text-[#C8A951] mt-0.5 shrink-0" />
+                      ) : (
+                        <Check size={16} className="text-[#C8A951] mt-0.5 shrink-0" />
+                      )}
+                      <span>{texto}</span>
+                    </li>
+                  );
+                })}
               </ul>
               <Link
                 to="/planos"

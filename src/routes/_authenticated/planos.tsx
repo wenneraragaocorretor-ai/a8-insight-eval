@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Check, ArrowLeft, Loader2 } from "lucide-react";
+import { Check, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { criarCheckoutSession, getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
 import { toast } from "sonner";
 
@@ -81,6 +81,7 @@ const PLANOS = [
       "QR Code de autenticidade no laudo",
       "Número do laudo (LAU-XXXXXX)",
       "PDF 15+ páginas premium",
+      "★ Chat com IA especialista integrado ao laudo",
       "Suporte prioritário",
     ],
   },
@@ -183,12 +184,23 @@ function PlanosPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-2">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 text-brand-gold shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
+                  {p.features.map((f) => {
+                    const destaqueOuro = f.startsWith("★ ");
+                    const texto = destaqueOuro ? f.slice(2) : f;
+                    return (
+                      <li
+                        key={f}
+                        className={`flex items-start gap-2 text-sm ${destaqueOuro ? "font-semibold text-brand-blue bg-brand-gold/10 -mx-2 px-2 py-1.5 rounded-md" : ""}`}
+                      >
+                        {destaqueOuro ? (
+                          <Sparkles className="h-4 w-4 text-brand-gold shrink-0 mt-0.5" />
+                        ) : (
+                          <Check className="h-4 w-4 text-brand-gold shrink-0 mt-0.5" />
+                        )}
+                        <span>{texto}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
                 <Button
                   className={`w-full h-11 ${p.destaque ? "bg-brand-gold text-primary-foreground hover:opacity-90" : ""}`}
