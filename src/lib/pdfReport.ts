@@ -1328,7 +1328,7 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
 }
 
 // ---------- EXPERT EXTRA: LOCALIZAÇÃO ----------
-function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
+function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, mapaDataUrl?: string | null) {
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Localização");
@@ -1338,42 +1338,25 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
     String(avaliacao?.localizacao || "").trim() ||
     "Endereço não informado";
 
-  // Área do "mapa" (placeholder elegante)
   const x = M;
   const y = 50;
   const w = PW - M * 2;
   const h = PH - y - 50;
 
-  doc.setFillColor(...CARD_BLUE);
-  doc.rect(x, y, w, h, "F");
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.4);
-  doc.rect(x, y, w, h, "S");
-
-  // Linhas decorativas estilo "mapa"
-  doc.setDrawColor(210, 220, 232);
-  doc.setLineWidth(0.3);
-  for (let i = 1; i < 8; i++) {
-    doc.line(x + (w * i) / 8, y + 4, x + (w * i) / 8, y + h - 4);
+  if (mapaDataUrl) {
+    try {
+      const fmt = mapaDataUrl.startsWith("data:image/jpeg") || mapaDataUrl.startsWith("data:image/jpg") ? "JPEG" : "PNG";
+      doc.addImage(mapaDataUrl, fmt as any, x, y, w, h, undefined, "FAST");
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.4);
+      doc.rect(x, y, w, h, "S");
+    } catch (e) {
+      console.error("Falha ao desenhar mapa OSM:", e);
+      desenharPlaceholderMapa(doc, x, y, w, h);
+    }
+  } else {
+    desenharPlaceholderMapa(doc, x, y, w, h);
   }
-  for (let i = 1; i < 5; i++) {
-    doc.line(x + 4, y + (h * i) / 5, x + w - 4, y + (h * i) / 5);
-  }
-
-  // Pin no centro
-  const cx = x + w / 2;
-  const cy = y + h / 2 - 6;
-  doc.setFillColor(...GOLD);
-  doc.circle(cx, cy - 6, 5, "F");
-  doc.setFillColor(...BLUE);
-  doc.circle(cx, cy - 6, 1.8, "F");
-  doc.setFillColor(...GOLD);
-  doc.triangle(cx - 4, cy - 3, cx + 4, cy - 3, cx, cy + 4, "F");
-
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(10);
-  doc.setTextColor(...GRAY);
-  doc.text("Pré-visualização de localização", cx, cy + 14, { align: "center" });
 
   // Endereço abaixo
   doc.setFont("helvetica", "bold");
@@ -1385,9 +1368,42 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
   doc.setTextColor(...TEXT);
   const wrapped = doc.splitTextToSize(endereco, PW - M * 2 - 26);
   doc.text(wrapped, M + 22, y + h + 12);
+
+  // Atribuição obrigatória do OpenStreetMap
+  if (mapaDataUrl) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7);
+    doc.setTextColor(...GRAY_DIM);
+    doc.text("© OpenStreetMap contributors", PW - M, y + h - 2, { align: "right" });
+  }
 }
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
+function desenharPlaceholderMapa(doc: jsPDF, x: number, y: number, w: number, h: number) {
+  doc.setFillColor(...CARD_BLUE);
+  doc.rect(x, y, w, h, "F");
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.4);
+  doc.rect(x, y, w, h, "S");
+  doc.setDrawColor(210, 220, 232);
+  doc.setLineWidth(0.3);
+  for (let i = 1; i < 8; i++) doc.line(x + (w * i) / 8, y + 4, x + (w * i) / 8, y + h - 4);
+  for (let i = 1; i < 5; i++) doc.line(x + 4, y + (h * i) / 5, x + w - 4, y + (h * i) / 5);
+  const cx = x + w / 2;
+  const cy = y + h / 2 - 6;
+  doc.setFillColor(...GOLD);
+  doc.circle(cx, cy - 6, 5, "F");
+  doc.setFillColor(...BLUE);
+  doc.circle(cx, cy - 6, 1.8, "F");
+  doc.setFillColor(...GOLD);
+  doc.triangle(cx - 4, cy - 3, cx + 4, cy - 3, cx, cy + 4, "F");
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  doc.text("Mapa indisponível — exibindo apenas o endereço", cx, cy + 14, { align: "center" });
+}
+
+
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
@@ -1412,7 +1428,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
-  paginaLocalizacao(doc, avaliacao, corretor);
+  paginaLocalizacao(doc, avaliacao, corretor, mapaDataUrl);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDet, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
@@ -1440,6 +1456,7 @@ export function gerarPdfAvaliacao(
     corretor?: CorretorInfo | string;
     fotosDataUrls?: string[];
     fotosDetalhadas?: FotoDetalhada[];
+    mapaDataUrl?: string | null;
   },
 ) {
   const { modelo, plano } = opts;
@@ -1455,7 +1472,7 @@ export function gerarPdfAvaliacao(
 
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);

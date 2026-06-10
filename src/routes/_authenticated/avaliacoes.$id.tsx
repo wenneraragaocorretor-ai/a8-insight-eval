@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
+import { getMapaEstatico } from "../../lib/mapa.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
 import { supabase } from "../../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -63,6 +65,8 @@ function AvaliacaoDetalhe() {
   ];
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
 
+  const fetchMapa = useServerFn(getMapaEstatico);
+
   const handleDownload = async () => {
     if (!disponiveis.includes(modelo)) {
       toast.error("Faça upgrade para acessar este relatório", {
@@ -116,12 +120,28 @@ function AvaliacaoDetalhe() {
         console.error("Falha ao carregar logo:", e);
       }
     }
+    // Mapa estático via OpenStreetMap (apenas no laudo Expert / Modelo 3)
+    let mapaDataUrl: string | null = null;
+    if (modelo === 3) {
+      const endereco =
+        String((avaliacao as any)?.endereco_completo || "").trim() ||
+        String((avaliacao as any)?.localizacao || "").trim();
+      if (endereco) {
+        try {
+          const res = await fetchMapa({ data: { endereco } });
+          if (res && (res as any).ok) mapaDataUrl = (res as any).dataUrl;
+        } catch (e) {
+          console.error("Falha ao gerar mapa OSM:", e);
+        }
+      }
+    }
     const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
     gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
       modelo,
       plano,
       fotosDataUrls,
       fotosDetalhadas,
+      mapaDataUrl,
       corretor: {
         nome: profile?.nome ?? "Corretor",
         creci: profile?.creci ?? null,
