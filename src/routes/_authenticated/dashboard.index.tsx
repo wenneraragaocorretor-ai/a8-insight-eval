@@ -127,6 +127,11 @@ function Dashboard() {
           <p className="text-muted-foreground">Bem-vindo ao seu painel de avaliações.</p>
         </div>
         <div className="flex gap-2">
+          <Link to="/perfil">
+            <Button variant="outline" className="gap-2 h-12 px-5 rounded-xl">
+              <User size={16} /> Meu Perfil
+            </Button>
+          </Link>
           <Link to="/planos">
             <Button variant="outline" className="gap-2 h-12 px-5 rounded-xl">
               Planos
