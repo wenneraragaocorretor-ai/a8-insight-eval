@@ -536,7 +536,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
       doc.text(`Valor: ${fmtBRL(Number(c.valor_anunciado))}`, x1, y + 17);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text(`Fonte: ${c.fonte ?? "—"}`, x1, y + 24);
+      doc.text(`Fonte: ${fmtFonte(c.fonte)}`, x1, y + 24);
 
       // col 3: R$/m²
       const x2 = x1 + colW;
