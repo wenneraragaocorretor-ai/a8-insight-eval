@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil } from "lucide-react";
+import { limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 
 
 
