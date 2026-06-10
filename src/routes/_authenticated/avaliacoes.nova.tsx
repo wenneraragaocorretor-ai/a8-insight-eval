@@ -62,7 +62,21 @@ const INFRA_LAZER_OPCOES = [
   "Nenhum",
 ];
 
-const TIPOS_IMOVEL = ["Apartamento", "Casa", "Terreno", "Sala Comercial", "Galpão"] as const;
+const TIPO_ACABAMENTO_OPCOES = [
+  "Mármore",
+  "Porcelanato",
+  "Cerâmica",
+  "Granito",
+  "Madeira",
+  "Laminado",
+  "Cimento Queimado",
+  "Pastilha",
+  "Tinta Simples",
+  "Alto Padrão Importado",
+];
+const NUMERO_PAVIMENTOS_OPCOES = ["1 pavimento", "2 pavimentos", "3 ou mais pavimentos"];
+
+const TIPOS_IMOVEL = ["Apartamento", "Casa", "Sobrado", "Terreno", "Sala Comercial", "Galpão"] as const;
 type TipoImovel = typeof TIPOS_IMOVEL[number];
 
 type NativeSelectProps = {
@@ -103,6 +117,7 @@ const camposDoTipo = (tipo: string) => {
     case "Apartamento":
       return { ...base, andar: true };
     case "Casa":
+    case "Sobrado":
       return { ...base, andar: false };
     case "Terreno":
       return {
@@ -228,6 +243,9 @@ function NovaAvaliacao() {
     vagas_cobertas: 0,
     vagas_descobertas: 0,
     total_andares: 0,
+    tipo_acabamento: [] as string[],
+    acabamento_outros: "",
+    numero_pavimentos: "",
   });
 
   const [plano, setPlano] = useState<string>("basico");
@@ -434,6 +452,19 @@ function NovaAvaliacao() {
             vagas_cobertas: isExpert ? imovel.vagas_cobertas || undefined : undefined,
             vagas_descobertas: isExpert ? imovel.vagas_descobertas || undefined : undefined,
             total_andares: isExpert ? imovel.total_andares || undefined : undefined,
+            tipo_acabamento: isExpert
+              ? [
+                  ...imovel.tipo_acabamento,
+                  ...imovel.acabamento_outros
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter((s) => s.length > 0),
+                ]
+              : [],
+            numero_pavimentos:
+              isExpert && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
+                ? imovel.numero_pavimentos || undefined
+                : undefined,
           },
 
           comparaveis: comparaveis.map(({ id, ...c2 }) => ({
@@ -688,6 +719,50 @@ function NovaAvaliacao() {
                       />
                     </div>
                   )}
+                  {(imovel.tipo === "Casa" || imovel.tipo === "Sobrado") && (
+                    <div className="space-y-2">
+                      <Label>Número de Pavimentos</Label>
+                      <NativeSelect
+                        value={imovel.numero_pavimentos}
+                        options={["", ...NUMERO_PAVIMENTOS_OPCOES]}
+                        onChange={(v) => setImovelField("numero_pavimentos", v)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Tipo de Acabamento</Label>
+                  <div className="flex flex-wrap gap-4">
+                    {TIPO_ACABAMENTO_OPCOES.map((opcao) => (
+                      <label key={opcao} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={imovel.tipo_acabamento.includes(opcao)}
+                          onChange={() =>
+                            safe(() =>
+                              setImovel((prev) => ({
+                                ...prev,
+                                tipo_acabamento: prev.tipo_acabamento.includes(opcao)
+                                  ? prev.tipo_acabamento.filter((c) => c !== opcao)
+                                  : [...prev.tipo_acabamento, opcao],
+                              })),
+                            )
+                          }
+                          className="h-4 w-4 shrink-0 cursor-pointer rounded-sm accent-brand-gold"
+                        />
+                        <span className="text-sm">{opcao}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-sm">Outros acabamentos (separe por vírgula)</Label>
+                    <Input
+                      placeholder="Ex: Pedra natural, Deck de madeira..."
+                      value={imovel.acabamento_outros}
+                      onChange={(e) => setImovelField("acabamento_outros", e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-3">

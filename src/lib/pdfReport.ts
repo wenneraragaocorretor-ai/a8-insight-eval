@@ -906,6 +906,7 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
     ["Vagas Descobertas", a.vagas_descobertas != null && a.vagas_descobertas !== 0 ? String(a.vagas_descobertas) : "—"],
     ["Andar do Imóvel", a.andar != null && a.andar !== 0 ? String(a.andar) : "—"],
     ["Total de Andares", a.total_andares != null && a.total_andares !== 0 ? String(a.total_andares) : "—"],
+    ["Número de Pavimentos", String(a.numero_pavimentos || "—")],
   ];
 
   let y = yStart;
@@ -924,11 +925,46 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
     doc.text(d[1], x + 5, y + 10);
   });
 
+  // Tipo de Acabamento
+  const acabamentos: string[] = Array.isArray(a.tipo_acabamento)
+    ? a.tipo_acabamento.filter((s: any) => typeof s === "string" && s.trim().length > 0)
+    : [];
+  const yAcab = y + rowH + 10;
+  const acabBoxH = 32;
+  card(doc, M, yAcab, usable, acabBoxH, { variant: "white", border: "gold" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...BLUE);
+  doc.text("Tipo de Acabamento", M + 8, yAcab + 10);
+  if (acabamentos.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(...GRAY);
+    doc.text("Nenhum item informado.", M + 8, yAcab + 22);
+  } else {
+    const cols = 3;
+    const colInnerW = (usable - 16) / cols;
+    const lineH = 6;
+    acabamentos.forEach((item, i) => {
+      const c = i % cols;
+      const r = Math.floor(i / cols);
+      const x = M + 8 + c * colInnerW;
+      const yi = yAcab + 22 + r * lineH;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...GOLD);
+      doc.text("•", x, yi);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...TEXT);
+      doc.text(item, x + 4, yi);
+    });
+  }
+
   // Infraestrutura de Lazer
   const lazer: string[] = Array.isArray(a.infraestrutura_lazer)
     ? a.infraestrutura_lazer.filter((s: any) => typeof s === "string" && s.trim().length > 0)
     : [];
-  const yLazer = y + rowH + 10;
+  const yLazer = yAcab + acabBoxH + 6;
   const boxH = PH - yLazer - 18;
   card(doc, M, yLazer, usable, boxH, { variant: "white", border: "gold" });
   doc.setFont("helvetica", "bold");
@@ -942,7 +978,6 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
     doc.setTextColor(...GRAY);
     doc.text("Nenhum item informado.", M + 8, yLazer + 22);
   } else {
-    // grid 3 colunas
     const cols = 3;
     const colInnerW = (usable - 16) / cols;
     const lineH = 6;

@@ -30,6 +30,8 @@ const evaluationSchema = z.object({
     vagas_cobertas: z.number().optional(),
     vagas_descobertas: z.number().optional(),
     total_andares: z.number().optional(),
+    tipo_acabamento: z.array(z.string()).optional().default([]),
+    numero_pavimentos: z.string().optional(),
   }),
   comparaveis: z.array(z.object({
     fonte: z.string(),
@@ -125,6 +127,8 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           vagas_cobertas: data.imovel.vagas_cobertas ?? null,
           vagas_descobertas: data.imovel.vagas_descobertas ?? null,
           total_andares: data.imovel.total_andares ?? null,
+          tipo_acabamento: data.imovel.tipo_acabamento ?? [],
+          numero_pavimentos: data.imovel.numero_pavimentos ?? null,
           status: "concluido",
         })
         .select()
