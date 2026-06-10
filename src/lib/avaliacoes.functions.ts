@@ -62,6 +62,20 @@ const evaluationSchema = z.object({
   })).min(3),
 });
 
+export function limiteEdicoesPorPlano(plano: string): number | null {
+  switch (plano) {
+    case "expert":
+      return null; // ilimitado
+    case "profissional":
+    case "pro":
+      return 3;
+    case "basico":
+    case "user":
+    default:
+      return 1;
+  }
+}
+
 
 export const processarAvaliacaoIA = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
