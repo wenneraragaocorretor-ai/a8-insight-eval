@@ -25,6 +25,8 @@ const perfilSchema = z.object({
     .trim()
     .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF deve estar no formato 000.000.000-00"),
   creci: z.string().trim().max(40).optional().or(z.literal("")),
+  cnai: z.string().trim().max(40).optional().or(z.literal("")),
+  outro_registro: z.string().trim().max(120).optional().or(z.literal("")),
   tipo: z.enum(["pessoa_fisica", "imobiliaria"]),
   nome_imobiliaria: z.string().trim().max(160).optional().or(z.literal("")),
   cidade: z.string().trim().min(1, "Cidade obrigatória").max(120),
