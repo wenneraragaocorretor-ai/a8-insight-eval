@@ -39,52 +39,6 @@ function LandingPage() {
   );
 }
 
-/* ===================== NAV ===================== */
-function SiteNav() {
-  return (
-    <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-[#0A1F44]/40 border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-1 select-none">
-          <span className="font-display text-sm tracking-[0.3em] text-[#C8A951] uppercase">
-            A8
-          </span>
-          <span className="font-display text-sm tracking-[0.3em] text-white/90 uppercase">
-            Investimentos
-          </span>
-        </Link>
-        <div className="hidden md:flex items-center gap-10 text-sm tracking-wide text-white/80">
-          <a href="#diferenciais" className="hover:text-[#C8A951] transition-colors">
-            Diferenciais
-          </a>
-          <a href="#como-funciona" className="hover:text-[#C8A951] transition-colors">
-            Como funciona
-          </a>
-          <a href="#planos" className="hover:text-[#C8A951] transition-colors">
-            Planos
-          </a>
-          <a href="#depoimentos" className="hover:text-[#C8A951] transition-colors">
-            Depoimentos
-          </a>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/auth"
-            className="hidden sm:inline-flex text-sm text-white/90 hover:text-[#C8A951] transition-colors px-3 py-2"
-          >
-            Entrar
-          </Link>
-          <Link
-            to="/planos"
-            className="inline-flex items-center gap-2 bg-[#C8A951] text-[#0A1F44] text-sm font-semibold px-5 py-2.5 rounded-md hover:bg-[#E2C97E] transition-all hover:shadow-[0_8px_24px_-8px_rgba(200,169,81,0.6)]"
-          >
-            Começar Agora
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
 /* ===================== HERO ===================== */
 function Hero() {
   return (
