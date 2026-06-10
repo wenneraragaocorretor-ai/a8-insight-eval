@@ -118,10 +118,16 @@ function Dashboard() {
   if (!user) return null;
   const nome = user.user_metadata?.nome || user.email?.split("@")[0];
   const planoLabel = status ? PLAN_LABEL[status.plano] ?? "Básico" : "—";
+  const planoCode = status?.plano ?? "basico";
+  const ehBasico = planoCode === "basico" || planoCode === "user";
+  const ehExpert = planoCode === "expert";
   const usadas = status?.avaliacoesMes ?? 0;
   const limite = status?.limiteMes;
+  const creditos = (status as any)?.creditosAvulsos ?? 0;
   const ativa = status?.assinaturaAtiva;
-  const limiteAtingido = limite != null && usadas >= limite;
+  const limiteAtingido = ehBasico
+    ? creditos <= 0
+    : !ehExpert && limite != null && usadas >= limite;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
