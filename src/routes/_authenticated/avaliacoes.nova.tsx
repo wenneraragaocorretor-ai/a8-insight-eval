@@ -714,6 +714,14 @@ function NovaAvaliacao() {
                       </label>
                     ))}
                   </div>
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-sm">Outros itens de lazer (separe por vírgula)</Label>
+                    <Input
+                      placeholder="Ex: Rooftop, Espaço zen, Pista de skate..."
+                      value={imovel.lazer_outros}
+                      onChange={(e) => setImovelField("lazer_outros", e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             )}
