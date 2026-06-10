@@ -7,12 +7,10 @@ import {
   ArrowRight,
   ChevronDown,
   Quote,
-  Instagram,
-  Linkedin,
-  Mail,
   Check,
 } from "lucide-react";
 import heroImg from "../assets/hero-luxury.jpg";
+import { LandingLayout } from "../components/landing/LandingLayout";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,16 +28,14 @@ export const Route = createFileRoute("/")({
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-[#0A1F44] overflow-x-hidden">
-      <SiteNav />
+    <LandingLayout>
       <Hero />
       <Diferenciais />
       <ComoFunciona />
       <Planos />
       <Depoimentos />
       <CtaFinal />
-      <Footer />
-    </div>
+    </LandingLayout>
   );
 }
 
