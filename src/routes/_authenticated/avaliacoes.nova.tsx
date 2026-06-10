@@ -213,6 +213,9 @@ const novoComparavel = (id: number): Comparavel => ({
 });
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/nova")({
+  validateSearch: (s: Record<string, unknown>): { edit?: string } => ({
+    edit: typeof s.edit === "string" ? s.edit : undefined,
+  }),
   component: () => (
     <ErrorBoundary fallbackTitle="Erro no formulário de Nova Avaliação">
       <NovaAvaliacao />
