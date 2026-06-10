@@ -194,15 +194,21 @@ function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="premium-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avaliações no Mês</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {ehBasico ? "Laudos Avulsos" : ehExpert ? "Avaliações no Mês" : "Avaliações no Mês"}
+            </CardTitle>
             <History className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {usadas}{limite != null ? ` / ${limite}` : ""}
+              {ehBasico
+                ? `${creditos} disponível${creditos === 1 ? "" : "s"}`
+                : ehExpert
+                  ? `${usadas} (ilimitado)`
+                  : `${usadas} / ${limite ?? 5}`}
             </div>
             <p className="text-xs text-muted-foreground">
-              Mês atual
+              {ehBasico ? "Crédito por compra (R$ 157)" : "Mês atual"}
             </p>
           </CardContent>
         </Card>
@@ -214,7 +220,11 @@ function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{planoLabel}</div>
             <p className="text-xs text-muted-foreground">
-              {ativa ? "Assinatura ativa" : (
+              {ehBasico ? (
+                <Link to="/planos" className="text-brand-gold font-medium hover:underline">
+                  Comprar laudo / fazer upgrade
+                </Link>
+              ) : ativa ? "Assinatura ativa" : (
                 <Link to="/planos" className="text-brand-gold font-medium hover:underline">
                   Assinar plano
                 </Link>
@@ -238,11 +248,21 @@ function Dashboard() {
         <Card className="premium-card border-brand-gold border-2">
           <CardContent className="flex items-center justify-between py-4 gap-4">
             <div>
-              <p className="font-semibold text-brand-blue">Você atingiu o limite do Plano Básico</p>
-              <p className="text-sm text-muted-foreground">Faça upgrade para o Profissional e tenha avaliações ilimitadas.</p>
+              <p className="font-semibold text-brand-blue">
+                {ehBasico
+                  ? "Você não tem laudos avulsos disponíveis"
+                  : "Você atingiu o limite de 5 laudos/mês do Plano Profissional"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {ehBasico
+                  ? "Compre um novo laudo Básico (R$ 157) ou assine o Profissional/Expert."
+                  : "Faça upgrade para o Expert e tenha laudos ilimitados."}
+              </p>
             </div>
             <Link to="/planos">
-              <Button className="bg-brand-gold text-primary-foreground">Fazer upgrade</Button>
+              <Button className="bg-brand-gold text-primary-foreground">
+                {ehBasico ? "Comprar / Fazer upgrade" : "Fazer upgrade"}
+              </Button>
             </Link>
           </CardContent>
         </Card>
