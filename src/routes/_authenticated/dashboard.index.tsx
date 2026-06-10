@@ -332,6 +332,7 @@ function Dashboard() {
           </div>
         )}
       </div>
+      <ExpertChat plano={planoCode} />
     </div>
   );
 }
