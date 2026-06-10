@@ -67,6 +67,32 @@ function AvaliacaoDetalhe() {
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
 
   const fetchMapa = useServerFn(getMapaEstatico);
+  const fetchMarketing = useServerFn(gerarMarketingAvaliacao);
+  const [marketing, setMarketing] = useState<MarketingResultado | null>(null);
+  const [loadingMkt, setLoadingMkt] = useState(false);
+
+  const handleGerarMarketing = async () => {
+    if (loadingMkt) return;
+    setLoadingMkt(true);
+    try {
+      const res = await fetchMarketing({ data: { id: avaliacao.id } });
+      setMarketing(res);
+      toast.success("Plano de marketing gerado");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao gerar marketing");
+    } finally {
+      setLoadingMkt(false);
+    }
+  };
+
+  const copiar = async (texto: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success(`${label} copiado`);
+    } catch {
+      toast.error("Falha ao copiar");
+    }
+  };
 
   const handleDownload = async () => {
     if (!disponiveis.includes(modelo)) {
