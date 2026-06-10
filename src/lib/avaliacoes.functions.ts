@@ -238,7 +238,7 @@ export const getAvaliacaoDetalhe = createServerFn({ method: "GET" })
     const profileFinal = {
       ...(profile ?? {}),
       nome: nomeCompleto,
-      email: authUser?.email ?? null,
+      email: profile?.email ?? authUser?.email ?? null,
     };
 
     return { avaliacao, resultado: resultado ?? null, comparaveis: comparaveis ?? [], profile: profileFinal };
