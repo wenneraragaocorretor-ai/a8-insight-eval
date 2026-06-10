@@ -35,7 +35,6 @@ const PLANOS = [
       "Comparáveis simples (sem homogeneização)",
       "Valor estimado sem tratamento estatístico",
       "PDF simples 4-5 páginas (sem sua marca)",
-      "Sem suporte",
     ],
   },
   {
@@ -57,7 +56,6 @@ const PLANOS = [
       "Caracterização do bairro pela IA",
       "Perfil do público-alvo",
       "PDF 8-10 páginas",
-      "Suporte por e-mail",
     ],
   },
   {
@@ -82,7 +80,6 @@ const PLANOS = [
       "Número do laudo (LAU-XXXXXX)",
       "PDF 15+ páginas premium",
       "★ Chat com IA especialista integrado ao laudo",
-      "Suporte prioritário",
     ],
   },
 ];
