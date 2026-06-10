@@ -906,6 +906,7 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
     ["Vagas Descobertas", a.vagas_descobertas != null && a.vagas_descobertas !== 0 ? String(a.vagas_descobertas) : "—"],
     ["Andar do Imóvel", a.andar != null && a.andar !== 0 ? String(a.andar) : "—"],
     ["Total de Andares", a.total_andares != null && a.total_andares !== 0 ? String(a.total_andares) : "—"],
+    ["Número de Pavimentos", String(a.numero_pavimentos || "—")],
   ];
 
   let y = yStart;
