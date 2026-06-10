@@ -271,6 +271,12 @@ function NovaAvaliacao() {
     tipo_acabamento: [] as string[],
     acabamento_outros: "",
     numero_pavimentos: "",
+    ambientes_sociais: [] as string[],
+    ambientes_sociais_outros: "",
+    ambientes_servico: [] as string[],
+    ambientes_servico_outros: "",
+    ambientes_outros: [] as string[],
+    ambientes_outros_livres: "",
   });
 
   const [plano, setPlano] = useState<string>("basico");
