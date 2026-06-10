@@ -422,7 +422,15 @@ function NovaAvaliacao() {
             posicao_solar: isExpert ? imovel.posicao_solar || undefined : undefined,
             topografia: isExpert ? imovel.topografia || undefined : undefined,
             zoneamento: isExpert ? imovel.zoneamento || undefined : undefined,
-            infraestrutura_lazer: isExpert ? imovel.infraestrutura_lazer : [],
+            infraestrutura_lazer: isExpert
+              ? [
+                  ...imovel.infraestrutura_lazer,
+                  ...imovel.lazer_outros
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter((s) => s.length > 0),
+                ]
+              : [],
             vagas_cobertas: isExpert ? imovel.vagas_cobertas || undefined : undefined,
             vagas_descobertas: isExpert ? imovel.vagas_descobertas || undefined : undefined,
             total_andares: isExpert ? imovel.total_andares || undefined : undefined,
