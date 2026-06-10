@@ -150,6 +150,9 @@ ${fotosImagens.length > 0 ? `ANÁLISE DAS FOTOS (OBRIGATÓRIO): As imagens em an
 - Andar: ${fmt(imovel.andar)}
 - Padrão: ${imovel.padrao} | Conservação: ${imovel.conservacao} | Posição: ${fmt(imovel.posicao)}
 - Características: ${(imovel.caracteristicas || []).join(", ") || "-"}
+- Ambientes sociais: ${(imovel.ambientes_sociais || []).join(", ") || "-"}
+- Ambientes de serviço: ${(imovel.ambientes_servico || []).join(", ") || "-"}
+- Outros ambientes: ${(imovel.ambientes_outros || []).join(", ") || "-"}
 - Observações: ${fmt(imovel.observacoes)}
 
 COMPARÁVEIS (${comparaveis.length}):
