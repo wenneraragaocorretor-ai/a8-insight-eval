@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil } from "lucide-react";
 import { limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
+import { ExpertChat } from "../../components/ExpertChat";
 
 
 
