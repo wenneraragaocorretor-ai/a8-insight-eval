@@ -256,7 +256,13 @@ function NovaAvaliacao() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const editId = search.edit;
+  const isEdit = !!editId;
   const processarIA = useServerFn(processarAvaliacaoIA);
+  const regerarIA = useServerFn(regerarAvaliacao);
+  const fetchDetalhe = useServerFn(getAvaliacaoDetalhe);
+  const [edicoesUsadas, setEdicoesUsadas] = useState(0);
 
   const [imovel, setImovel] = useState({
     tipo: "Apartamento" as string,
