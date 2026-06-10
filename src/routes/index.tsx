@@ -13,7 +13,6 @@ import {
   Check,
 } from "lucide-react";
 import heroImg from "../assets/hero-luxury.jpg";
-import logoA8 from "../assets/a8-logo-gold.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -50,7 +49,6 @@ function SiteNav() {
     <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-[#0A1F44]/40 border-b border-white/10">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 select-none">
-          <img src={logoA8.url} alt="A8" className="h-10 w-10 object-contain" />
           <span className="font-display text-sm tracking-[0.3em] text-white/90 uppercase">
             A8 Investimentos
           </span>
@@ -492,7 +490,6 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <img src={logoA8.url} alt="A8" className="h-12 w-12 object-contain" />
               <span className="font-display text-sm tracking-[0.3em] text-white/90 uppercase">
                 A8 Investimentos
               </span>
