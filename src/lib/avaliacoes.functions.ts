@@ -182,6 +182,14 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
 
       if (errA) throw errA;
 
+      // Decrementa crédito avulso para Básico.
+      if (plano === "basico" || plano === "user") {
+        await supabase
+          .from("profiles")
+          .update({ creditos_avulsos: Math.max(0, creditos - 1) })
+          .eq("id", userId);
+      }
+
       const comparaveisData = data.comparaveis.map(c => ({
         avaliacao_id: avaliacao.id,
         fonte: c.fonte,
