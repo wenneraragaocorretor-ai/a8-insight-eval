@@ -777,7 +777,7 @@ function NovaAvaliacao() {
       )}
 
       <p className="mt-8 text-xs text-center text-muted-foreground italic">
-        "Esta avaliação é mercadológica e não substitui laudo técnico assinado por profissional habilitado (CNAI/IBAPE)"
+        "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional habilitado (CNAI/IBAPE)"
       </p>
     </div>
   );
