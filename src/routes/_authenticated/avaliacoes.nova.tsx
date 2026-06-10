@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { processarAvaliacaoIA } from "../../lib/avaliacoes.functions";
+import { processarAvaliacaoIA, regerarAvaliacao, getAvaliacaoDetalhe, limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 import { supabase } from "../../integrations/supabase/client";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -9,7 +9,7 @@ import { Label } from "../../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil } from "lucide-react";
 
 
 const CARACTERISTICAS_OPCOES = [
@@ -213,6 +213,9 @@ const novoComparavel = (id: number): Comparavel => ({
 });
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/nova")({
+  validateSearch: (s: Record<string, unknown>): { edit?: string } => ({
+    edit: typeof s.edit === "string" ? s.edit : undefined,
+  }),
   component: () => (
     <ErrorBoundary fallbackTitle="Erro no formulário de Nova Avaliação">
       <NovaAvaliacao />
@@ -253,7 +256,13 @@ function NovaAvaliacao() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const editId = search.edit;
+  const isEdit = !!editId;
   const processarIA = useServerFn(processarAvaliacaoIA);
+  const regerarIA = useServerFn(regerarAvaliacao);
+  const fetchDetalhe = useServerFn(getAvaliacaoDetalhe);
+  const [edicoesUsadas, setEdicoesUsadas] = useState(0);
 
   const [imovel, setImovel] = useState({
     tipo: "Apartamento" as string,
@@ -334,6 +343,98 @@ function NovaAvaliacao() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Prefill em modo edição
+  useEffect(() => {
+    if (!isEdit || !editId) return;
+    (async () => {
+      try {
+        const res = await fetchDetalhe({ data: { id: editId } });
+        const av: any = res.avaliacao;
+        setEdicoesUsadas(av.edicoes_count ?? 0);
+        setImovel((prev) => ({
+          ...prev,
+          tipo: av.tipo_imovel ?? prev.tipo,
+          finalidade: av.finalidade ?? prev.finalidade,
+          localizacao: av.localizacao ?? "",
+          endereco_completo: av.endereco_completo ?? "",
+          area_total: Number(av.area_total) || 0,
+          area_privativa: Number(av.area_privativa) || 0,
+          quartos: Number(av.quartos) || 0,
+          suites: Number(av.suites) || 0,
+          banheiros: Number(av.banheiros) || 0,
+          vagas: Number(av.vagas) || 0,
+          andar: Number(av.andar) || 0,
+          padrao: av.padrao ?? prev.padrao,
+          conservacao: av.conservacao ?? prev.conservacao,
+          posicao: av.posicao ?? prev.posicao,
+          caracteristicas: Array.isArray(av.caracteristicas) ? av.caracteristicas : [],
+          observacoes: av.observacoes ?? "",
+          idade_real: Number(av.idade_real) || 0,
+          idade_aparente: av.idade_aparente ?? "",
+          posicao_solar: av.posicao_solar ?? "",
+          topografia: av.topografia ?? "",
+          zoneamento: av.zoneamento ?? "",
+          infraestrutura_lazer: Array.isArray(av.infraestrutura_lazer) ? av.infraestrutura_lazer : [],
+          vagas_cobertas: Number(av.vagas_cobertas) || 0,
+          vagas_descobertas: Number(av.vagas_descobertas) || 0,
+          total_andares: Number(av.total_andares) || 0,
+          tipo_acabamento: Array.isArray(av.tipo_acabamento) ? av.tipo_acabamento : [],
+          numero_pavimentos: av.numero_pavimentos ?? "",
+          ambientes_sociais: Array.isArray(av.ambientes_sociais) ? av.ambientes_sociais : [],
+          ambientes_servico: Array.isArray(av.ambientes_servico) ? av.ambientes_servico : [],
+          ambientes_outros: Array.isArray(av.ambientes_outros) ? av.ambientes_outros : [],
+        }));
+        // Comparáveis
+        if (Array.isArray(res.comparaveis) && res.comparaveis.length > 0) {
+          setComparaveis(
+            res.comparaveis.map((c: any, i: number) => ({
+              id: i + 1,
+              fonte: c.fonte ?? "",
+              localizacao: c.localizacao ?? "",
+              area: Number(c.area) || 0,
+              area_privativa: Number(c.area_privativa) || 0,
+              quartos: Number(c.quartos) || 0,
+              suites: Number(c.suites) || 0,
+              banheiros: Number(c.banheiros) || 0,
+              vagas: Number(c.vagas) || 0,
+              padrao: c.padrao ?? "Normal",
+              conservacao: c.conservacao ?? "Bom",
+              posicao: c.posicao ?? "Meio de quadra",
+              andar: Number(c.andar) || 0,
+              idade: Number(c.idade) || 0,
+              condominio: Number(c.condominio) || 0,
+              caracteristicas: Array.isArray(c.caracteristicas) ? c.caracteristicas : [],
+              valor: Number(c.valor_anunciado) || 0,
+            })),
+          );
+        }
+        // Fotos — reusa paths já no storage; preview via URL assinada
+        const fotosPaths: string[] = Array.isArray(av.fotos) ? av.fotos : [];
+        const fotosMeta: any[] = Array.isArray(av.fotos_meta) ? av.fotos_meta : [];
+        if (fotosPaths.length > 0) {
+          const items: FotoItem[] = [];
+          for (const p of fotosPaths) {
+            const meta = fotosMeta.find((m) => m.path === p);
+            const { data: signed } = await supabase.storage
+              .from("avaliacoes-fotos")
+              .createSignedUrl(p, 60 * 60);
+            items.push({
+              path: p,
+              previewUrl: signed?.signedUrl ?? "",
+              uploading: false,
+              legenda: meta?.legenda ?? "",
+              principal: !!meta?.principal,
+            });
+          }
+          setFotos(items);
+        }
+      } catch (e: any) {
+        toast.error(e?.message || "Falha ao carregar laudo para edição");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, editId]);
 
   const ACEITOS = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
   const MAX_BYTES = 5 * 1024 * 1024;
@@ -572,10 +673,17 @@ function NovaAvaliacao() {
         },
       };
 
-      const result = await processarIA(payload);
-      toast.success("Avaliação concluída com sucesso!");
-      if (result && result.id) navigate({ to: `/avaliacoes/${result.id}` });
-      else navigate({ to: "/dashboard" });
+      let result: any;
+      if (isEdit && editId) {
+        result = await regerarIA({ data: { id: editId, ...(payload.data as any) } });
+        toast.success("Laudo regenerado com sucesso!");
+        navigate({ to: `/avaliacoes/${editId}` });
+      } else {
+        result = await processarIA(payload);
+        toast.success("Avaliação concluída com sucesso!");
+        if (result && result.id) navigate({ to: `/avaliacoes/${result.id}` });
+        else navigate({ to: "/dashboard" });
+      }
     } catch (error: any) {
       console.error("Erro:", error);
       toast.error(error.message || "Erro ao processar avaliação.");
@@ -588,8 +696,21 @@ function NovaAvaliacao() {
     <div className="max-w-4xl mx-auto py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-brand-blue">Nova Avaliação</h1>
-          <p className="text-muted-foreground">Preencha os dados para gerar o estudo com IA.</p>
+          <h1 className="text-3xl font-bold text-brand-blue">
+            {isEdit ? "Editar Laudo" : "Nova Avaliação"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isEdit
+              ? `Atualize os dados e regenere o laudo com a IA.${
+                  (() => {
+                    const lim = limiteEdicoesPorPlano(plano);
+                    if (lim === null) return " Edições ilimitadas (Expert).";
+                    const restantes = Math.max(0, lim - edicoesUsadas);
+                    return ` ${restantes} edição(ões) restante(s) neste laudo.`;
+                  })()
+                }`
+              : "Preencha os dados para gerar o estudo com IA."}
+          </p>
         </div>
         <div className="flex gap-2">
           {[1, 2, 3].map((s) => (
@@ -1254,8 +1375,15 @@ function NovaAvaliacao() {
               <p className="text-muted-foreground">Nossa IA irá analisar os dados e gerar seu relatório.</p>
             </div>
             <div className="flex flex-col gap-4 max-w-sm mx-auto">
-              <Button onClick={handleProcessar} className="bg-brand-gold text-primary-foreground h-12 text-lg font-bold" disabled={isLoading}>
-                {isLoading ? "Processando..." : "Gerar Avaliação com IA"}
+              <Button
+                onClick={handleProcessar}
+                className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold"}
+                disabled={isLoading}
+              >
+                {isEdit ? <Pencil size={18} /> : null}
+                {isLoading
+                  ? (isEdit ? "Regenerando..." : "Processando...")
+                  : (isEdit ? "Regenerar Laudo" : "Gerar Avaliação com IA")}
               </Button>
               <Button variant="ghost" onClick={() => setStep(2)} disabled={isLoading}>Revisar dados</Button>
             </div>

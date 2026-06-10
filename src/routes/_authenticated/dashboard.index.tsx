@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { FileText, Plus, History, Trophy, Eye, CheckCircle2, AlertTriangle, User } from "lucide-react";
+import { FileText, Plus, History, Trophy, Eye, CheckCircle2, AlertTriangle, User, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
 import { getMeuPerfil } from "../../lib/perfil.functions";
@@ -260,21 +260,39 @@ function Dashboard() {
               <Card key={a.id} className="premium-card">
                 <CardContent className="flex flex-col md:flex-row md:items-center justify-between gap-3 py-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-brand-blue">{a.tipo_imovel}</span>
                       <span className="text-xs text-muted-foreground">• {a.localizacao}</span>
+                      {a.editado && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-brand-gold text-white px-1.5 py-0.5 rounded inline-flex items-center gap-1">
+                          <Pencil size={10} /> Revisado
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {new Date(a.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                      {a.ultima_edicao_em && (
+                        <>
+                          {" "}• editado em{" "}
+                          {new Date(a.ultima_edicao_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                        </>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Valor estimado</p>
                     <p className="font-bold text-brand-gold">{fmtBRL(a.valor_central)}</p>
                   </div>
-                  <Link to="/avaliacoes/$id" params={{ id: a.id }}>
-                    <Button variant="outline" size="sm" className="gap-1"><Eye size={14} /> Visualizar</Button>
-                  </Link>
+                  <div className="flex gap-2">
+                    <Link to="/avaliacoes/nova" search={{ edit: a.id } as any}>
+                      <Button variant="outline" size="sm" className="gap-1 border-[#0F2D5C] text-[#0F2D5C] hover:bg-[#0F2D5C] hover:text-white">
+                        <Pencil size={14} /> Editar
+                      </Button>
+                    </Link>
+                    <Link to="/avaliacoes/$id" params={{ id: a.id }}>
+                      <Button variant="outline" size="sm" className="gap-1"><Eye size={14} /> Visualizar</Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             ))}

@@ -26,6 +26,8 @@ export type Database = {
           caracteristicas: Json | null
           conservacao: string | null
           created_at: string | null
+          edicoes_count: number
+          editado: boolean
           endereco_completo: string | null
           finalidade: string
           fotos: Json
@@ -48,6 +50,7 @@ export type Database = {
           tipo_relatorio: string
           topografia: string | null
           total_andares: number | null
+          ultima_edicao_em: string | null
           user_id: string
           vagas: number | null
           vagas_cobertas: number | null
@@ -65,6 +68,8 @@ export type Database = {
           caracteristicas?: Json | null
           conservacao?: string | null
           created_at?: string | null
+          edicoes_count?: number
+          editado?: boolean
           endereco_completo?: string | null
           finalidade: string
           fotos?: Json
@@ -87,6 +92,7 @@ export type Database = {
           tipo_relatorio: string
           topografia?: string | null
           total_andares?: number | null
+          ultima_edicao_em?: string | null
           user_id: string
           vagas?: number | null
           vagas_cobertas?: number | null
@@ -104,6 +110,8 @@ export type Database = {
           caracteristicas?: Json | null
           conservacao?: string | null
           created_at?: string | null
+          edicoes_count?: number
+          editado?: boolean
           endereco_completo?: string | null
           finalidade?: string
           fotos?: Json
@@ -126,6 +134,7 @@ export type Database = {
           tipo_relatorio?: string
           topografia?: string | null
           total_andares?: number | null
+          ultima_edicao_em?: string | null
           user_id?: string
           vagas?: number | null
           vagas_cobertas?: number | null
@@ -133,6 +142,38 @@ export type Database = {
           zoneamento?: string | null
         }
         Relationships: []
+      }
+      avaliacoes_versoes: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          id: string
+          snapshot: Json
+          versao: number
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          id?: string
+          snapshot: Json
+          versao: number
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          id?: string
+          snapshot?: Json
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_versoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comparaveis: {
         Row: {

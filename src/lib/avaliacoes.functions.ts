@@ -62,6 +62,20 @@ const evaluationSchema = z.object({
   })).min(3),
 });
 
+export function limiteEdicoesPorPlano(plano: string): number | null {
+  switch (plano) {
+    case "expert":
+      return null; // ilimitado
+    case "profissional":
+    case "pro":
+      return 3;
+    case "basico":
+    case "user":
+    default:
+      return 1;
+  }
+}
+
 
 export const processarAvaliacaoIA = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -253,7 +267,7 @@ export const listarAvaliacoes = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("avaliacoes")
-      .select("id, tipo_imovel, localizacao, created_at, status, resultados(valor_central)")
+      .select("id, tipo_imovel, localizacao, created_at, status, editado, ultima_edicao_em, edicoes_count, resultados(valor_central)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(20);
@@ -264,6 +278,165 @@ export const listarAvaliacoes = createServerFn({ method: "GET" })
       localizacao: a.localizacao,
       created_at: a.created_at,
       status: a.status,
+      editado: !!a.editado,
+      ultima_edicao_em: a.ultima_edicao_em ?? null,
+      edicoes_count: a.edicoes_count ?? 0,
       valor_central: a.resultados?.[0]?.valor_central ?? null,
     }));
   });
+
+export const regerarAvaliacao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ id: z.string().uuid() }).merge(evaluationSchema).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // 1) Carrega avaliação atual + valida ownership + limite
+    const { data: atual, error: errAtual } = await supabase
+      .from("avaliacoes")
+      .select("*")
+      .eq("id", data.id)
+      .single();
+    if (errAtual || !atual) throw new Error("Avaliação não encontrada");
+    if (atual.user_id !== userId) throw new Error("Sem permissão para editar esta avaliação");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plano")
+      .eq("id", userId)
+      .maybeSingle();
+    const plano = (profile?.plano ?? "basico") as string;
+    const limite = limiteEdicoesPorPlano(plano);
+    const usadas = atual.edicoes_count ?? 0;
+    if (limite !== null && usadas >= limite) {
+      throw new Error(`Limite de ${limite} edição(ões) deste laudo atingido no plano atual.`);
+    }
+
+    // 2) Snapshot da versão atual antes de sobrescrever
+    const [{ data: resultadoAtual }, { data: comparaveisAtuais }] = await Promise.all([
+      supabase.from("resultados").select("*").eq("avaliacao_id", data.id).maybeSingle(),
+      supabase.from("comparaveis").select("*").eq("avaliacao_id", data.id),
+    ]);
+    await supabase.from("avaliacoes_versoes").insert({
+      avaliacao_id: data.id,
+      versao: usadas + 1,
+      snapshot: {
+        avaliacao: atual,
+        resultado: resultadoAtual ?? null,
+        comparaveis: comparaveisAtuais ?? [],
+      },
+    });
+
+    // 3) Reprocessa via IA
+    const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
+      body: { imovel: data.imovel, comparaveis: data.comparaveis },
+    });
+    if (edgeError) throw new Error("Erro na comunicação com o motor de IA: " + edgeError.message);
+    if (aiResult?.error) throw new Error(aiResult.error);
+
+    // 4) UPDATE avaliacao
+    const fotosMetaUpd = (() => {
+      const baseMeta = Array.isArray(data.imovel.fotos_meta) ? data.imovel.fotos_meta : [];
+      const aiPerFoto = Array.isArray(aiResult.analise_fotos_individual) ? aiResult.analise_fotos_individual : [];
+      return baseMeta.map((m: any, i: number) => ({
+        path: m.path,
+        legenda: m.legenda ?? "",
+        principal: !!m.principal,
+        comentario_ia: typeof aiPerFoto[i] === "string" ? aiPerFoto[i] : (aiPerFoto[i]?.comentario ?? ""),
+      }));
+    })();
+
+    const { error: errUpd } = await supabase
+      .from("avaliacoes")
+      .update({
+        tipo_imovel: data.imovel.tipo,
+        finalidade: data.imovel.finalidade,
+        localizacao: data.imovel.localizacao,
+        endereco_completo: data.imovel.endereco_completo ?? null,
+        area_total: data.imovel.area_total,
+        area_privativa: data.imovel.area_privativa ?? null,
+        quartos: data.imovel.quartos,
+        suites: data.imovel.suites ?? null,
+        banheiros: data.imovel.banheiros,
+        vagas: data.imovel.vagas,
+        andar: data.imovel.andar ?? null,
+        padrao: data.imovel.padrao,
+        conservacao: data.imovel.conservacao,
+        posicao: data.imovel.posicao ?? null,
+        caracteristicas: data.imovel.caracteristicas,
+        observacoes: data.imovel.observacoes,
+        fotos: data.imovel.fotos ?? [],
+        fotos_meta: fotosMetaUpd,
+        idade_real: data.imovel.idade_real ?? null,
+        idade_aparente: data.imovel.idade_aparente ?? null,
+        posicao_solar: data.imovel.posicao_solar ?? null,
+        topografia: data.imovel.topografia ?? null,
+        zoneamento: data.imovel.zoneamento ?? null,
+        infraestrutura_lazer: data.imovel.infraestrutura_lazer ?? [],
+        vagas_cobertas: data.imovel.vagas_cobertas ?? null,
+        vagas_descobertas: data.imovel.vagas_descobertas ?? null,
+        total_andares: data.imovel.total_andares ?? null,
+        tipo_acabamento: data.imovel.tipo_acabamento ?? [],
+        numero_pavimentos: data.imovel.numero_pavimentos ?? null,
+        ambientes_sociais: data.imovel.ambientes_sociais ?? [],
+        ambientes_servico: data.imovel.ambientes_servico ?? [],
+        ambientes_outros: data.imovel.ambientes_outros ?? [],
+        editado: true,
+        edicoes_count: usadas + 1,
+        ultima_edicao_em: new Date().toISOString(),
+      })
+      .eq("id", data.id);
+    if (errUpd) throw new Error("Falha ao atualizar avaliação: " + errUpd.message);
+
+    // 5) Substitui comparáveis
+    await supabase.from("comparaveis").delete().eq("avaliacao_id", data.id);
+    const comparaveisNovos = data.comparaveis.map((c) => ({
+      avaliacao_id: data.id,
+      fonte: c.fonte,
+      localizacao: c.localizacao,
+      tipo: data.imovel.tipo,
+      area: c.area,
+      area_privativa: c.area_privativa ?? null,
+      quartos: c.quartos ?? null,
+      suites: c.suites ?? null,
+      banheiros: c.banheiros ?? null,
+      vagas: c.vagas ?? null,
+      padrao: c.padrao ?? null,
+      conservacao: c.conservacao ?? null,
+      posicao: c.posicao ?? null,
+      andar: c.andar ?? null,
+      idade: c.idade ?? null,
+      condominio: c.condominio ?? null,
+      caracteristicas: c.caracteristicas ?? [],
+      valor_anunciado: c.valor,
+    }));
+    await supabase.from("comparaveis").insert(comparaveisNovos);
+
+    // 6) UPSERT resultado
+    if (resultadoAtual) {
+      await supabase
+        .from("resultados")
+        .update({
+          valor_minimo: aiResult.valor_minimo,
+          valor_central: aiResult.valor_central,
+          valor_maximo: aiResult.valor_maximo,
+          valor_unitario_medio: aiResult.valor_unitario_medio,
+          relatorio_json: aiResult,
+        })
+        .eq("avaliacao_id", data.id);
+    } else {
+      await supabase.from("resultados").insert({
+        avaliacao_id: data.id,
+        valor_minimo: aiResult.valor_minimo,
+        valor_central: aiResult.valor_central,
+        valor_maximo: aiResult.valor_maximo,
+        valor_unitario_medio: aiResult.valor_unitario_medio,
+        relatorio_json: aiResult,
+      });
+    }
+
+    return { id: data.id, ...aiResult };
+  });
+
