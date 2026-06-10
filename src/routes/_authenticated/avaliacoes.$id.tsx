@@ -483,6 +483,7 @@ function AvaliacaoDetalhe() {
       <p className="text-xs text-center text-muted-foreground italic">
         "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional habilitado (CNAI/IBAPE)"
       </p>
+      <ExpertChat plano={plano} avaliacaoId={avaliacao?.id} />
     </div>
   );
 }
