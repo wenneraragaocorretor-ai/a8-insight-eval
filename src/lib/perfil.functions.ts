@@ -62,6 +62,8 @@ export const salvarMeuPerfil = createServerFn({ method: "POST" })
       telefone: data.telefone,
       cpf: data.cpf,
       creci: data.creci || null,
+      cnai: data.cnai || null,
+      outro_registro: data.outro_registro || null,
       tipo: data.tipo,
       nome_imobiliaria: data.tipo === "imobiliaria" ? (data.nome_imobiliaria || null) : null,
       cidade: data.cidade,
