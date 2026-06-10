@@ -854,6 +854,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
     ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Anúncios na Região", "Valor do Imóvel", "Contato"],
   );
   paginaImovel(doc, avaliacao, rel, corretor);
+  paginaAmbientes(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor);
