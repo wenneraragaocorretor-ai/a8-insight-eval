@@ -209,7 +209,30 @@ function NovaAvaliacao() {
     posicao: "Meio de quadra",
     caracteristicas: [] as string[],
     observacoes: "",
+    // Ficha Técnica Detalhada (Expert)
+    idade_real: 0,
+    idade_aparente: "",
+    posicao_solar: "",
+    topografia: "",
+    zoneamento: "",
+    infraestrutura_lazer: [] as string[],
+    vagas_cobertas: 0,
+    vagas_descobertas: 0,
+    total_andares: 0,
   });
+
+  const [plano, setPlano] = useState<string>("basico");
+  const isExpert = plano === "expert";
+
+  useEffect(() => {
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData?.user?.id;
+      if (!uid) return;
+      const { data } = await supabase.from("profiles").select("plano").eq("id", uid).maybeSingle();
+      if (data?.plano) setPlano(data.plano);
+    })();
+  }, []);
 
   const [comparaveis, setComparaveis] = useState<Comparavel[]>([
     novoComparavel(1),
