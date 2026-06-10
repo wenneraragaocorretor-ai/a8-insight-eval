@@ -76,6 +76,31 @@ const TIPO_ACABAMENTO_OPCOES = [
 ];
 const NUMERO_PAVIMENTOS_OPCOES = ["1 pavimento", "2 pavimentos", "3 ou mais pavimentos"];
 
+const AMBIENTES_SOCIAIS_OPCOES = [
+  "Sala de Estar",
+  "Sala de Jantar",
+  "Sala de TV",
+  "Varanda",
+  "Terraço",
+  "Sacada",
+];
+const AMBIENTES_SERVICO_OPCOES = [
+  "Cozinha Simples",
+  "Cozinha Gourmet",
+  "Copa",
+  "Lavanderia",
+  "Área de Serviço",
+  "Quarto de Empregada",
+  "Banheiro de Serviço",
+  "Despensa",
+];
+const AMBIENTES_OUTROS_OPCOES = [
+  "Escritório / Home Office",
+  "Closet",
+  "Adega",
+  "Hall de Entrada",
+];
+
 const TIPOS_IMOVEL = ["Apartamento", "Casa", "Sobrado", "Terreno", "Sala Comercial", "Galpão"] as const;
 type TipoImovel = typeof TIPOS_IMOVEL[number];
 
