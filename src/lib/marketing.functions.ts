@@ -35,7 +35,7 @@ export const gerarMarketingAvaliacao = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY ausente no servidor");
 
-    const { data: av, error: e1 } = await supabase
+    const { data: avRaw, error: e1 } = await supabase
       .from("avaliacoes")
       .select("*")
       .eq("id", data.id)
