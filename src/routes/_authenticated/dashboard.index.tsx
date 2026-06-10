@@ -103,7 +103,11 @@ function Dashboard() {
       }
       const label = PLAN_LABEL[plano] ?? "Básico";
       setWelcomePlano(label);
-      toast.success(`Plano ${label} ativado com sucesso!`);
+      if (plano === "basico" || plano === "user") {
+        toast.success("Compra confirmada! +1 laudo Básico disponível.");
+      } else {
+        toast.success(`Plano ${label} ativado com sucesso!`);
+      }
       await queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
       await refetchStatus();
       navigate({ to: "/dashboard", search: {}, replace: true });
