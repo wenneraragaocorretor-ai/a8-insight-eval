@@ -174,8 +174,11 @@ function PlanosPage() {
                 <CardTitle className="text-2xl text-brand-blue">{p.nome}</CardTitle>
                 <div className="mt-2">
                   <span className="text-4xl font-bold">{p.preco}</span>
-                  <span className="text-muted-foreground">/mês</span>
+                  <span className="text-muted-foreground">{p.periodo}</span>
                 </div>
+                {p.modo === "avulso" && (
+                  <p className="text-xs text-muted-foreground mt-1">Pagamento único, não recorrente</p>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-2">
@@ -189,12 +192,12 @@ function PlanosPage() {
                 <Button
                   className={`w-full h-11 ${p.destaque ? "bg-brand-gold text-primary-foreground hover:opacity-90" : ""}`}
                   variant={p.destaque ? "default" : "outline"}
-                  disabled={loading !== null || ehAtual}
+                  disabled={loading !== null || (p.modo === "assinatura" && ehAtual)}
                   onClick={() => assinar(p.code)}
                 >
                   {loading === p.code ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...</>
-                  ) : ehAtual ? "Plano atual" : "Assinar"}
+                  ) : p.modo === "avulso" ? "Comprar laudo" : ehAtual ? "Plano atual" : "Assinar"}
                 </Button>
               </CardContent>
             </Card>
