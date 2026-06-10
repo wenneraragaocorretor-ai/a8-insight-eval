@@ -167,8 +167,15 @@ function PerfilPage() {
               <Input value={form.telefone} onChange={(e) => set("telefone", e.target.value)} required placeholder="(11) 99999-0000" />
             </div>
             <div>
-              <Label>CPF</Label>
-              <Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
+              <Label>CPF *</Label>
+              <Input
+                value={form.cpf}
+                onChange={(e) => set("cpf", formatCpf(e.target.value))}
+                required
+                inputMode="numeric"
+                maxLength={14}
+                placeholder="000.000.000-00"
+              />
             </div>
           </CardContent>
         </Card>
