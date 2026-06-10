@@ -117,8 +117,33 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility font-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+@utility gold-divider {
+  display: block;
+  width: 56px;
+  height: 2px;
+  background: linear-gradient(90deg, #C8A951, #E2C97E);
+}
+
+@utility luxury-shadow {
+  box-shadow: 0 20px 50px -20px rgba(10, 31, 68, 0.25), 0 10px 25px -10px rgba(10, 31, 68, 0.15);
+}
+
+@utility gold-shadow {
+  box-shadow: 0 12px 30px -10px rgba(200, 169, 81, 0.45);
 }
 
 @layer utilities {
@@ -126,6 +151,22 @@
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  @keyframes scroll-bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(8px); opacity: 1; }
+  }
+  .animate-scroll-bounce {
+    animation: scroll-bounce 1.8s ease-in-out infinite;
+  }
+
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .reveal-up {
+    animation: reveal-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .premium-card {
