@@ -45,6 +45,21 @@ const fmtNum = (v: number | null | undefined, digits = 2) =>
 
 const hoje = () => new Date().toLocaleDateString("pt-BR");
 
+// Extrai apenas o domínio principal quando a fonte for uma URL completa
+const fmtFonte = (f: any): string => {
+  const s = String(f ?? "").trim();
+  if (!s) return "—";
+  const looksLikeUrl = /^https?:\/\//i.test(s) || /^www\./i.test(s) || /^[a-z0-9-]+(\.[a-z0-9-]+)+\//i.test(s);
+  if (!looksLikeUrl) return s;
+  try {
+    const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+    const host = new URL(withProto).hostname.replace(/^www\./i, "");
+    return host || s;
+  } catch {
+    return s.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
+  }
+};
+
 export function modelosDisponiveis(plano: PlanoUsuario): ModeloPdf[] {
   const p = String(plano || "basico").toLowerCase();
   if (p === "expert") return [1, 2, 3];
