@@ -650,6 +650,11 @@ function NovaAvaliacao() {
                   <Label>Valor Anunciado (R$)</Label>
                   <Input type="number" value={c.valor}
                     onChange={(e) => updateComp(index, { valor: toNum(e.target.value) })} />
+                  {Number(c.valor) > 0 && Number(c.valor) < 10000 && (
+                    <p className="text-xs font-medium text-destructive">
+                      Valor muito baixo — verifique se esqueceu zeros
+                    </p>
+                  )}
                 </div>
                 {campos.quartos && (
                   <div className="space-y-2">
