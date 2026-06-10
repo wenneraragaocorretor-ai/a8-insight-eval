@@ -19,7 +19,12 @@ const evaluationSchema = z.object({
     posicao: z.string().optional(),
     caracteristicas: z.array(z.string()),
     observacoes: z.string().optional(),
-    fotos: z.array(z.string()).max(3).optional().default([]),
+    fotos: z.array(z.string()).max(15).optional().default([]),
+    fotos_meta: z.array(z.object({
+      path: z.string(),
+      legenda: z.string().optional().default(""),
+      principal: z.boolean().optional().default(false),
+    })).max(15).optional().default([]),
     // Ficha Técnica Detalhada (Plano Expert)
     idade_real: z.number().optional(),
     idade_aparente: z.string().optional(),
