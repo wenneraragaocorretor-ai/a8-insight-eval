@@ -26,17 +26,26 @@ export type Database = {
           finalidade: string
           fotos: Json
           id: string
+          idade_aparente: string | null
+          idade_real: number | null
+          infraestrutura_lazer: Json
           localizacao: string
           observacoes: string | null
           padrao: string | null
           posicao: string | null
+          posicao_solar: string | null
           quartos: number | null
           status: string | null
           suites: number | null
           tipo_imovel: string
           tipo_relatorio: string
+          topografia: string | null
+          total_andares: number | null
           user_id: string
           vagas: number | null
+          vagas_cobertas: number | null
+          vagas_descobertas: number | null
+          zoneamento: string | null
         }
         Insert: {
           andar?: number | null
@@ -49,17 +58,26 @@ export type Database = {
           finalidade: string
           fotos?: Json
           id?: string
+          idade_aparente?: string | null
+          idade_real?: number | null
+          infraestrutura_lazer?: Json
           localizacao: string
           observacoes?: string | null
           padrao?: string | null
           posicao?: string | null
+          posicao_solar?: string | null
           quartos?: number | null
           status?: string | null
           suites?: number | null
           tipo_imovel: string
           tipo_relatorio: string
+          topografia?: string | null
+          total_andares?: number | null
           user_id: string
           vagas?: number | null
+          vagas_cobertas?: number | null
+          vagas_descobertas?: number | null
+          zoneamento?: string | null
         }
         Update: {
           andar?: number | null
@@ -72,17 +90,26 @@ export type Database = {
           finalidade?: string
           fotos?: Json
           id?: string
+          idade_aparente?: string | null
+          idade_real?: number | null
+          infraestrutura_lazer?: Json
           localizacao?: string
           observacoes?: string | null
           padrao?: string | null
           posicao?: string | null
+          posicao_solar?: string | null
           quartos?: number | null
           status?: string | null
           suites?: number | null
           tipo_imovel?: string
           tipo_relatorio?: string
+          topografia?: string | null
+          total_andares?: number | null
           user_id?: string
           vagas?: number | null
+          vagas_cobertas?: number | null
+          vagas_descobertas?: number | null
+          zoneamento?: string | null
         }
         Relationships: []
       }
