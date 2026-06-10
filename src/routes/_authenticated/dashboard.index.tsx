@@ -146,6 +146,24 @@ function Dashboard() {
         </div>
       </div>
 
+      {perfilIncompleto && (
+        <Card className="premium-card border-2 border-yellow-400 bg-yellow-50">
+          <CardContent className="flex flex-col md:flex-row items-start md:items-center gap-3 py-4">
+            <AlertTriangle className="h-6 w-6 text-yellow-600 shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold text-yellow-900">Complete seu perfil</p>
+              <p className="text-sm text-yellow-800">
+                Adicione CRECI e telefone para que seus dados apareçam nos laudos gerados.
+              </p>
+            </div>
+            <Link to="/perfil">
+              <Button className="bg-yellow-500 hover:bg-yellow-600 text-yellow-950">Completar agora</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+
       {welcomePlano && (
         <Card className="premium-card border-2 border-brand-gold bg-brand-gold/5">
           <CardContent className="flex items-center gap-3 py-4">
