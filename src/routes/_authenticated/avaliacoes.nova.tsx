@@ -243,6 +243,9 @@ function NovaAvaliacao() {
     vagas_cobertas: 0,
     vagas_descobertas: 0,
     total_andares: 0,
+    tipo_acabamento: [] as string[],
+    acabamento_outros: "",
+    numero_pavimentos: "",
   });
 
   const [plano, setPlano] = useState<string>("basico");
