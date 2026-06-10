@@ -1072,6 +1072,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
     "Contato",
   ]);
   paginaImovel(doc, avaliacao, rel, corretor);
+  paginaAmbientes(doc, avaliacao, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
