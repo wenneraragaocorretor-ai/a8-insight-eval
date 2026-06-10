@@ -101,12 +101,13 @@ function PlanosPage() {
   useEffect(() => {
     if (search.success && search.session_id) {
       confirm({ data: { session_id: search.session_id } })
-        .then(() => {
-          toast.success("Assinatura ativada com sucesso!");
+        .then((res: any) => {
+          if (res?.plano === "basico") toast.success("Compra confirmada! +1 laudo Básico disponível.");
+          else toast.success("Assinatura ativada com sucesso!");
           refetch();
         })
         .catch(() => {
-          toast.info("Pagamento recebido. A assinatura será ativada em instantes.");
+          toast.info("Pagamento recebido. Será processado em instantes.");
           setTimeout(() => refetch(), 3000);
         });
     } else if (search.canceled) {
