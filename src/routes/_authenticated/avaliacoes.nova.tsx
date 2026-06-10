@@ -696,8 +696,21 @@ function NovaAvaliacao() {
     <div className="max-w-4xl mx-auto py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-brand-blue">Nova Avaliação</h1>
-          <p className="text-muted-foreground">Preencha os dados para gerar o estudo com IA.</p>
+          <h1 className="text-3xl font-bold text-brand-blue">
+            {isEdit ? "Editar Laudo" : "Nova Avaliação"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isEdit
+              ? `Atualize os dados e regenere o laudo com a IA.${
+                  (() => {
+                    const lim = limiteEdicoesPorPlano(plano);
+                    if (lim === null) return " Edições ilimitadas (Expert).";
+                    const restantes = Math.max(0, lim - edicoesUsadas);
+                    return ` ${restantes} edição(ões) restante(s) neste laudo.`;
+                  })()
+                }`
+              : "Preencha os dados para gerar o estudo com IA."}
+          </p>
         </div>
         <div className="flex gap-2">
           {[1, 2, 3].map((s) => (
