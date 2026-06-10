@@ -162,6 +162,16 @@ function AvaliacaoDetalhe() {
         }
       }
     }
+    // Marketing (Plano Expert / Modelo 3) — gera silenciosamente se ainda não houver
+    let marketingForPdf: MarketingResultado | null = marketing;
+    if (modelo === 3 && !marketingForPdf) {
+      try {
+        marketingForPdf = await fetchMarketing({ data: { id: avaliacao.id } });
+        setMarketing(marketingForPdf);
+      } catch (e) {
+        console.error("Falha ao gerar marketing:", e);
+      }
+    }
     const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
     gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
       modelo,
@@ -169,6 +179,7 @@ function AvaliacaoDetalhe() {
       fotosDataUrls,
       fotosDetalhadas,
       mapaDataUrl,
+      marketing: marketingForPdf,
       corretor: {
         nome: profile?.nome ?? "Corretor",
         creci: profile?.creci ?? null,
