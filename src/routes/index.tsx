@@ -276,6 +276,7 @@ function Planos() {
         "Textos prontos para portais",
         "QR Code de autenticidade (LAU-XXXXXX)",
         "PDF 15+ páginas premium",
+        "★ Chat com IA especialista integrado ao laudo",
         "Suporte prioritário",
       ],
       destaque: true,
