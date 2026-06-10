@@ -124,6 +124,27 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   sub.metadata = { ...sub.metadata, ...session.metadata };
                 }
                 await applySubscription(sub, session);
+              } else if (session.mode === "payment" && session.payment_status === "paid") {
+                // Pagamento único — Plano Básico (laudo avulso): +1 crédito
+                const userId = session.metadata?.user_id;
+                if (userId) {
+                  const { data: existing } = await supabaseAdmin
+                    .from("profiles")
+                    .select("nome, creditos_avulsos")
+                    .eq("id", userId)
+                    .maybeSingle();
+                  const nome = existing?.nome || session.customer_details?.name || session.customer_details?.email?.split("@")[0] || "Usuário";
+                  const novosCreditos = (existing?.creditos_avulsos ?? 0) + 1;
+                  const { error } = await supabaseAdmin.from("profiles").upsert({
+                    id: userId,
+                    nome,
+                    plano: "basico" as any,
+                    creditos_avulsos: novosCreditos,
+                    stripe_customer_id: session.customer ?? null,
+                  }, { onConflict: "id" });
+                  if (error) throw error;
+                  console.log("[stripe-webhook] +1 crédito Básico", { userId, novosCreditos });
+                }
               }
               break;
             }
