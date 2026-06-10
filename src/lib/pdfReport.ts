@@ -1692,6 +1692,7 @@ export function gerarPdfAvaliacao(
     fotosDataUrls?: string[];
     fotosDetalhadas?: FotoDetalhada[];
     mapaDataUrl?: string | null;
+    marketing?: MarketingPdf | null;
   },
 ) {
   const { modelo, plano } = opts;
@@ -1707,7 +1708,7 @@ export function gerarPdfAvaliacao(
 
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);
