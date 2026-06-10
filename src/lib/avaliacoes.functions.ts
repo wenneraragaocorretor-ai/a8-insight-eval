@@ -126,6 +126,16 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           caracteristicas: data.imovel.caracteristicas,
           observacoes: data.imovel.observacoes,
           fotos: data.imovel.fotos ?? [],
+          fotos_meta: (() => {
+            const baseMeta = Array.isArray(data.imovel.fotos_meta) ? data.imovel.fotos_meta : [];
+            const aiPerFoto = Array.isArray(aiResult.analise_fotos_individual) ? aiResult.analise_fotos_individual : [];
+            return baseMeta.map((m: any, i: number) => ({
+              path: m.path,
+              legenda: m.legenda ?? "",
+              principal: !!m.principal,
+              comentario_ia: typeof aiPerFoto[i] === "string" ? aiPerFoto[i] : (aiPerFoto[i]?.comentario ?? ""),
+            }));
+          })(),
           idade_real: data.imovel.idade_real ?? null,
           idade_aparente: data.imovel.idade_aparente ?? null,
           posicao_solar: data.imovel.posicao_solar ?? null,
