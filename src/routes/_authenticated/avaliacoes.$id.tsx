@@ -72,8 +72,11 @@ function AvaliacaoDetalhe() {
     }
     // Carrega fotos do imóvel (paths privados → dataURL) para embutir no PDF
     const fotosPaths: string[] = Array.isArray((avaliacao as any)?.fotos) ? (avaliacao as any).fotos : [];
+    const fotosMeta: Array<{ path: string; legenda?: string; principal?: boolean; comentario_ia?: string }> =
+      Array.isArray((avaliacao as any)?.fotos_meta) ? (avaliacao as any).fotos_meta : [];
     const fotosDataUrls: string[] = [];
-    for (const p of fotosPaths.slice(0, 3)) {
+    const fotosDetalhadas: Array<{ dataUrl: string; legenda: string; principal: boolean; comentario_ia: string }> = [];
+    for (const p of fotosPaths.slice(0, 15)) {
       try {
         const { data: blob, error } = await supabase.storage.from("avaliacoes-fotos").download(p);
         if (error || !blob) continue;
@@ -84,6 +87,13 @@ function AvaliacaoDetalhe() {
           reader.readAsDataURL(blob);
         });
         fotosDataUrls.push(dataUrl);
+        const meta = fotosMeta.find((m) => m.path === p);
+        fotosDetalhadas.push({
+          dataUrl,
+          legenda: meta?.legenda ?? "",
+          principal: !!meta?.principal,
+          comentario_ia: meta?.comentario_ia ?? "",
+        });
       } catch (e) {
         console.error("Falha ao carregar foto para o PDF:", e);
       }
@@ -93,6 +103,7 @@ function AvaliacaoDetalhe() {
       modelo,
       plano,
       fotosDataUrls,
+      fotosDetalhadas,
       corretor: {
         nome: profile?.nome ?? "Corretor",
         creci: profile?.creci ?? null,
