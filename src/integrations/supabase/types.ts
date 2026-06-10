@@ -26,6 +26,7 @@ export type Database = {
           caracteristicas: Json | null
           conservacao: string | null
           created_at: string | null
+          endereco_completo: string | null
           finalidade: string
           fotos: Json
           fotos_meta: Json | null
@@ -64,6 +65,7 @@ export type Database = {
           caracteristicas?: Json | null
           conservacao?: string | null
           created_at?: string | null
+          endereco_completo?: string | null
           finalidade: string
           fotos?: Json
           fotos_meta?: Json | null
@@ -102,6 +104,7 @@ export type Database = {
           caracteristicas?: Json | null
           conservacao?: string | null
           created_at?: string | null
+          endereco_completo?: string | null
           finalidade?: string
           fotos?: Json
           fotos_meta?: Json | null

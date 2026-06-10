@@ -1162,6 +1162,231 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
   void primeira;
 }
 
+// ---------- EXPERT EXTRA: DISPERSÃO (R$/m² × Área) ----------
+function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Dispersão dos Comparáveis — Valor/m² × Área");
+
+  const pts = comparaveis
+    .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
+    .map((c) => ({ x: Number(c.area), y: Number(c.valor_anunciado) / Number(c.area) }));
+
+  // Detecta outliers via 1.5 * desvio padrão em y
+  let mean = 0, sd = 0;
+  if (pts.length) {
+    mean = pts.reduce((a, b) => a + b.y, 0) / pts.length;
+    sd = Math.sqrt(pts.reduce((a, b) => a + (b.y - mean) ** 2, 0) / pts.length);
+  }
+  const inliers = pts.filter((p) => sd === 0 || Math.abs(p.y - mean) <= 1.5 * sd);
+  const outliers = pts.filter((p) => sd > 0 && Math.abs(p.y - mean) > 1.5 * sd);
+
+  // Ponto do imóvel avaliado
+  const avalArea = Number(avaliacao?.area_total) || 0;
+  const avalY =
+    Number(resultado?.valor_unitario_medio) ||
+    (Number(resultado?.valor_central) > 0 && avalArea > 0 ? Number(resultado.valor_central) / avalArea : 0);
+  const avalPoint = avalArea > 0 && avalY > 0 ? { x: avalArea, y: avalY } : null;
+
+  // Regressão linear nos inliers
+  let slope = 0, intercept = mean;
+  if (inliers.length >= 2) {
+    const mx = inliers.reduce((a, b) => a + b.x, 0) / inliers.length;
+    const my = inliers.reduce((a, b) => a + b.y, 0) / inliers.length;
+    const num = inliers.reduce((a, b) => a + (b.x - mx) * (b.y - my), 0);
+    const den = inliers.reduce((a, b) => a + (b.x - mx) ** 2, 0);
+    slope = den === 0 ? 0 : num / den;
+    intercept = my - slope * mx;
+  }
+
+  // Caixa do gráfico
+  const x0 = M + 22;
+  const x1 = PW - M - 8;
+  const y0 = 52;
+  const y1 = PH - 48;
+  const cw = x1 - x0;
+  const ch = y1 - y0;
+
+  // Range
+  const allXs = [...pts.map((p) => p.x), ...(avalPoint ? [avalPoint.x] : [])];
+  const allYs = [...pts.map((p) => p.y), ...(avalPoint ? [avalPoint.y] : [])];
+  if (allXs.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(11);
+    doc.setTextColor(...GRAY);
+    doc.text("Sem dados suficientes para gerar o gráfico de dispersão.", PW / 2, PH / 2, { align: "center" });
+    return;
+  }
+  const padPct = 0.08;
+  const xMinR = Math.min(...allXs), xMaxR = Math.max(...allXs);
+  const yMinR = Math.min(...allYs), yMaxR = Math.max(...allYs);
+  const xMin = xMinR - (xMaxR - xMinR || xMinR) * padPct;
+  const xMax = xMaxR + (xMaxR - xMinR || xMaxR) * padPct;
+  const yMin = Math.max(0, yMinR - (yMaxR - yMinR || yMinR) * padPct);
+  const yMax = yMaxR + (yMaxR - yMinR || yMaxR) * padPct;
+  const sx = (x: number) => x0 + ((x - xMin) / (xMax - xMin || 1)) * cw;
+  const sy = (y: number) => y1 - ((y - yMin) / (yMax - yMin || 1)) * ch;
+
+  // Fundo + grid
+  doc.setFillColor(...BG_SOFT);
+  doc.rect(x0, y0, cw, ch, "F");
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.2);
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const gy = y0 + (ch * i) / steps;
+    doc.line(x0, gy, x1, gy);
+    const yVal = yMax - ((yMax - yMin) * i) / steps;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
+    doc.text(fmtBRL(yVal), x0 - 2, gy + 1.5, { align: "right" });
+  }
+  for (let i = 0; i <= steps; i++) {
+    const gx = x0 + (cw * i) / steps;
+    doc.line(gx, y0, gx, y1);
+    const xVal = xMin + ((xMax - xMin) * i) / steps;
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
+    doc.text(`${fmtNum(xVal, 0)} m²`, gx, y1 + 5, { align: "center" });
+  }
+
+  // Eixos
+  doc.setDrawColor(...BLUE);
+  doc.setLineWidth(0.6);
+  doc.line(x0, y0, x0, y1);
+  doc.line(x0, y1, x1, y1);
+
+  // Linha de tendência
+  if (inliers.length >= 2) {
+    const yA = slope * xMin + intercept;
+    const yB = slope * xMax + intercept;
+    doc.setDrawColor(...BLUE);
+    doc.setLineWidth(0.8);
+    doc.line(sx(xMin), sy(yA), sx(xMax), sy(yB));
+  }
+
+  // Pontos inliers (azul escuro)
+  doc.setDrawColor(...BLUE);
+  doc.setFillColor(...BLUE);
+  inliers.forEach((p) => doc.circle(sx(p.x), sy(p.y), 1.6, "F"));
+
+  // Outliers (vermelho com "x")
+  doc.setDrawColor(220, 53, 69);
+  doc.setLineWidth(0.8);
+  outliers.forEach((p) => {
+    const cx = sx(p.x), cy = sy(p.y);
+    doc.line(cx - 2, cy - 2, cx + 2, cy + 2);
+    doc.line(cx - 2, cy + 2, cx + 2, cy - 2);
+  });
+
+  // Imóvel avaliado (dourado, maior)
+  if (avalPoint) {
+    doc.setDrawColor(...GOLD);
+    doc.setFillColor(...GOLD);
+    doc.circle(sx(avalPoint.x), sy(avalPoint.y), 2.6, "F");
+    doc.setDrawColor(...BLUE);
+    doc.setLineWidth(0.4);
+    doc.circle(sx(avalPoint.x), sy(avalPoint.y), 2.6, "S");
+  }
+
+  // Rótulos dos eixos
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...BLUE);
+  doc.text("Área total (m²)", (x0 + x1) / 2, y1 + 11, { align: "center" });
+  doc.text("Valor por m² (R$/m²)", x0 - 16, (y0 + y1) / 2, { align: "center", angle: 90 });
+
+  // Legenda
+  const lgY = PH - 22;
+  const item = (cx: number, cor: [number, number, number], tipo: "dot" | "x" | "gold", label: string) => {
+    if (tipo === "gold") {
+      doc.setFillColor(...cor);
+      doc.circle(cx, lgY - 1.2, 2, "F");
+    } else if (tipo === "dot") {
+      doc.setFillColor(...cor);
+      doc.circle(cx, lgY - 1.2, 1.5, "F");
+    } else {
+      doc.setDrawColor(...cor);
+      doc.setLineWidth(0.8);
+      doc.line(cx - 2, lgY - 3, cx + 2, lgY + 0.5);
+      doc.line(cx - 2, lgY + 0.5, cx + 2, lgY - 3);
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...TEXT);
+    doc.text(label, cx + 4, lgY, { align: "left" });
+  };
+  item(M, BLUE, "dot", "Comparáveis");
+  item(M + 55, BLUE, "dot", "Linha de tendência (regressão linear)");
+  // Sobrescreve para desenhar uma linha azul ao lado da legenda da tendência
+  doc.setDrawColor(...BLUE);
+  doc.setLineWidth(0.8);
+  doc.line(M + 53, lgY - 1.2, M + 57, lgY - 1.2);
+  item(M + 130, [220, 53, 69], "x", "Outliers eliminados");
+  item(M + 180, GOLD, "gold", "Imóvel avaliado");
+}
+
+// ---------- EXPERT EXTRA: LOCALIZAÇÃO ----------
+function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Localização");
+
+  const endereco =
+    String(avaliacao?.endereco_completo || "").trim() ||
+    String(avaliacao?.localizacao || "").trim() ||
+    "Endereço não informado";
+
+  // Área do "mapa" (placeholder elegante)
+  const x = M;
+  const y = 50;
+  const w = PW - M * 2;
+  const h = PH - y - 50;
+
+  doc.setFillColor(...CARD_BLUE);
+  doc.rect(x, y, w, h, "F");
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.4);
+  doc.rect(x, y, w, h, "S");
+
+  // Linhas decorativas estilo "mapa"
+  doc.setDrawColor(210, 220, 232);
+  doc.setLineWidth(0.3);
+  for (let i = 1; i < 8; i++) {
+    doc.line(x + (w * i) / 8, y + 4, x + (w * i) / 8, y + h - 4);
+  }
+  for (let i = 1; i < 5; i++) {
+    doc.line(x + 4, y + (h * i) / 5, x + w - 4, y + (h * i) / 5);
+  }
+
+  // Pin no centro
+  const cx = x + w / 2;
+  const cy = y + h / 2 - 6;
+  doc.setFillColor(...GOLD);
+  doc.circle(cx, cy - 6, 5, "F");
+  doc.setFillColor(...BLUE);
+  doc.circle(cx, cy - 6, 1.8, "F");
+  doc.setFillColor(...GOLD);
+  doc.triangle(cx - 4, cy - 3, cx + 4, cy - 3, cx, cy + 4, "F");
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  doc.text("Pré-visualização de localização", cx, cy + 14, { align: "center" });
+
+  // Endereço abaixo
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...BLUE);
+  doc.text("Endereço:", M, y + h + 12);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...TEXT);
+  const wrapped = doc.splitTextToSize(endereco, PW - M * 2 - 26);
+  doc.text(wrapped, M + 22, y + h + 12);
+}
+
 function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
@@ -1171,12 +1396,14 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaSumario(doc, [
     "O Imóvel",
     "Ficha Técnica",
+    "Localização",
     ...(temFotos ? ["Fotos do Imóvel"] : []),
     ...(temDocFotos ? ["Documentação Fotográfica"] : []),
     "Análise do Bairro",
     "Perfil do Público",
     "Anúncios na Região",
     "Homogeneização",
+    "Dispersão dos Comparáveis",
     "Tratamento Estatístico",
     "Campo de Arbítrio",
     "Valor do Imóvel",
@@ -1185,12 +1412,14 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
+  paginaLocalizacao(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDet, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
+  paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
   paginaEstatistica(doc, comparaveis, corretor);
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, resultado, corretor);

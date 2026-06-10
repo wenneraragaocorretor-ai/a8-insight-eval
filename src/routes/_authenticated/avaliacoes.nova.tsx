@@ -245,6 +245,7 @@ function NovaAvaliacao() {
     tipo: "Apartamento" as string,
     finalidade: "Venda",
     localizacao: "",
+    endereco_completo: "",
     area_total: 0,
     area_privativa: 0,
     quartos: 0,
@@ -598,6 +599,17 @@ function NovaAvaliacao() {
                 value={imovel.localizacao}
                 onChange={(e) => setImovelField("localizacao", e.target.value)}
               />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Endereço completo do imóvel</Label>
+              <Input
+                placeholder="Ex: Rua Joaquim Floriano, 100, Itaim Bibi, São Paulo - SP, 04534-000"
+                value={imovel.endereco_completo}
+                onChange={(e) => setImovelField("endereco_completo", e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Usado para gerar a página de Localização no laudo Expert. Quanto mais completo, melhor.
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Área Total (m²)</Label>
