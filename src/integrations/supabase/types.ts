@@ -30,6 +30,7 @@ export type Database = {
           idade_real: number | null
           infraestrutura_lazer: Json
           localizacao: string
+          numero_pavimentos: string | null
           observacoes: string | null
           padrao: string | null
           posicao: string | null
@@ -37,6 +38,7 @@ export type Database = {
           quartos: number | null
           status: string | null
           suites: number | null
+          tipo_acabamento: Json | null
           tipo_imovel: string
           tipo_relatorio: string
           topografia: string | null
@@ -62,6 +64,7 @@ export type Database = {
           idade_real?: number | null
           infraestrutura_lazer?: Json
           localizacao: string
+          numero_pavimentos?: string | null
           observacoes?: string | null
           padrao?: string | null
           posicao?: string | null
@@ -69,6 +72,7 @@ export type Database = {
           quartos?: number | null
           status?: string | null
           suites?: number | null
+          tipo_acabamento?: Json | null
           tipo_imovel: string
           tipo_relatorio: string
           topografia?: string | null
@@ -94,6 +98,7 @@ export type Database = {
           idade_real?: number | null
           infraestrutura_lazer?: Json
           localizacao?: string
+          numero_pavimentos?: string | null
           observacoes?: string | null
           padrao?: string | null
           posicao?: string | null
@@ -101,6 +106,7 @@ export type Database = {
           quartos?: number | null
           status?: string | null
           suites?: number | null
+          tipo_acabamento?: Json | null
           tipo_imovel?: string
           tipo_relatorio?: string
           topografia?: string | null
