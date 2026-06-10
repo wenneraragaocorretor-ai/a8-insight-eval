@@ -27,6 +27,8 @@ type FormState = {
   telefone: string;
   cpf: string;
   creci: string;
+  cnai: string;
+  outro_registro: string;
   tipo: "pessoa_fisica" | "imobiliaria";
   nome_imobiliaria: string;
   cidade: string;
@@ -35,7 +37,7 @@ type FormState = {
 };
 
 const empty: FormState = {
-  nome: "", email: "", telefone: "", cpf: "", creci: "",
+  nome: "", email: "", telefone: "", cpf: "", creci: "", cnai: "", outro_registro: "",
   tipo: "pessoa_fisica", nome_imobiliaria: "", cidade: "", estado: "", logo_url: "",
 };
 
