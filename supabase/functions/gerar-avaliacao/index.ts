@@ -22,7 +22,7 @@ serve(async (req) => {
     console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
 
     // Baixa as fotos do imóvel (caminhos no bucket privado) usando service role
-    const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 3) : []
+    const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 15) : []
     const fotosImagens: Array<{ mediaType: string; base64: string }> = []
     if (fotosPaths.length > 0) {
       const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
@@ -135,10 +135,11 @@ e devem ser preenchidos com base nas características reais — NÃO retorne str
   "dicas_precificacao": ["Iniciar 5% acima do valor central", "Ajustar após 30 dias"],
   "estrategias_venda": ["Tour virtual em alta", "Parceria com home staging"],
   "dicas_anuncio": ["Destaque a vista livre", "Enfatize a proximidade com o metrô"],
-  "analise_fotos": "${fotosImagens.length > 0 ? 'Análise visual das fotos enviadas: padrão construtivo aparente, estado de conservação real, acabamentos visíveis (piso, esquadrias, bancadas, pintura), pontos positivos e pontos de atenção observados nas imagens. Se houver discrepância entre as fotos e os dados informados pelo corretor, mencione-a explicitamente. 4-6 frases.' : ''}"
+  "analise_fotos": "${fotosImagens.length > 0 ? 'Análise visual geral consolidada das fotos enviadas: padrão construtivo aparente, estado de conservação real, acabamentos visíveis (piso, esquadrias, bancadas, pintura), pontos positivos e pontos de atenção observados nas imagens. Se houver discrepância entre as fotos e os dados informados pelo corretor, mencione-a explicitamente. 4-6 frases.' : ''}",
+  "analise_fotos_individual": ${fotosImagens.length > 0 ? `[${fotosImagens.map((_, i) => `"Foto ${i + 1}: comentário técnico curto (2-3 linhas) sobre estado de conservação aparente, tipo de acabamento visível, pontos positivos e pontos de atenção."`).join(", ")}]` : "[]"}
 }
 
-${fotosImagens.length > 0 ? `ANÁLISE DAS FOTOS (OBRIGATÓRIO): As imagens em anexo são fotos reais do imóvel avaliando. Analise-as e identifique: padrão construtivo (simples/normal/alto/luxo), estado de conservação real, acabamentos visíveis, pontos positivos e pontos de atenção baseados nas imagens. Se as fotos contradizerem os dados informados pelo corretor (padrão, conservação), mencione a discrepância no campo "analise_fotos" e ajuste o valor estimado conforme o que as fotos efetivamente mostram.` : ''}`
+${fotosImagens.length > 0 ? `ANÁLISE DAS FOTOS (OBRIGATÓRIO): As ${fotosImagens.length} imagens em anexo são fotos reais do imóvel avaliando, na ordem em que aparecem (Foto 1, Foto 2, ...). Para cada foto, gere um comentário técnico curto (2 a 3 linhas) cobrindo: estado de conservação aparente, tipo de acabamento visível, pontos positivos e pontos de atenção. Devolva esses comentários no array "analise_fotos_individual" — UM item por foto, NA MESMA ORDEM das imagens, totalizando exatamente ${fotosImagens.length} itens. Em "analise_fotos" devolva a análise geral consolidada (padrão, conservação, acabamentos, discrepâncias com os dados informados). Se as fotos contradisserem os dados do corretor, mencione e ajuste o valor estimado.` : ''}`
 
 
     const fmt = (v: any) => (v === undefined || v === null || v === "" ? "-" : v);
@@ -185,16 +186,16 @@ Comparável #${i + 1} (${c.fonte}):
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: systemPrompt,
         messages: [
           {
             role: 'user',
             content: [
-              ...fotosImagens.map((img) => ({
-                type: 'image',
-                source: { type: 'base64', media_type: img.mediaType, data: img.base64 },
-              })),
+              ...fotosImagens.flatMap((img, i) => ([
+                { type: 'text', text: `Foto ${i + 1}:` },
+                { type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } },
+              ])),
               { type: 'text', text: userPrompt },
             ],
           },

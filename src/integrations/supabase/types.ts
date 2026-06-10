@@ -28,6 +28,7 @@ export type Database = {
           created_at: string | null
           finalidade: string
           fotos: Json
+          fotos_meta: Json | null
           id: string
           idade_aparente: string | null
           idade_real: number | null
@@ -65,6 +66,7 @@ export type Database = {
           created_at?: string | null
           finalidade: string
           fotos?: Json
+          fotos_meta?: Json | null
           id?: string
           idade_aparente?: string | null
           idade_real?: number | null
@@ -102,6 +104,7 @@ export type Database = {
           created_at?: string | null
           finalidade?: string
           fotos?: Json
+          fotos_meta?: Json | null
           id?: string
           idade_aparente?: string | null
           idade_real?: number | null

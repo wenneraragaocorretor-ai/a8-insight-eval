@@ -9,7 +9,7 @@ import { Label } from "../../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star } from "lucide-react";
 
 
 const CARACTERISTICAS_OPCOES = [
@@ -298,8 +298,16 @@ function NovaAvaliacao() {
     novoComparavel(3),
   ]);
 
-  type FotoItem = { path: string; previewUrl: string; uploading?: boolean };
+  type FotoItem = {
+    path: string;
+    previewUrl: string;
+    uploading?: boolean;
+    legenda: string;
+    principal: boolean;
+  };
   const [fotos, setFotos] = useState<FotoItem[]>([]);
+
+  const maxFotos = plano === "expert" ? 15 : plano === "profissional" || plano === "pro" ? 5 : 3;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Limpa as object URLs ao desmontar
@@ -318,9 +326,9 @@ function NovaAvaliacao() {
   const handleFotosSelected = async (filesList: FileList | null) => {
     if (!filesList) return;
     const files = Array.from(filesList);
-    const disponivel = 3 - fotos.length;
+    const disponivel = maxFotos - fotos.length;
     if (disponivel <= 0) {
-      toast.error("Limite de 3 fotos atingido.");
+      toast.error(`Limite de ${maxFotos} fotos atingido.`);
       return;
     }
     const aProcessar = files.slice(0, disponivel);
@@ -340,7 +348,7 @@ function NovaAvaliacao() {
         continue;
       }
       const previewUrl = URL.createObjectURL(file);
-      const tempItem: FotoItem = { path: "", previewUrl, uploading: true };
+      const tempItem: FotoItem = { path: "", previewUrl, uploading: true, legenda: "", principal: false };
       setFotos((prev) => [...prev, tempItem]);
       try {
         const ext = file.name.split(".").pop() || "jpg";
@@ -465,6 +473,15 @@ function NovaAvaliacao() {
             conservacao: c.conservacao ? imovel.conservacao : "Bom",
             caracteristicas: c.caracteristicas ? imovel.caracteristicas : [],
             fotos: fotos.filter((f) => f.path && !f.uploading).map((f) => f.path),
+            fotos_meta: (() => {
+              const validas = fotos.filter((f) => f.path && !f.uploading);
+              const temPrincipal = validas.some((f) => f.principal);
+              return validas.map((f, i) => ({
+                path: f.path,
+                legenda: f.legenda || "",
+                principal: temPrincipal ? f.principal : i === 0,
+              }));
+            })(),
             // Ficha Técnica Detalhada — só envia se Expert
             idade_real: isExpert ? imovel.idade_real || undefined : undefined,
             idade_aparente: isExpert ? imovel.idade_aparente || undefined : undefined,
@@ -934,14 +951,15 @@ function NovaAvaliacao() {
                 <div>
                   <Label className="text-base">Fotos do Imóvel</Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Até 3 fotos · JPG, PNG ou WEBP · máx. 5MB cada · usadas pela IA na análise visual e no PDF.
+                    Até {maxFotos} fotos · JPG, PNG ou WEBP · máx. 5MB cada · usadas pela IA na análise visual e no PDF.
+                    {plano === "expert" && " Marque a foto principal com a estrela — ela vai para a capa do PDF."}
                   </p>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   className="gap-2"
-                  disabled={fotos.length >= 3}
+                  disabled={fotos.length >= maxFotos}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <ImagePlus size={16} /> Adicionar foto
@@ -966,23 +984,56 @@ function NovaAvaliacao() {
                   <span className="text-sm">Clique para enviar fotos do imóvel</span>
                 </button>
               ) : (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {fotos.map((f, i) => (
-                    <div key={f.previewUrl} className="relative group rounded-lg overflow-hidden border border-border aspect-[4/3] bg-muted">
-                      <img src={f.previewUrl} alt={`Foto ${i + 1} do imóvel`} className="w-full h-full object-cover" />
-                      {f.uploading && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs">
-                          Enviando…
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => safe(() => removerFoto(i))}
-                        className="absolute top-2 right-2 bg-black/70 hover:bg-destructive text-white rounded-full p-1.5 opacity-90"
-                        aria-label="Remover foto"
-                      >
-                        <X size={14} />
-                      </button>
+                    <div key={f.previewUrl} className="space-y-2">
+                      <div className="relative group rounded-lg overflow-hidden border border-border aspect-[4/3] bg-muted">
+                        <img src={f.previewUrl} alt={`Foto ${i + 1} do imóvel`} className="w-full h-full object-cover" />
+                        {f.uploading && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs">
+                            Enviando…
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            safe(() =>
+                              setFotos((prev) =>
+                                prev.map((p, idx) => ({ ...p, principal: idx === i ? !p.principal : false })),
+                              ),
+                            )
+                          }
+                          className={`absolute top-2 left-2 rounded-full p-1.5 ${
+                            f.principal ? "bg-brand-gold text-white" : "bg-black/70 text-white hover:bg-brand-gold"
+                          }`}
+                          aria-label={f.principal ? "Foto principal" : "Marcar como foto principal"}
+                          title={f.principal ? "Foto principal" : "Marcar como foto principal"}
+                        >
+                          <Star size={14} fill={f.principal ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => safe(() => removerFoto(i))}
+                          className="absolute top-2 right-2 bg-black/70 hover:bg-destructive text-white rounded-full p-1.5 opacity-90"
+                          aria-label="Remover foto"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Legenda da foto</Label>
+                        <Input
+                          placeholder="Ex: Sala de estar, Cozinha, Fachada, Varanda..."
+                          value={f.legenda}
+                          onChange={(e) =>
+                            safe(() =>
+                              setFotos((prev) =>
+                                prev.map((p, idx) => (idx === i ? { ...p, legenda: e.target.value } : p)),
+                              ),
+                            )
+                          }
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

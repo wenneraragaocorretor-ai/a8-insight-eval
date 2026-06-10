@@ -1053,15 +1053,77 @@ function paginaAmbientes(doc: jsPDF, a: any, corretor: CorretorInfo) {
   });
 }
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
+function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], corretor: CorretorInfo) {
+  if (fotosDet.length === 0) return;
+  const usable = PW - M * 2;
+  const gap = 6;
+  const colW = (usable - gap) / 2;
+  const imgH = 55;
+  const legendaH = 6;
+  const comentH = 18;
+  const blocoH = imgH + legendaH + comentH + 6;
+  const topY = 50;
+  const maxY = PH - 18;
+  let y = topY;
+  let col = 0;
+  let primeira = true;
+
+  const novaPag = () => {
+    novaPagina(doc);
+    microHeader(doc, corretor);
+    tituloPagina(doc, "Documentação Fotográfica");
+    y = topY;
+    col = 0;
+  };
+
+  novaPag();
+  primeira = false;
+
+  fotosDet.forEach((f) => {
+    if (col === 0 && y + blocoH > maxY) novaPag();
+    const x = M + col * (colW + gap);
+    try {
+      const match = /^data:image\/(jpe?g|png|webp);base64,/i.exec(f.dataUrl);
+      const fmt = match && match[1].toLowerCase().startsWith("png") ? "PNG"
+        : match && match[1].toLowerCase() === "webp" ? "WEBP" : "JPEG";
+      doc.setFillColor(...CARD_BLUE);
+      doc.roundedRect(x, y, colW, imgH, 2, 2, "F");
+      doc.addImage(f.dataUrl, fmt as any, x + 1, y + 1, colW - 2, imgH - 2, undefined, "FAST");
+    } catch (e) {
+      console.error("Falha ao desenhar foto:", e);
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...BLUE);
+    doc.text(f.legenda || "Sem legenda", x, y + imgH + 5);
+    if (f.comentario_ia) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(...TEXT);
+      textoMultilinha(doc, f.comentario_ia, x, y + imgH + legendaH + 5, colW, {
+        size: 8, color: TEXT, lineHeight: 3.6,
+      });
+    }
+    col++;
+    if (col >= 2) {
+      col = 0;
+      y += blocoH;
+    }
+  });
+  void primeira;
+}
+
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
+  const temDocFotos = fotosDet.length > 0;
   paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação");
   paginaSumario(doc, [
     "O Imóvel",
     "Ficha Técnica",
     ...(temFotos ? ["Fotos do Imóvel"] : []),
+    ...(temDocFotos ? ["Documentação Fotográfica"] : []),
     "Análise do Bairro",
     "Perfil do Público",
     "Anúncios na Região",
@@ -1075,6 +1137,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAmbientes(doc, avaliacao, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
+  if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDet, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor);
@@ -1087,14 +1150,23 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
+export type FotoDetalhada = { dataUrl: string; legenda: string; principal: boolean; comentario_ia: string };
+
 export function gerarPdfAvaliacao(
   avaliacao: any,
   resultado: any,
   comparaveis: any[],
-  opts: { modelo: ModeloPdf; plano: PlanoUsuario; corretor?: CorretorInfo | string; fotosDataUrls?: string[] },
+  opts: {
+    modelo: ModeloPdf;
+    plano: PlanoUsuario;
+    corretor?: CorretorInfo | string;
+    fotosDataUrls?: string[];
+    fotosDetalhadas?: FotoDetalhada[];
+  },
 ) {
   const { modelo, plano } = opts;
   const fotos = Array.isArray(opts.fotosDataUrls) ? opts.fotosDataUrls.filter((s) => typeof s === "string" && s.length > 0) : [];
+  const fotosDet = Array.isArray(opts.fotosDetalhadas) ? opts.fotosDetalhadas.filter((f) => f && f.dataUrl) : [];
   const corretor: CorretorInfo =
     typeof opts.corretor === "string"
       ? { nome: opts.corretor || "Corretor não identificado" }
@@ -1105,7 +1177,7 @@ export function gerarPdfAvaliacao(
 
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);
