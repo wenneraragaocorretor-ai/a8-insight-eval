@@ -29,6 +29,8 @@ export type ModeloPdf = 1 | 2 | 3;
 export type CorretorInfo = {
   nome: string;
   creci?: string | null;
+  cnai?: string | null;
+  outro_registro?: string | null;
   telefone?: string | null;
   cidade?: string | null;
   estado?: string | null;
@@ -655,7 +657,6 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   const items = [
     corretor.telefone ? `Tel  ${corretor.telefone}` : null,
     corretor.email ? `Email  ${corretor.email}` : null,
-    corretor.creci ? `Registro Profissional  ${corretor.creci}` : null,
     localCidade ? `Local  ${localCidade}` : null,
   ].filter(Boolean) as string[];
 
@@ -681,6 +682,39 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     doc.text(t, x + w / 2, y + 9.2, { align: "center" });
     x += w + 6;
   });
+
+  // Registros profissionais (um abaixo do outro)
+  const stripPrefix = (v: string, prefixes: string[]) => {
+    let s = v.trim();
+    for (const p of prefixes) {
+      const re = new RegExp(`^${p}[\\s\\-:]*`, "i");
+      if (re.test(s)) { s = s.replace(re, "").trim(); break; }
+    }
+    return s;
+  };
+  const detectarLabel = (v: string): { label: string; value: string } => {
+    const s = v.trim();
+    if (/^cau\b/i.test(s)) return { label: "CAU", value: stripPrefix(s, ["CAU"]) };
+    if (/^crea\b/i.test(s)) return { label: "CREA", value: stripPrefix(s, ["CREA"]) };
+    return { label: "Registro", value: s };
+  };
+  const registros: string[] = [];
+  if (corretor.creci) registros.push(`CRECI: ${stripPrefix(corretor.creci, ["CRECI"])}`);
+  if (corretor.cnai) registros.push(`CNAI: ${stripPrefix(corretor.cnai, ["CNAI"])}`);
+  if (corretor.outro_registro) {
+    const { label, value } = detectarLabel(corretor.outro_registro);
+    registros.push(`${label}: ${value}`);
+  }
+  if (registros.length) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(...GOLD);
+    let yr = y + 24;
+    registros.forEach((r) => {
+      doc.text(r, PW / 2, yr, { align: "center" });
+      yr += 6;
+    });
+  }
 
   // Disclaimer técnico (CNAI/IBAPE)
   doc.setFont("helvetica", "italic");

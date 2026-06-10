@@ -125,6 +125,8 @@ function AvaliacaoDetalhe() {
       corretor: {
         nome: profile?.nome ?? "Corretor",
         creci: profile?.creci ?? null,
+        cnai: (profile as any)?.cnai ?? null,
+        outro_registro: (profile as any)?.outro_registro ?? null,
         telefone: profile?.telefone ?? null,
         cidade: profile?.cidade ?? null,
         estado: profile?.estado ?? null,
