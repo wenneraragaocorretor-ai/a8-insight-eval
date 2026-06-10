@@ -942,14 +942,15 @@ function NovaAvaliacao() {
                 <div>
                   <Label className="text-base">Fotos do Imóvel</Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Até 3 fotos · JPG, PNG ou WEBP · máx. 5MB cada · usadas pela IA na análise visual e no PDF.
+                    Até {maxFotos} fotos · JPG, PNG ou WEBP · máx. 5MB cada · usadas pela IA na análise visual e no PDF.
+                    {plano === "expert" && " Marque a foto principal com a estrela — ela vai para a capa do PDF."}
                   </p>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   className="gap-2"
-                  disabled={fotos.length >= 3}
+                  disabled={fotos.length >= maxFotos}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <ImagePlus size={16} /> Adicionar foto
@@ -974,23 +975,56 @@ function NovaAvaliacao() {
                   <span className="text-sm">Clique para enviar fotos do imóvel</span>
                 </button>
               ) : (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {fotos.map((f, i) => (
-                    <div key={f.previewUrl} className="relative group rounded-lg overflow-hidden border border-border aspect-[4/3] bg-muted">
-                      <img src={f.previewUrl} alt={`Foto ${i + 1} do imóvel`} className="w-full h-full object-cover" />
-                      {f.uploading && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs">
-                          Enviando…
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => safe(() => removerFoto(i))}
-                        className="absolute top-2 right-2 bg-black/70 hover:bg-destructive text-white rounded-full p-1.5 opacity-90"
-                        aria-label="Remover foto"
-                      >
-                        <X size={14} />
-                      </button>
+                    <div key={f.previewUrl} className="space-y-2">
+                      <div className="relative group rounded-lg overflow-hidden border border-border aspect-[4/3] bg-muted">
+                        <img src={f.previewUrl} alt={`Foto ${i + 1} do imóvel`} className="w-full h-full object-cover" />
+                        {f.uploading && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs">
+                            Enviando…
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            safe(() =>
+                              setFotos((prev) =>
+                                prev.map((p, idx) => ({ ...p, principal: idx === i ? !p.principal : false })),
+                              ),
+                            )
+                          }
+                          className={`absolute top-2 left-2 rounded-full p-1.5 ${
+                            f.principal ? "bg-brand-gold text-white" : "bg-black/70 text-white hover:bg-brand-gold"
+                          }`}
+                          aria-label={f.principal ? "Foto principal" : "Marcar como foto principal"}
+                          title={f.principal ? "Foto principal" : "Marcar como foto principal"}
+                        >
+                          <Star size={14} fill={f.principal ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => safe(() => removerFoto(i))}
+                          className="absolute top-2 right-2 bg-black/70 hover:bg-destructive text-white rounded-full p-1.5 opacity-90"
+                          aria-label="Remover foto"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Legenda da foto</Label>
+                        <Input
+                          placeholder="Ex: Sala de estar, Cozinha, Fachada, Varanda..."
+                          value={f.legenda}
+                          onChange={(e) =>
+                            safe(() =>
+                              setFotos((prev) =>
+                                prev.map((p, idx) => (idx === i ? { ...p, legenda: e.target.value } : p)),
+                              ),
+                            )
+                          }
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
