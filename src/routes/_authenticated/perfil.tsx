@@ -39,6 +39,15 @@ const empty: FormState = {
   tipo: "pessoa_fisica", nome_imobiliaria: "", cidade: "", estado: "", logo_url: "",
 };
 
+function formatCpf(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  let out = d;
+  if (d.length > 9) out = `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+  else if (d.length > 6) out = `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
+  else if (d.length > 3) out = `${d.slice(0,3)}.${d.slice(3)}`;
+  return out;
+}
+
 function PerfilPage() {
   const fetchPerfil = useServerFn(getMeuPerfil);
   const saveFn = useServerFn(salvarMeuPerfil);
