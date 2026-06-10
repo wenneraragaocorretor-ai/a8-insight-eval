@@ -210,56 +210,150 @@ function textoMultilinha(
 }
 
 // ---------- PAGE 1: COVER ----------
-function paginaCapa(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, titulo: string) {
+function paginaCapa(
+  doc: jsPDF,
+  avaliacao: any,
+  corretor: CorretorInfo,
+  titulo: string,
+  capaFoto?: string | null,
+) {
   pintarFundo(doc);
+
+  // ===== TOPO (60% da página): foto do imóvel com overlay marinho =====
+  const fotoH = PH * 0.6; // ~126mm
   try {
-    doc.addImage(COVER_BG_BASE64, "JPEG", 0, 0, PW, PH, undefined, "FAST");
+    const img = capaFoto || COVER_BG_BASE64;
+    const fmt = typeof img === "string" && img.includes("image/png") ? "PNG" : "JPEG";
+    doc.addImage(img, fmt, 0, 0, PW, fotoH, undefined, "FAST");
   } catch {
     /* ignore */
   }
-  // semi-transparent BLUE overlay
+
+  // Overlay gradiente azul marinho escuro (várias camadas para fake gradient)
   doc.saveGraphicsState();
   // @ts-ignore
-  doc.setGState(new (doc as any).GState({ opacity: 0.7 }));
-  doc.setFillColor(...BLUE);
-  doc.rect(0, 0, PW, PH, "F");
+  doc.setGState(new (doc as any).GState({ opacity: 0.55 }));
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, PW, fotoH, "F");
   doc.restoreGraphicsState();
 
-  // top white header bar with logo text
+  // Banda mais escura na base da foto para transição
+  doc.saveGraphicsState();
+  // @ts-ignore
+  doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
+  doc.setFillColor(...NAVY);
+  doc.rect(0, fotoH - 24, PW, 24, "F");
+  doc.restoreGraphicsState();
+
+  // ===== Faixa dourada no topo (6mm) =====
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 0, PW, 4, "F");
+  doc.setFillColor(...GOLD_LIGHT);
+  doc.rect(0, 4, PW, 1.2, "F");
+
+  // ===== Bloco inferior (40%): fundo branco com texto e elementos =====
   doc.setFillColor(...WHITE);
-  doc.rect(0, 0, PW, 18, "F");
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.6);
-  doc.line(0, 18, PW, 18);
+  doc.rect(0, fotoH, PW, PH - fotoH, "F");
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(...BLUE);
-  doc.text("A8 INVESTIMENTOS", M, 11);
-  doc.setTextColor(...GOLD);
-  doc.text(" IMOBILIÁRIOS", M + doc.getTextWidth("A8 INVESTIMENTOS"), 11);
+  // Faixa dourada na base (6mm)
+  doc.setFillColor(...GOLD_LIGHT);
+  doc.rect(0, PH - 5.2, PW, 1.2, "F");
+  doc.setFillColor(...GOLD);
+  doc.rect(0, PH - 4, PW, 4, "F");
 
+  // ===== Ornamentos dourados nos cantos =====
+  const ornamento = (x: number, y: number, dir: number) => {
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.5);
+    doc.line(x, y, x + 14 * dir, y);
+    doc.line(x, y, x, y + 14);
+  };
+  ornamento(M / 2 + 4, 10, 1);
+  ornamento(PW - M / 2 - 4, 10, -1);
+
+  // ===== Logo do corretor (top-left, sobre a foto) =====
+  if (corretor.logo_data_url) {
+    try {
+      const fmt = corretor.logo_data_url.includes("image/png") ? "PNG" : "JPEG";
+      doc.addImage(corretor.logo_data_url, fmt, M, 14, 28, 14, undefined, "FAST");
+    } catch { /* ignore */ }
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...GOLD);
+    doc.text("A8", M, 22);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...WHITE);
+    doc.text("INVESTIMENTOS IMOBILIÁRIOS", M, 27);
+  }
+
+  // Etiqueta superior direita
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...BLUE);
-  doc.text(corretor.nome.toUpperCase(), PW - M, 11, { align: "right" });
+  doc.setFontSize(7);
+  doc.setTextColor(...GOLD_LIGHT);
+  doc.text("LAUDO TÉCNICO", PW - M, 22, { align: "right" });
+  doc.text("CONFIDENCIAL", PW - M, 27, { align: "right" });
 
-  // big title bottom-left over overlay
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(64);
-  doc.setTextColor(...WHITE);
-  const partes = titulo.split(" ");
-  const linha1 = partes[0];
-  const linha2 = partes.slice(1).join(" ");
-  doc.text(linha1.toUpperCase(), M, PH - 40);
+  // ===== Título principal (serif dourado, centralizado no bloco branco) =====
+  const yTituloCentro = fotoH + (PH - fotoH) / 2 - 6;
+
+  doc.setFont("times", "bold");
   doc.setFontSize(28);
   doc.setTextColor(...GOLD);
-  doc.text(linha2.toUpperCase(), M, PH - 22);
+  doc.text("LAUDO DE AVALIAÇÃO", PW / 2, yTituloCentro - 8, { align: "center" });
+  doc.setFont("times", "italic");
+  doc.setFontSize(22);
+  doc.setTextColor(...NAVY);
+  doc.text("Mercadológica", PW / 2, yTituloCentro + 4, { align: "center" });
 
+  // Divisor dourado
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(PW / 2 - 18, yTituloCentro + 9, PW / 2 + 18, yTituloCentro + 9);
+
+  // Subtítulo
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text(
+    "Conforme orientações da NBR 14653-2 da ABNT",
+    PW / 2,
+    yTituloCentro + 16,
+    { align: "center" },
+  );
+
+  // ===== Endereço do imóvel (sobre a foto, em branco) =====
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
   doc.setTextColor(...WHITE);
-  doc.text(`${avaliacao?.localizacao ?? ""}  •  ${hoje()}`, M, PH - 10);
+  doc.text(String(avaliacao?.localizacao ?? "").toUpperCase(), M, fotoH - 12);
+  doc.setFontSize(7);
+  doc.setTextColor(...GOLD_LIGHT);
+  doc.text("IMÓVEL AVALIADO", M, fotoH - 17);
+
+  // ===== Número do laudo + data (canto inferior direito do bloco branco, dourado) =====
+  const laudoId = String(avaliacao?.id ?? "").slice(0, 8).toUpperCase();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(150, 150, 150);
+  doc.text("LAUDO Nº", PW - M, PH - 22, { align: "right" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...GOLD);
+  doc.text(laudoId || "—", PW - M, PH - 16, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...NAVY);
+  doc.text(hoje(), PW - M, PH - 10, { align: "right" });
+
+  // Pequena referência do titulo original (parametrizada)
+  if (titulo && !/laudo/i.test(titulo)) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
+    doc.text(titulo, M, PH - 10);
+  }
 }
 
 // ---------- PAGE: SUMÁRIO ----------
