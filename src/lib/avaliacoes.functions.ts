@@ -32,6 +32,9 @@ const evaluationSchema = z.object({
     total_andares: z.number().optional(),
     tipo_acabamento: z.array(z.string()).optional().default([]),
     numero_pavimentos: z.string().optional(),
+    ambientes_sociais: z.array(z.string()).optional().default([]),
+    ambientes_servico: z.array(z.string()).optional().default([]),
+    ambientes_outros: z.array(z.string()).optional().default([]),
   }),
   comparaveis: z.array(z.object({
     fonte: z.string(),
