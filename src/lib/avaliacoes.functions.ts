@@ -132,6 +132,9 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           total_andares: data.imovel.total_andares ?? null,
           tipo_acabamento: data.imovel.tipo_acabamento ?? [],
           numero_pavimentos: data.imovel.numero_pavimentos ?? null,
+          ambientes_sociais: data.imovel.ambientes_sociais ?? [],
+          ambientes_servico: data.imovel.ambientes_servico ?? [],
+          ambientes_outros: data.imovel.ambientes_outros ?? [],
           status: "concluido",
         })
         .select()
