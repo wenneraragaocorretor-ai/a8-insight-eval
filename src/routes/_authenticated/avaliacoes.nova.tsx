@@ -452,6 +452,19 @@ function NovaAvaliacao() {
             vagas_cobertas: isExpert ? imovel.vagas_cobertas || undefined : undefined,
             vagas_descobertas: isExpert ? imovel.vagas_descobertas || undefined : undefined,
             total_andares: isExpert ? imovel.total_andares || undefined : undefined,
+            tipo_acabamento: isExpert
+              ? [
+                  ...imovel.tipo_acabamento,
+                  ...imovel.acabamento_outros
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter((s) => s.length > 0),
+                ]
+              : [],
+            numero_pavimentos:
+              isExpert && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
+                ? imovel.numero_pavimentos || undefined
+                : undefined,
           },
 
           comparaveis: comparaveis.map(({ id, ...c2 }) => ({
