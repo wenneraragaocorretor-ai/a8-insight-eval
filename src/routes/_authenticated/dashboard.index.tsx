@@ -5,9 +5,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { FileText, Plus, History, Trophy, Eye, CheckCircle2 } from "lucide-react";
+import { FileText, Plus, History, Trophy, Eye, CheckCircle2, AlertTriangle, User } from "lucide-react";
 import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
+import { getMeuPerfil } from "../../lib/perfil.functions";
 import { getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
 
 type DashboardSearch = { session_id?: string; pagamento?: string };
@@ -39,6 +40,7 @@ function Dashboard() {
   const queryClient = useQueryClient();
   const fetchList = useServerFn(listarAvaliacoes);
   const fetchStatus = useServerFn(getStatusAssinatura);
+  const fetchPerfil = useServerFn(getMeuPerfil);
   const confirmFn = useServerFn(confirmarCheckout);
   const [welcomePlano, setWelcomePlano] = useState<string | null>(null);
   const confirmedRef = useRef(false);
@@ -51,6 +53,11 @@ function Dashboard() {
     queryKey: ["assinatura-status"],
     queryFn: () => fetchStatus(),
   });
+  const { data: perfilData } = useQuery({
+    queryKey: ["meu-perfil"],
+    queryFn: () => fetchPerfil(),
+  });
+  const perfilIncompleto = !!perfilData && (!perfilData.profile?.creci || !perfilData.profile?.telefone);
 
   useEffect(() => {
     const sid = search.session_id;
@@ -120,6 +127,11 @@ function Dashboard() {
           <p className="text-muted-foreground">Bem-vindo ao seu painel de avaliações.</p>
         </div>
         <div className="flex gap-2">
+          <Link to="/perfil">
+            <Button variant="outline" className="gap-2 h-12 px-5 rounded-xl">
+              <User size={16} /> Meu Perfil
+            </Button>
+          </Link>
           <Link to="/planos">
             <Button variant="outline" className="gap-2 h-12 px-5 rounded-xl">
               Planos
@@ -133,6 +145,24 @@ function Dashboard() {
           </Link>
         </div>
       </div>
+
+      {perfilIncompleto && (
+        <Card className="premium-card border-2 border-yellow-400 bg-yellow-50">
+          <CardContent className="flex flex-col md:flex-row items-start md:items-center gap-3 py-4">
+            <AlertTriangle className="h-6 w-6 text-yellow-600 shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold text-yellow-900">Complete seu perfil</p>
+              <p className="text-sm text-yellow-800">
+                Adicione CRECI e telefone para que seus dados apareçam nos laudos gerados.
+              </p>
+            </div>
+            <Link to="/perfil">
+              <Button className="bg-yellow-500 hover:bg-yellow-600 text-yellow-950">Completar agora</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
 
       {welcomePlano && (
         <Card className="premium-card border-2 border-brand-gold bg-brand-gold/5">

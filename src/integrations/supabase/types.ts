@@ -217,12 +217,15 @@ export type Database = {
       profiles: {
         Row: {
           cidade: string | null
+          cpf: string | null
           created_at: string | null
           creci: string | null
+          email: string | null
           estado: string | null
           id: string
           logo_url: string | null
           nome: string
+          nome_imobiliaria: string | null
           plan_price_id: string | null
           plano: Database["public"]["Enums"]["user_role"] | null
           stripe_customer_id: string | null
@@ -230,15 +233,20 @@ export type Database = {
           subscription_current_period_end: string | null
           subscription_status: string | null
           telefone: string | null
+          tipo: string | null
+          updated_at: string
         }
         Insert: {
           cidade?: string | null
+          cpf?: string | null
           created_at?: string | null
           creci?: string | null
+          email?: string | null
           estado?: string | null
           id: string
           logo_url?: string | null
           nome: string
+          nome_imobiliaria?: string | null
           plan_price_id?: string | null
           plano?: Database["public"]["Enums"]["user_role"] | null
           stripe_customer_id?: string | null
@@ -246,15 +254,20 @@ export type Database = {
           subscription_current_period_end?: string | null
           subscription_status?: string | null
           telefone?: string | null
+          tipo?: string | null
+          updated_at?: string
         }
         Update: {
           cidade?: string | null
+          cpf?: string | null
           created_at?: string | null
           creci?: string | null
+          email?: string | null
           estado?: string | null
           id?: string
           logo_url?: string | null
           nome?: string
+          nome_imobiliaria?: string | null
           plan_price_id?: string | null
           plano?: Database["public"]["Enums"]["user_role"] | null
           stripe_customer_id?: string | null
@@ -262,6 +275,8 @@ export type Database = {
           subscription_current_period_end?: string | null
           subscription_status?: string | null
           telefone?: string | null
+          tipo?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

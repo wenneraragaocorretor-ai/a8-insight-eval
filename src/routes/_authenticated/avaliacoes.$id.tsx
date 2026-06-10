@@ -98,6 +98,24 @@ function AvaliacaoDetalhe() {
         console.error("Falha ao carregar foto para o PDF:", e);
       }
     }
+    // Carrega o logo do corretor (bucket privado "logos")
+    let logoDataUrl: string | null = null;
+    const logoPath = (profile as any)?.logo_url;
+    if (logoPath) {
+      try {
+        const { data: blob } = await supabase.storage.from("logos").download(logoPath);
+        if (blob) {
+          logoDataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (e) {
+        console.error("Falha ao carregar logo:", e);
+      }
+    }
     const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
     gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
       modelo,
@@ -111,6 +129,8 @@ function AvaliacaoDetalhe() {
         cidade: profile?.cidade ?? null,
         estado: profile?.estado ?? null,
         email: (profile as any)?.email ?? null,
+        nome_imobiliaria: (profile as any)?.nome_imobiliaria ?? null,
+        logo_data_url: logoDataUrl,
       },
     });
   };

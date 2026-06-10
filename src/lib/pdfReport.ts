@@ -33,6 +33,8 @@ export type CorretorInfo = {
   cidade?: string | null;
   estado?: string | null;
   email?: string | null;
+  nome_imobiliaria?: string | null;
+  logo_data_url?: string | null;
 };
 
 const fmtBRL = (v: number | null | undefined) =>
@@ -623,25 +625,38 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   doc.setFillColor(...BLUE);
   doc.rect(0, 0, PW, PH, "F");
 
+  // Logo do corretor (se disponível)
+  if (corretor.logo_data_url) {
+    try {
+      const fmt = corretor.logo_data_url.includes("image/png") ? "PNG" : "JPEG";
+      doc.addImage(corretor.logo_data_url, fmt, PW / 2 - 18, 18, 36, 18, undefined, "FAST");
+    } catch { /* ignore */ }
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(...WHITE);
-  doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW / 2, 40, { align: "center" });
+  doc.text(
+    (corretor.nome_imobiliaria || "A8 INVESTIMENTOS IMOBILIÁRIOS").toUpperCase(),
+    PW / 2, 44, { align: "center" }
+  );
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   doc.setTextColor(...GOLD);
-  doc.text(corretor.nome.toUpperCase(), PW / 2, 48, { align: "center" });
+  doc.text(corretor.nome.toUpperCase(), PW / 2, 52, { align: "center" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(96);
   doc.setTextColor(...WHITE);
-  doc.text("Obrigado!", PW / 2, 110, { align: "center" });
+  doc.text("Obrigado!", PW / 2, 114, { align: "center" });
 
   // contact pills (outlined gold)
+  const localCidade = [corretor.cidade, corretor.estado].filter(Boolean).join(" / ");
   const items = [
     corretor.telefone ? `Tel  ${corretor.telefone}` : null,
     corretor.email ? `Email  ${corretor.email}` : null,
     corretor.creci ? `CRECI ${corretor.creci}` : null,
+    localCidade ? `Local  ${localCidade}` : null,
   ].filter(Boolean) as string[];
 
   let totalW = 0;
