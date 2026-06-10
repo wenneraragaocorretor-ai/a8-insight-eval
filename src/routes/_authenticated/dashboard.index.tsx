@@ -181,7 +181,9 @@ function Dashboard() {
             <div className="flex-1">
               <p className="font-semibold text-brand-blue">Pagamento confirmado!</p>
               <p className="text-sm text-muted-foreground">
-                Sua assinatura do Plano {welcomePlano} está ativa. Aproveite!
+                {welcomePlano === "Básico"
+                  ? "+1 laudo Básico disponível na sua conta."
+                  : `Sua assinatura do Plano ${welcomePlano} está ativa. Aproveite!`}
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setWelcomePlano(null)}>Fechar</Button>
