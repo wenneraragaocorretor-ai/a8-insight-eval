@@ -51,6 +51,14 @@ const INFRA_LAZER_OPCOES = [
   "Quadra",
   "Portaria 24h",
   "Elevador",
+  "Sauna",
+  "Cinema",
+  "Quadra de Beach Tennis",
+  "Quadra de Tênis",
+  "Espaço Gourmet",
+  "Coworking",
+  "Pet Place",
+  "Brinquedoteca",
   "Nenhum",
 ];
 
@@ -216,6 +224,7 @@ function NovaAvaliacao() {
     topografia: "",
     zoneamento: "",
     infraestrutura_lazer: [] as string[],
+    lazer_outros: "",
     vagas_cobertas: 0,
     vagas_descobertas: 0,
     total_andares: 0,
@@ -413,7 +422,15 @@ function NovaAvaliacao() {
             posicao_solar: isExpert ? imovel.posicao_solar || undefined : undefined,
             topografia: isExpert ? imovel.topografia || undefined : undefined,
             zoneamento: isExpert ? imovel.zoneamento || undefined : undefined,
-            infraestrutura_lazer: isExpert ? imovel.infraestrutura_lazer : [],
+            infraestrutura_lazer: isExpert
+              ? [
+                  ...imovel.infraestrutura_lazer,
+                  ...imovel.lazer_outros
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter((s) => s.length > 0),
+                ]
+              : [],
             vagas_cobertas: isExpert ? imovel.vagas_cobertas || undefined : undefined,
             vagas_descobertas: isExpert ? imovel.vagas_descobertas || undefined : undefined,
             total_andares: isExpert ? imovel.total_andares || undefined : undefined,
@@ -696,6 +713,14 @@ function NovaAvaliacao() {
                         <span className="text-sm">{opcao}</span>
                       </label>
                     ))}
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-sm">Outros itens de lazer (separe por vírgula)</Label>
+                    <Input
+                      placeholder="Ex: Rooftop, Espaço zen, Pista de skate..."
+                      value={imovel.lazer_outros}
+                      onChange={(e) => setImovelField("lazer_outros", e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
