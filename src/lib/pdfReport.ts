@@ -883,6 +883,85 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
+function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Ficha Técnica");
+
+  const usable = PW - M * 2;
+  const yStart = 50;
+  const colW = (usable - 6) / 2;
+  const rowH = 12;
+
+  const dados: Array<[string, string]> = [
+    ["Padrão Construtivo", String(a.padrao ?? "—")],
+    ["Estado de Conservação", String(a.conservacao ?? "—")],
+    ["Idade Real (anos)", a.idade_real != null && a.idade_real !== 0 ? String(a.idade_real) : "—"],
+    ["Idade Aparente", String(a.idade_aparente || "—")],
+    ["Posição Solar", String(a.posicao_solar || "—")],
+    ["Topografia", String(a.topografia || "—")],
+    ["Zoneamento", String(a.zoneamento || "—")],
+    ["Posição", String(a.posicao || "—")],
+    ["Vagas Cobertas", a.vagas_cobertas != null && a.vagas_cobertas !== 0 ? String(a.vagas_cobertas) : "—"],
+    ["Vagas Descobertas", a.vagas_descobertas != null && a.vagas_descobertas !== 0 ? String(a.vagas_descobertas) : "—"],
+    ["Andar do Imóvel", a.andar != null && a.andar !== 0 ? String(a.andar) : "—"],
+    ["Total de Andares", a.total_andares != null && a.total_andares !== 0 ? String(a.total_andares) : "—"],
+  ];
+
+  let y = yStart;
+  dados.forEach((d, i) => {
+    const col = i % 2;
+    const x = M + col * (colW + 6);
+    if (col === 0 && i > 0) y += rowH + 2;
+    card(doc, x, y, colW, rowH, { variant: "white", border: "soft" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...GOLD);
+    doc.text(d[0].toUpperCase(), x + 5, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...TEXT);
+    doc.text(d[1], x + 5, y + 10);
+  });
+
+  // Infraestrutura de Lazer
+  const lazer: string[] = Array.isArray(a.infraestrutura_lazer)
+    ? a.infraestrutura_lazer.filter((s: any) => typeof s === "string" && s.trim().length > 0)
+    : [];
+  const yLazer = y + rowH + 10;
+  const boxH = PH - yLazer - 18;
+  card(doc, M, yLazer, usable, boxH, { variant: "white", border: "gold" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...BLUE);
+  doc.text("Infraestrutura de Lazer", M + 8, yLazer + 10);
+
+  if (lazer.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(...GRAY);
+    doc.text("Nenhum item informado.", M + 8, yLazer + 22);
+  } else {
+    // grid 3 colunas
+    const cols = 3;
+    const colInnerW = (usable - 16) / cols;
+    const lineH = 6;
+    lazer.forEach((item, i) => {
+      const c = i % cols;
+      const r = Math.floor(i / cols);
+      const x = M + 8 + c * colInnerW;
+      const yi = yLazer + 22 + r * lineH;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...GOLD);
+      doc.text("•", x, yi);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...TEXT);
+      doc.text(item, x + 4, yi);
+    });
+  }
+}
+
 function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
@@ -890,6 +969,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação");
   paginaSumario(doc, [
     "O Imóvel",
+    "Ficha Técnica",
     ...(temFotos ? ["Fotos do Imóvel"] : []),
     "Análise do Bairro",
     "Perfil do Público",
@@ -901,6 +981,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
     "Contato",
   ]);
   paginaImovel(doc, avaliacao, rel, corretor);
+  paginaFichaTecnica(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
