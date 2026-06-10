@@ -344,6 +344,98 @@ function NovaAvaliacao() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Prefill em modo edição
+  useEffect(() => {
+    if (!isEdit || !editId) return;
+    (async () => {
+      try {
+        const res = await fetchDetalhe({ data: { id: editId } });
+        const av: any = res.avaliacao;
+        setEdicoesUsadas(av.edicoes_count ?? 0);
+        setImovel((prev) => ({
+          ...prev,
+          tipo: av.tipo_imovel ?? prev.tipo,
+          finalidade: av.finalidade ?? prev.finalidade,
+          localizacao: av.localizacao ?? "",
+          endereco_completo: av.endereco_completo ?? "",
+          area_total: Number(av.area_total) || 0,
+          area_privativa: Number(av.area_privativa) || 0,
+          quartos: Number(av.quartos) || 0,
+          suites: Number(av.suites) || 0,
+          banheiros: Number(av.banheiros) || 0,
+          vagas: Number(av.vagas) || 0,
+          andar: Number(av.andar) || 0,
+          padrao: av.padrao ?? prev.padrao,
+          conservacao: av.conservacao ?? prev.conservacao,
+          posicao: av.posicao ?? prev.posicao,
+          caracteristicas: Array.isArray(av.caracteristicas) ? av.caracteristicas : [],
+          observacoes: av.observacoes ?? "",
+          idade_real: Number(av.idade_real) || 0,
+          idade_aparente: av.idade_aparente ?? "",
+          posicao_solar: av.posicao_solar ?? "",
+          topografia: av.topografia ?? "",
+          zoneamento: av.zoneamento ?? "",
+          infraestrutura_lazer: Array.isArray(av.infraestrutura_lazer) ? av.infraestrutura_lazer : [],
+          vagas_cobertas: Number(av.vagas_cobertas) || 0,
+          vagas_descobertas: Number(av.vagas_descobertas) || 0,
+          total_andares: Number(av.total_andares) || 0,
+          tipo_acabamento: Array.isArray(av.tipo_acabamento) ? av.tipo_acabamento : [],
+          numero_pavimentos: av.numero_pavimentos ?? "",
+          ambientes_sociais: Array.isArray(av.ambientes_sociais) ? av.ambientes_sociais : [],
+          ambientes_servico: Array.isArray(av.ambientes_servico) ? av.ambientes_servico : [],
+          ambientes_outros: Array.isArray(av.ambientes_outros) ? av.ambientes_outros : [],
+        }));
+        // Comparáveis
+        if (Array.isArray(res.comparaveis) && res.comparaveis.length > 0) {
+          setComparaveis(
+            res.comparaveis.map((c: any, i: number) => ({
+              id: i + 1,
+              fonte: c.fonte ?? "",
+              localizacao: c.localizacao ?? "",
+              area: Number(c.area) || 0,
+              area_privativa: Number(c.area_privativa) || 0,
+              quartos: Number(c.quartos) || 0,
+              suites: Number(c.suites) || 0,
+              banheiros: Number(c.banheiros) || 0,
+              vagas: Number(c.vagas) || 0,
+              padrao: c.padrao ?? "Normal",
+              conservacao: c.conservacao ?? "Bom",
+              posicao: c.posicao ?? "Meio de quadra",
+              andar: Number(c.andar) || 0,
+              idade: Number(c.idade) || 0,
+              condominio: Number(c.condominio) || 0,
+              caracteristicas: Array.isArray(c.caracteristicas) ? c.caracteristicas : [],
+              valor: Number(c.valor_anunciado) || 0,
+            })),
+          );
+        }
+        // Fotos — reusa paths já no storage; preview via URL assinada
+        const fotosPaths: string[] = Array.isArray(av.fotos) ? av.fotos : [];
+        const fotosMeta: any[] = Array.isArray(av.fotos_meta) ? av.fotos_meta : [];
+        if (fotosPaths.length > 0) {
+          const items: FotoItem[] = [];
+          for (const p of fotosPaths) {
+            const meta = fotosMeta.find((m) => m.path === p);
+            const { data: signed } = await supabase.storage
+              .from("avaliacoes-fotos")
+              .createSignedUrl(p, 60 * 60);
+            items.push({
+              path: p,
+              previewUrl: signed?.signedUrl ?? "",
+              uploading: false,
+              legenda: meta?.legenda ?? "",
+              principal: !!meta?.principal,
+            });
+          }
+          setFotos(items);
+        }
+      } catch (e: any) {
+        toast.error(e?.message || "Falha ao carregar laudo para edição");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, editId]);
+
   const ACEITOS = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
   const MAX_BYTES = 5 * 1024 * 1024;
 
