@@ -5,9 +5,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { FileText, Plus, History, Trophy, Eye, CheckCircle2 } from "lucide-react";
+import { FileText, Plus, History, Trophy, Eye, CheckCircle2, AlertTriangle, User } from "lucide-react";
 import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
+import { getMeuPerfil } from "../../lib/perfil.functions";
 import { getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
 
 type DashboardSearch = { session_id?: string; pagamento?: string };
