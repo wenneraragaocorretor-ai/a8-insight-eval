@@ -298,8 +298,16 @@ function NovaAvaliacao() {
     novoComparavel(3),
   ]);
 
-  type FotoItem = { path: string; previewUrl: string; uploading?: boolean };
+  type FotoItem = {
+    path: string;
+    previewUrl: string;
+    uploading?: boolean;
+    legenda: string;
+    principal: boolean;
+  };
   const [fotos, setFotos] = useState<FotoItem[]>([]);
+
+  const maxFotos = plano === "expert" ? 15 : plano === "profissional" || plano === "pro" ? 5 : 3;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Limpa as object URLs ao desmontar
