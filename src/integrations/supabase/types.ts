@@ -265,6 +265,7 @@ export type Database = {
           cpf: string | null
           created_at: string | null
           creci: string | null
+          creditos_avulsos: number
           email: string | null
           estado: string | null
           id: string
@@ -288,6 +289,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string | null
           creci?: string | null
+          creditos_avulsos?: number
           email?: string | null
           estado?: string | null
           id: string
@@ -311,6 +313,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string | null
           creci?: string | null
+          creditos_avulsos?: number
           email?: string | null
           estado?: string | null
           id?: string
