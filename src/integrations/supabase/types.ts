@@ -16,6 +16,9 @@ export type Database = {
     Tables: {
       avaliacoes: {
         Row: {
+          ambientes_outros: Json | null
+          ambientes_servico: Json | null
+          ambientes_sociais: Json | null
           andar: number | null
           area_privativa: number | null
           area_total: number | null
@@ -50,6 +53,9 @@ export type Database = {
           zoneamento: string | null
         }
         Insert: {
+          ambientes_outros?: Json | null
+          ambientes_servico?: Json | null
+          ambientes_sociais?: Json | null
           andar?: number | null
           area_privativa?: number | null
           area_total?: number | null
@@ -84,6 +90,9 @@ export type Database = {
           zoneamento?: string | null
         }
         Update: {
+          ambientes_outros?: Json | null
+          ambientes_servico?: Json | null
+          ambientes_sociais?: Json | null
           andar?: number | null
           area_privativa?: number | null
           area_total?: number | null
