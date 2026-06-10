@@ -1403,7 +1403,7 @@ function desenharPlaceholderMapa(doc: jsPDF, x: number, y: number, w: number, h:
 }
 
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
@@ -1428,7 +1428,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
-  paginaLocalizacao(doc, avaliacao, corretor);
+  paginaLocalizacao(doc, avaliacao, corretor, mapaDataUrl);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDet, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
@@ -1456,6 +1456,7 @@ export function gerarPdfAvaliacao(
     corretor?: CorretorInfo | string;
     fotosDataUrls?: string[];
     fotosDetalhadas?: FotoDetalhada[];
+    mapaDataUrl?: string | null;
   },
 ) {
   const { modelo, plano } = opts;
@@ -1471,7 +1472,7 @@ export function gerarPdfAvaliacao(
 
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);
