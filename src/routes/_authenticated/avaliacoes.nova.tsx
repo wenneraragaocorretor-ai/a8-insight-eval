@@ -1094,7 +1094,11 @@ function NovaAvaliacao() {
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Fonte (Ex: Zap, OLX)</Label>
-                  <Input value={c.fonte} onChange={(e) => updateComp(index, { fonte: e.target.value })} />
+                  <Input
+                    value={c.fonte}
+                    onChange={(e) => updateComp(index, { fonte: extrairDominio(e.target.value) })}
+                    placeholder="https://www.zapimoveis.com.br/..."
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Localização / Referência</Label>
