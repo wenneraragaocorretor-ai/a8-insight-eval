@@ -583,6 +583,125 @@ function NovaAvaliacao() {
               </div>
             )}
 
+            {isExpert && (
+              <div className="md:col-span-2 rounded-lg border border-brand-gold/40 bg-brand-gold/5 p-5 space-y-5">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="bg-brand-gold/15 text-brand-gold rounded-md p-2">
+                    <ClipboardList size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-brand-blue">Ficha Técnica Detalhada</h3>
+                  <span className="text-xs font-bold uppercase tracking-wide bg-brand-gold text-white px-2 py-0.5 rounded">
+                    Expert
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Campos avançados exclusivos do Plano Expert — refinam a análise técnica do imóvel.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Idade Real do Imóvel (anos)</Label>
+                    <Input
+                      type="number"
+                      placeholder="Opcional"
+                      value={imovel.idade_real || ""}
+                      onChange={(e) => setImovelField("idade_real", toNum(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Idade Aparente</Label>
+                    <NativeSelect
+                      value={imovel.idade_aparente}
+                      options={["", ...IDADE_APARENTE_OPCOES]}
+                      onChange={(v) => setImovelField("idade_aparente", v)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Posição Solar</Label>
+                    <NativeSelect
+                      value={imovel.posicao_solar}
+                      options={["", ...POSICAO_SOLAR_OPCOES]}
+                      onChange={(v) => setImovelField("posicao_solar", v)}
+                    />
+                  </div>
+                  {(imovel.tipo === "Casa" || imovel.tipo === "Terreno") && (
+                    <div className="space-y-2">
+                      <Label>Topografia</Label>
+                      <NativeSelect
+                        value={imovel.topografia}
+                        options={["", ...TOPOGRAFIA_OPCOES]}
+                        onChange={(v) => setImovelField("topografia", v)}
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label>Zoneamento</Label>
+                    <Input
+                      placeholder="Ex: ZR1, ZC, ZM"
+                      value={imovel.zoneamento}
+                      onChange={(e) => setImovelField("zoneamento", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Vagas Cobertas</Label>
+                    <Input
+                      type="number"
+                      placeholder="Opcional"
+                      value={imovel.vagas_cobertas || ""}
+                      onChange={(e) => setImovelField("vagas_cobertas", toNum(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Vagas Descobertas</Label>
+                    <Input
+                      type="number"
+                      placeholder="Opcional"
+                      value={imovel.vagas_descobertas || ""}
+                      onChange={(e) => setImovelField("vagas_descobertas", toNum(e.target.value))}
+                    />
+                  </div>
+                  {imovel.tipo === "Apartamento" && (
+                    <div className="space-y-2">
+                      <Label>Total de Andares do Edifício</Label>
+                      <Input
+                        type="number"
+                        placeholder="Opcional"
+                        value={imovel.total_andares || ""}
+                        onChange={(e) => setImovelField("total_andares", toNum(e.target.value))}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Infraestrutura de Lazer</Label>
+                  <div className="flex flex-wrap gap-4">
+                    {INFRA_LAZER_OPCOES.map((opcao) => (
+                      <label key={opcao} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={imovel.infraestrutura_lazer.includes(opcao)}
+                          onChange={() =>
+                            safe(() =>
+                              setImovel((prev) => ({
+                                ...prev,
+                                infraestrutura_lazer: prev.infraestrutura_lazer.includes(opcao)
+                                  ? prev.infraestrutura_lazer.filter((c) => c !== opcao)
+                                  : [...prev.infraestrutura_lazer, opcao],
+                              })),
+                            )
+                          }
+                          className="h-4 w-4 shrink-0 cursor-pointer rounded-sm accent-brand-gold"
+                        />
+                        <span className="text-sm">{opcao}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             <div className="space-y-2 md:col-span-2">
               <Label>Observações</Label>
               <Input
