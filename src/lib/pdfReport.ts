@@ -707,7 +707,7 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
     const total = fOferta * fArea * fPadrao * fConserv * fLocal;
     return [
       String(i + 1),
-      String(c.fonte ?? "—"),
+      fmtFonte(c.fonte),
       fmtNum(fOferta, 2),
       fmtNum(fArea, 2),
       fmtNum(fPadrao, 2),
