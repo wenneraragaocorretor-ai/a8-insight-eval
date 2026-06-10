@@ -109,7 +109,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           .eq("user_id", userId)
           .gte("created_at", inicioMes.toISOString());
         if ((count ?? 0) >= 5) {
-          throw new Error("Limite de 5 laudos/mês do Plano Profissional atingido. Faça upgrade para Expert em /planos.");
+          throw new Error("Limite de 8 laudos/mês do Plano Profissional atingido. Faça upgrade para Expert em /planos.");
         }
       }
       // expert: sem limite

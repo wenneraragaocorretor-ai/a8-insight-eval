@@ -46,7 +46,7 @@ const PLANOS = [
     destaque: true,
     db: "profissional",
     features: [
-      "5 laudos por mês",
+      "8 laudos por mês",
       "Ficha técnica completa",
       "Até 8 fotos com análise da IA",
       "Homogeneização dos comparáveis",

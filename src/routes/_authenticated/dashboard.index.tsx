@@ -254,7 +254,7 @@ function Dashboard() {
               <p className="font-semibold text-brand-blue">
                 {ehBasico
                   ? "Você não tem laudos avulsos disponíveis"
-                  : "Você atingiu o limite de 5 laudos/mês do Plano Profissional"}
+                  : "Você atingiu o limite de 8 laudos/mês do Plano Profissional"}
               </p>
               <p className="text-sm text-muted-foreground">
                 {ehBasico
