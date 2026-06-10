@@ -1520,7 +1520,9 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
     "Campo de Arbítrio",
     "Valor do Imóvel",
     "Contato",
+    "Assinatura",
   ]);
+
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
