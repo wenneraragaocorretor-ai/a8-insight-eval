@@ -673,10 +673,17 @@ function NovaAvaliacao() {
         },
       };
 
-      const result = await processarIA(payload);
-      toast.success("Avaliação concluída com sucesso!");
-      if (result && result.id) navigate({ to: `/avaliacoes/${result.id}` });
-      else navigate({ to: "/dashboard" });
+      let result: any;
+      if (isEdit && editId) {
+        result = await regerarIA({ data: { id: editId, ...(payload.data as any) } });
+        toast.success("Laudo regenerado com sucesso!");
+        navigate({ to: `/avaliacoes/${editId}` });
+      } else {
+        result = await processarIA(payload);
+        toast.success("Avaliação concluída com sucesso!");
+        if (result && result.id) navigate({ to: `/avaliacoes/${result.id}` });
+        else navigate({ to: "/dashboard" });
+      }
     } catch (error: any) {
       console.error("Erro:", error);
       toast.error(error.message || "Erro ao processar avaliação.");
