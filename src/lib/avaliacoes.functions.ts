@@ -222,7 +222,7 @@ export const getAvaliacaoDetalhe = createServerFn({ method: "GET" })
     const [{ data: resultado, error: errR }, { data: comparaveis, error: errC }, { data: profile }, { data: userData }] = await Promise.all([
       supabase.from("resultados").select("*").eq("avaliacao_id", data.id).maybeSingle(),
       supabase.from("comparaveis").select("*").eq("avaliacao_id", data.id),
-      supabase.from("profiles").select("nome, plano, creci, telefone, cidade, estado").eq("id", userId).maybeSingle(),
+      supabase.from("profiles").select("nome, plano, creci, telefone, cidade, estado, email, cpf, tipo, nome_imobiliaria, logo_url").eq("id", userId).maybeSingle(),
       supabase.auth.getUser(),
     ]);
 
