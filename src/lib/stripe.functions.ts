@@ -76,7 +76,7 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plano, subscription_status, subscription_current_period_end, plan_price_id")
+      .select("plano, subscription_status, subscription_current_period_end, plan_price_id, creditos_avulsos")
       .eq("id", userId)
       .maybeSingle();
 
@@ -91,7 +91,10 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       .gte("created_at", inicioMes.toISOString());
 
     const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
-    const limite = plano === "basico" || plano === "user" ? 3 : null;
+    let limite: number | null;
+    if (plano === "expert") limite = null;
+    else if (plano === "profissional" || plano === "pro") limite = 5;
+    else limite = 1; // básico: laudo avulso
     const ativa = profile?.subscription_status === "active" || profile?.subscription_status === "trialing";
 
     return {
@@ -101,6 +104,7 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       proximoCiclo: profile?.subscription_current_period_end ?? null,
       avaliacoesMes: count ?? 0,
       limiteMes: limite,
+      creditosAvulsos: profile?.creditos_avulsos ?? 0,
     };
   });
 
