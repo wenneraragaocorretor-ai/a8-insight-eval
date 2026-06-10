@@ -40,8 +40,9 @@ export const gerarMarketingAvaliacao = createServerFn({ method: "POST" })
       .select("*")
       .eq("id", data.id)
       .single();
-    if (e1 || !av) throw new Error("Avaliação não encontrada");
-    if (av.user_id !== userId) throw new Error("Sem permissão");
+    if (e1 || !avRaw) throw new Error("Avaliação não encontrada");
+    if (avRaw.user_id !== userId) throw new Error("Sem permissão");
+    const av = avRaw as any;
 
     const { data: res } = await supabase
       .from("resultados")
