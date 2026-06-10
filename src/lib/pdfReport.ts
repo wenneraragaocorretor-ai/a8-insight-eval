@@ -1538,7 +1538,9 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
+  paginaAssinatura(doc, corretor);
   rodape(doc);
+
   return doc;
 }
 
