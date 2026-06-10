@@ -30,6 +30,8 @@ const evaluationSchema = z.object({
     vagas_cobertas: z.number().optional(),
     vagas_descobertas: z.number().optional(),
     total_andares: z.number().optional(),
+    tipo_acabamento: z.array(z.string()).optional().default([]),
+    numero_pavimentos: z.string().optional(),
   }),
   comparaveis: z.array(z.object({
     fonte: z.string(),
