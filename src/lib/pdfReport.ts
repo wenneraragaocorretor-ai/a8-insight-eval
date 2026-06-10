@@ -123,33 +123,69 @@ function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, n
   doc.line(M, y + 3, M + 24, y + 3);
 }
 
-function microHeader(doc: jsPDF, corretor: CorretorInfo) {
+function microHeader(doc: jsPDF, corretor: CorretorInfo, laudoNum?: string) {
+  // Faixa fina azul marinho no topo (12mm)
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, PW, 12, "F");
+  // Linha dourada inferior
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.4);
+  doc.line(0, 12, PW, 12);
+
+  // Logo / marca à esquerda
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...BLUE);
-  doc.text("A8 INVESTIMENTOS IMOBILIÁRIOS", PW - M, 10, { align: "right" });
+  doc.setFontSize(9);
+  doc.setTextColor(...GOLD);
+  doc.text("A8", M, 7.8);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.setTextColor(...GOLD);
-  doc.text(corretor.nome.toUpperCase(), PW - M, 14, { align: "right" });
+  doc.setTextColor(...WHITE);
+  doc.text("INVESTIMENTOS  •  " + (corretor.nome || "").toUpperCase(), M + 7, 7.8);
+
+  // Número do laudo à direita em dourado
+  if (laudoNum) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...GOLD);
+    doc.text(`LAUDO ${laudoNum}`, PW - M, 7.8, { align: "right" });
+  }
 }
 
 function rodape(doc: jsPDF) {
   const total = doc.getNumberOfPages();
   for (let i = 2; i <= total; i++) {
     doc.setPage(i);
-    // strip
-    doc.setFillColor(...BLUE);
-    doc.rect(0, PH - 12, PW, 12, "F");
+    // Linha dourada fina
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.6);
-    doc.line(0, PH - 12, PW, PH - 12);
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(7);
-    doc.setTextColor(...WHITE);
-    doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", M, PH - 5);
+    doc.setLineWidth(0.4);
+    doc.line(M, PH - 12, PW - M, PH - 12);
+
+    // Logo pequeno à esquerda
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...NAVY);
+    doc.text("A8", M, PH - 7);
     doc.setFont("helvetica", "normal");
-    doc.text(`${i} / ${total}  •  ${hoje()}`, PW - M, PH - 5, { align: "right" });
+    doc.setFontSize(6.5);
+    doc.setTextColor(...NAVY);
+    doc.text("INVESTIMENTOS", M + 6, PH - 7);
+
+    // Disclaimer central em itálico cinza
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(6.5);
+    doc.setTextColor(...GRAY_DIM);
+    doc.text(
+      "Esta avaliação é mercadológica e não substitui laudo técnico assinado por profissional habilitado (CNAI/IBAPE).",
+      PW / 2,
+      PH - 7,
+      { align: "center" },
+    );
+
+    // Número da página em dourado à direita
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...GOLD);
+    doc.text(`${String(i).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, PW - M, PH - 7, { align: "right" });
   }
 }
 
