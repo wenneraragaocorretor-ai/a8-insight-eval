@@ -1769,7 +1769,8 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   const temFotos = fotos.length > 0;
   const temDocFotos = fotosDet.length > 0;
   const temMkt = !!marketing;
-  paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação");
+  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotos[0] || null;
+  paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação", capaFoto);
   paginaSumario(doc, [
     "O Imóvel",
     "Ficha Técnica",
