@@ -22,7 +22,7 @@ serve(async (req) => {
     console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
 
     // Baixa as fotos do imóvel (caminhos no bucket privado) usando service role
-    const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 3) : []
+    const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 15) : []
     const fotosImagens: Array<{ mediaType: string; base64: string }> = []
     if (fotosPaths.length > 0) {
       const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
