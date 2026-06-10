@@ -73,6 +73,8 @@ function PerfilPage() {
       telefone: p?.telefone ?? "",
       cpf: p?.cpf ?? "",
       creci: p?.creci ?? "",
+      cnai: (p as any)?.cnai ?? "",
+      outro_registro: (p as any)?.outro_registro ?? "",
       tipo: (p?.tipo as any) === "imobiliaria" ? "imobiliaria" : "pessoa_fisica",
       nome_imobiliaria: p?.nome_imobiliaria ?? "",
       cidade: p?.cidade ?? "",
