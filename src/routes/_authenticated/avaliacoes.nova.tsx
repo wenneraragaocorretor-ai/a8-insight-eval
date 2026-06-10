@@ -326,9 +326,9 @@ function NovaAvaliacao() {
   const handleFotosSelected = async (filesList: FileList | null) => {
     if (!filesList) return;
     const files = Array.from(filesList);
-    const disponivel = 3 - fotos.length;
+    const disponivel = maxFotos - fotos.length;
     if (disponivel <= 0) {
-      toast.error("Limite de 3 fotos atingido.");
+      toast.error(`Limite de ${maxFotos} fotos atingido.`);
       return;
     }
     const aProcessar = files.slice(0, disponivel);
@@ -348,7 +348,7 @@ function NovaAvaliacao() {
         continue;
       }
       const previewUrl = URL.createObjectURL(file);
-      const tempItem: FotoItem = { path: "", previewUrl, uploading: true };
+      const tempItem: FotoItem = { path: "", previewUrl, uploading: true, legenda: "", principal: false };
       setFotos((prev) => [...prev, tempItem]);
       try {
         const ext = file.name.split(".").pop() || "jpg";
