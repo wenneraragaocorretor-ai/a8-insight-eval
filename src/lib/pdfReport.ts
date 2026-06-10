@@ -29,6 +29,8 @@ export type ModeloPdf = 1 | 2 | 3;
 export type CorretorInfo = {
   nome: string;
   creci?: string | null;
+  cnai?: string | null;
+  outro_registro?: string | null;
   telefone?: string | null;
   cidade?: string | null;
   estado?: string | null;
