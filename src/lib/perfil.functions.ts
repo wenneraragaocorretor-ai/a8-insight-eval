@@ -20,7 +20,10 @@ const perfilSchema = z.object({
   nome: z.string().trim().min(1, "Nome obrigatório").max(120),
   email: z.string().trim().email("E-mail inválido").max(160).optional().or(z.literal("")),
   telefone: z.string().trim().min(1, "Telefone obrigatório").max(40),
-  cpf: z.string().trim().max(20).optional().or(z.literal("")),
+  cpf: z
+    .string()
+    .trim()
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF deve estar no formato 000.000.000-00"),
   creci: z.string().trim().min(1, "CRECI obrigatório").max(40),
   tipo: z.enum(["pessoa_fisica", "imobiliaria"]),
   nome_imobiliaria: z.string().trim().max(160).optional().or(z.literal("")),
@@ -34,12 +37,28 @@ export const salvarMeuPerfil = createServerFn({ method: "POST" })
   .inputValidator((data) => perfilSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const cpfDigits = data.cpf.replace(/\D/g, "");
+    if (cpfDigits.length !== 11) {
+      throw new Error("CPF inválido");
+    }
+    // Verifica unicidade do CPF (comparando apenas dígitos)
+    const { data: existing, error: checkError } = await supabase
+      .from("profiles")
+      .select("id, cpf")
+      .neq("id", userId);
+    if (checkError) throw new Error(checkError.message);
+    const conflict = (existing ?? []).some(
+      (p: any) => (p.cpf ?? "").replace(/\D/g, "") === cpfDigits,
+    );
+    if (conflict) {
+      throw new Error("CPF já cadastrado no sistema");
+    }
     const payload = {
       id: userId,
       nome: data.nome,
       email: data.email || null,
       telefone: data.telefone,
-      cpf: data.cpf || null,
+      cpf: data.cpf,
       creci: data.creci,
       tipo: data.tipo,
       nome_imobiliaria: data.tipo === "imobiliaria" ? (data.nome_imobiliaria || null) : null,
@@ -48,6 +67,11 @@ export const salvarMeuPerfil = createServerFn({ method: "POST" })
       logo_url: data.logo_url || null,
     };
     const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.code === "23505" || /profiles_cpf_unique/.test(error.message)) {
+        throw new Error("CPF já cadastrado no sistema");
+      }
+      throw new Error(error.message);
+    }
     return { ok: true };
   });

@@ -39,6 +39,15 @@ const empty: FormState = {
   tipo: "pessoa_fisica", nome_imobiliaria: "", cidade: "", estado: "", logo_url: "",
 };
 
+function formatCpf(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  let out = d;
+  if (d.length > 9) out = `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+  else if (d.length > 6) out = `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
+  else if (d.length > 3) out = `${d.slice(0,3)}.${d.slice(3)}`;
+  return out;
+}
+
 function PerfilPage() {
   const fetchPerfil = useServerFn(getMeuPerfil);
   const saveFn = useServerFn(salvarMeuPerfil);
@@ -167,8 +176,15 @@ function PerfilPage() {
               <Input value={form.telefone} onChange={(e) => set("telefone", e.target.value)} required placeholder="(11) 99999-0000" />
             </div>
             <div>
-              <Label>CPF</Label>
-              <Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
+              <Label>CPF *</Label>
+              <Input
+                value={form.cpf}
+                onChange={(e) => set("cpf", formatCpf(e.target.value))}
+                required
+                inputMode="numeric"
+                maxLength={14}
+                placeholder="000.000.000-00"
+              />
             </div>
           </CardContent>
         </Card>
