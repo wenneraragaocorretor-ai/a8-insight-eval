@@ -204,32 +204,73 @@ function AvaliacaoDetalhe() {
           <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
             <ChevronLeft size={16} /> Dashboard
           </Link>
-          <h1 className="text-3xl font-bold text-brand-blue mt-2">Resultado da Avaliação</h1>
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
+            <h1 className="text-3xl font-bold text-brand-blue">Resultado da Avaliação</h1>
+            {(avaliacao as any)?.editado && (
+              <span className="text-xs font-semibold uppercase tracking-wide bg-brand-gold text-white px-2 py-1 rounded">
+                Atualizado
+              </span>
+            )}
+          </div>
           <p className="text-muted-foreground">
             {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {avaliacao?.area_total} m²
           </p>
-        </div>
-        <div className="flex items-end gap-2">
-          <Select value={String(modelo)} onValueChange={(v) => setModelo(Number(v) as ModeloPdf)}>
-            <SelectTrigger className="w-[260px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {todosModelos.map((m) => {
-                const bloqueado = !disponiveis.includes(m.id);
-                return (
-                  <SelectItem key={m.id} value={String(m.id)} disabled={bloqueado}>
-                    <span className="flex items-center gap-2">
-                      {bloqueado && <Lock size={12} />} {m.nome}
-                    </span>
-                  </SelectItem>
-                );
+          {(avaliacao as any)?.ultima_edicao_em && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Última edição em{" "}
+              {new Date((avaliacao as any).ultima_edicao_em).toLocaleDateString("pt-BR", {
+                day: "2-digit", month: "short", year: "numeric",
               })}
-            </SelectContent>
-          </Select>
-          <Button onClick={handleDownload} className="gap-2 bg-brand-gold text-primary-foreground">
-            <Download size={16} /> Baixar PDF
-          </Button>
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-end gap-2 flex-wrap">
+            <Select value={String(modelo)} onValueChange={(v) => setModelo(Number(v) as ModeloPdf)}>
+              <SelectTrigger className="w-[260px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {todosModelos.map((m) => {
+                  const bloqueado = !disponiveis.includes(m.id);
+                  return (
+                    <SelectItem key={m.id} value={String(m.id)} disabled={bloqueado}>
+                      <span className="flex items-center gap-2">
+                        {bloqueado && <Lock size={12} />} {m.nome}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              onClick={() => navigate({ to: "/avaliacoes/nova", search: { edit: avaliacao.id } as any })}
+              className="gap-2 border-[#0F2D5C] text-[#0F2D5C] hover:bg-[#0F2D5C] hover:text-white"
+              disabled={(() => {
+                const lim = limiteEdicoesPorPlano(plano);
+                return lim !== null && ((avaliacao as any)?.edicoes_count ?? 0) >= lim;
+              })()}
+            >
+              <Pencil size={16} /> Editar Laudo
+            </Button>
+            <Button onClick={handleDownload} className="gap-2 bg-brand-gold text-primary-foreground">
+              <Download size={16} /> Baixar PDF
+            </Button>
+          </div>
+          {(() => {
+            const lim = limiteEdicoesPorPlano(plano);
+            const usadas = (avaliacao as any)?.edicoes_count ?? 0;
+            if (lim === null) {
+              return <span className="text-xs text-muted-foreground">Edições ilimitadas (Expert)</span>;
+            }
+            const restantes = Math.max(0, lim - usadas);
+            return (
+              <span className="text-xs text-muted-foreground">
+                {restantes > 0 ? `${restantes} edição(ões) restante(s)` : "Limite de edições atingido"}
+              </span>
+            );
+          })()}
         </div>
       </div>
 
