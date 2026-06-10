@@ -719,6 +719,50 @@ function NovaAvaliacao() {
                       />
                     </div>
                   )}
+                  {(imovel.tipo === "Casa" || imovel.tipo === "Sobrado") && (
+                    <div className="space-y-2">
+                      <Label>Número de Pavimentos</Label>
+                      <NativeSelect
+                        value={imovel.numero_pavimentos}
+                        options={["", ...NUMERO_PAVIMENTOS_OPCOES]}
+                        onChange={(v) => setImovelField("numero_pavimentos", v)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Tipo de Acabamento</Label>
+                  <div className="flex flex-wrap gap-4">
+                    {TIPO_ACABAMENTO_OPCOES.map((opcao) => (
+                      <label key={opcao} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={imovel.tipo_acabamento.includes(opcao)}
+                          onChange={() =>
+                            safe(() =>
+                              setImovel((prev) => ({
+                                ...prev,
+                                tipo_acabamento: prev.tipo_acabamento.includes(opcao)
+                                  ? prev.tipo_acabamento.filter((c) => c !== opcao)
+                                  : [...prev.tipo_acabamento, opcao],
+                              })),
+                            )
+                          }
+                          className="h-4 w-4 shrink-0 cursor-pointer rounded-sm accent-brand-gold"
+                        />
+                        <span className="text-sm">{opcao}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-sm">Outros acabamentos (separe por vírgula)</Label>
+                    <Input
+                      placeholder="Ex: Pedra natural, Deck de madeira..."
+                      value={imovel.acabamento_outros}
+                      onChange={(e) => setImovelField("acabamento_outros", e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-3">
