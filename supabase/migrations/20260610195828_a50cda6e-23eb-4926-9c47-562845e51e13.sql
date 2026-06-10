@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cnai text, ADD COLUMN IF NOT EXISTS outro_registro text;

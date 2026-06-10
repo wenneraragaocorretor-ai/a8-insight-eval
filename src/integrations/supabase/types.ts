@@ -217,6 +217,7 @@ export type Database = {
       profiles: {
         Row: {
           cidade: string | null
+          cnai: string | null
           cpf: string | null
           created_at: string | null
           creci: string | null
@@ -226,6 +227,7 @@ export type Database = {
           logo_url: string | null
           nome: string
           nome_imobiliaria: string | null
+          outro_registro: string | null
           plan_price_id: string | null
           plano: Database["public"]["Enums"]["user_role"] | null
           stripe_customer_id: string | null
@@ -238,6 +240,7 @@ export type Database = {
         }
         Insert: {
           cidade?: string | null
+          cnai?: string | null
           cpf?: string | null
           created_at?: string | null
           creci?: string | null
@@ -247,6 +250,7 @@ export type Database = {
           logo_url?: string | null
           nome: string
           nome_imobiliaria?: string | null
+          outro_registro?: string | null
           plan_price_id?: string | null
           plano?: Database["public"]["Enums"]["user_role"] | null
           stripe_customer_id?: string | null
@@ -259,6 +263,7 @@ export type Database = {
         }
         Update: {
           cidade?: string | null
+          cnai?: string | null
           cpf?: string | null
           created_at?: string | null
           creci?: string | null
@@ -268,6 +273,7 @@ export type Database = {
           logo_url?: string | null
           nome?: string
           nome_imobiliaria?: string | null
+          outro_registro?: string | null
           plan_price_id?: string | null
           plano?: Database["public"]["Enums"]["user_role"] | null
           stripe_customer_id?: string | null
