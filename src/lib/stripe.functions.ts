@@ -46,19 +46,26 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
       .from("profiles")
       .upsert({ id: userId, nome, stripe_customer_id: customerId }, { onConflict: "id" });
 
-    const session = await stripeRequest("POST", "/checkout/sessions", {
-      mode: "subscription",
+    const sessionBody: Record<string, any> = {
+      mode: plan.mode,
       customer: customerId,
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": 1,
-      success_url: `${data.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${data.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}&pagamento=ok`,
       cancel_url: `${data.origin}/planos?canceled=1`,
       "metadata[user_id]": userId,
       "metadata[plan_code]": data.plano,
-      "subscription_data[metadata][user_id]": userId,
-      "subscription_data[metadata][plan_code]": data.plano,
       allow_promotion_codes: "true",
-    });
+    };
+    if (plan.mode === "subscription") {
+      sessionBody["subscription_data[metadata][user_id]"] = userId;
+      sessionBody["subscription_data[metadata][plan_code]"] = data.plano;
+    } else {
+      sessionBody["payment_intent_data[metadata][user_id]"] = userId;
+      sessionBody["payment_intent_data[metadata][plan_code]"] = data.plano;
+    }
+
+    const session = await stripeRequest("POST", "/checkout/sessions", sessionBody);
 
     return { url: session.url as string };
   });
@@ -69,7 +76,7 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plano, subscription_status, subscription_current_period_end, plan_price_id")
+      .select("plano, subscription_status, subscription_current_period_end, plan_price_id, creditos_avulsos")
       .eq("id", userId)
       .maybeSingle();
 
@@ -84,7 +91,10 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       .gte("created_at", inicioMes.toISOString());
 
     const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
-    const limite = plano === "basico" || plano === "user" ? 3 : null;
+    let limite: number | null;
+    if (plano === "expert") limite = null;
+    else if (plano === "profissional" || plano === "pro") limite = 5;
+    else limite = 1; // básico: laudo avulso
     const ativa = profile?.subscription_status === "active" || profile?.subscription_status === "trialing";
 
     return {
@@ -94,6 +104,7 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       proximoCiclo: profile?.subscription_current_period_end ?? null,
       avaliacoesMes: count ?? 0,
       limiteMes: limite,
+      creditosAvulsos: profile?.creditos_avulsos ?? 0,
     };
   });
 
@@ -107,22 +118,17 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
 
     const session = await stripeRequest(
       "GET",
-      `/checkout/sessions/${encodeURIComponent(data.session_id)}?expand[]=subscription`,
+      `/checkout/sessions/${encodeURIComponent(data.session_id)}?expand[]=subscription&expand[]=line_items.data.price`,
     );
     if (session.metadata?.user_id && session.metadata.user_id !== userId) {
       throw new Error("Sessão de checkout não pertence ao usuário atual");
     }
-    if (!session.subscription) return { ok: false };
 
-    const sub = typeof session.subscription === "string"
-      ? await stripeRequest("GET", `/subscriptions/${session.subscription}`)
-      : session.subscription;
-
-    const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
+    // Identifica plano via metadata ou via price lookup_key
     let planCode = session.metadata?.plan_code as keyof typeof PLANS | undefined;
-
-    if (priceId) {
-      const price = await stripeRequest("GET", `/prices/${encodeURIComponent(priceId)}`);
+    const lineItemPriceId = session.line_items?.data?.[0]?.price?.id as string | undefined;
+    if (!planCode && lineItemPriceId) {
+      const price = await stripeRequest("GET", `/prices/${encodeURIComponent(lineItemPriceId)}`);
       const lookupKey = price.lookup_key as string | undefined;
       const byLookup = Object.values(PLANS).find((plan) => plan.lookup_key === lookupKey);
       if (byLookup) planCode = byLookup.code as keyof typeof PLANS;
@@ -132,12 +138,12 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       throw new Error("Não foi possível identificar o plano comprado no checkout");
     }
 
-    const dbPlan = PLANS[planCode].db_plan;
+    const plan = PLANS[planCode];
 
     // Busca nome existente (necessário para upsert pois é NOT NULL)
     const { data: existing } = await supabase
       .from("profiles")
-      .select("nome")
+      .select("nome, creditos_avulsos")
       .eq("id", userId)
       .maybeSingle();
     const { data: userData } = await supabase.auth.getUser();
@@ -146,6 +152,33 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       (userData.user?.user_metadata as any)?.nome ||
       userData.user?.email?.split("@")[0] ||
       "Usuário";
+
+    // ---- BÁSICO: pagamento único, soma 1 crédito de laudo avulso ----
+    if (plan.mode === "payment") {
+      if (session.payment_status !== "paid") return { ok: false };
+      const novosCreditos = (existing?.creditos_avulsos ?? 0) + 1;
+      const { error } = await supabase.from("profiles").upsert(
+        {
+          id: userId,
+          nome,
+          plano: "basico" as any,
+          creditos_avulsos: novosCreditos,
+          stripe_customer_id: (session.customer as string) ?? undefined,
+        },
+        { onConflict: "id" },
+      );
+      if (error) throw new Error(`Falha ao creditar laudo: ${error.message}`);
+      return { ok: true, plano: "basico", creditosAvulsos: novosCreditos };
+    }
+
+    // ---- PROFISSIONAL/EXPERT: assinatura recorrente ----
+    if (!session.subscription) return { ok: false };
+    const sub = typeof session.subscription === "string"
+      ? await stripeRequest("GET", `/subscriptions/${session.subscription}`)
+      : session.subscription;
+
+    const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
+    const dbPlan = plan.db_plan;
 
     const { data: updatedProfile, error } = await supabase.from("profiles").upsert(
       {
@@ -164,7 +197,7 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
     ).select("plano, subscription_status, plan_price_id").single();
 
     if (error) throw new Error(`Falha ao atualizar plano no perfil: ${error.message}`);
-    console.log("[confirmarCheckout] Perfil atualizado com sucesso", {
+    console.log("[confirmarCheckout] Perfil atualizado", {
       userId,
       sessionId: data.session_id,
       plano: updatedProfile?.plano,

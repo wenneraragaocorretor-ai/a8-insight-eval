@@ -85,14 +85,21 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
     console.log("Iniciando processamento no servidor para o usuário:", userId);
 
     try {
-      // Enforça limite mensal para Plano Básico.
+      // Enforça limites por plano.
       const { data: profile } = await supabase
         .from("profiles")
-        .select("plano")
+        .select("plano, creditos_avulsos")
         .eq("id", userId)
         .maybeSingle();
       const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
+      const creditos = profile?.creditos_avulsos ?? 0;
+
       if (plano === "basico" || plano === "user") {
+        // Plano Básico: pay-per-laudo. Precisa ter pelo menos 1 crédito.
+        if (creditos < 1) {
+          throw new Error("Você não tem laudos avulsos disponíveis. Compre um novo laudo Básico (R$ 157,00) em /planos.");
+        }
+      } else if (plano === "profissional" || plano === "pro") {
         const inicioMes = new Date();
         inicioMes.setDate(1);
         inicioMes.setHours(0, 0, 0, 0);
@@ -101,10 +108,11 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           .select("id", { count: "exact", head: true })
           .eq("user_id", userId)
           .gte("created_at", inicioMes.toISOString());
-        if ((count ?? 0) >= 3) {
-          throw new Error("Limite de 3 avaliações/mês do Plano Básico atingido. Faça upgrade em /planos.");
+        if ((count ?? 0) >= 5) {
+          throw new Error("Limite de 5 laudos/mês do Plano Profissional atingido. Faça upgrade para Expert em /planos.");
         }
       }
+      // expert: sem limite
 
       const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
         body: data,
@@ -173,6 +181,14 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
 
 
       if (errA) throw errA;
+
+      // Decrementa crédito avulso para Básico.
+      if (plano === "basico" || plano === "user") {
+        await supabase
+          .from("profiles")
+          .update({ creditos_avulsos: Math.max(0, creditos - 1) })
+          .eq("id", userId);
+      }
 
       const comparaveisData = data.comparaveis.map(c => ({
         avaliacao_id: avaliacao.id,

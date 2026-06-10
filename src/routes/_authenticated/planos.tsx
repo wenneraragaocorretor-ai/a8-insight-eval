@@ -23,47 +23,65 @@ const PLANOS = [
   {
     code: "basico" as const,
     nome: "Básico",
-    preco: "R$ 99,90",
+    preco: "R$ 157",
+    periodo: "/laudo",
+    modo: "avulso" as const,
     destaque: false,
     db: "basico",
     features: [
-      "3 avaliações por mês",
-      "Estudo de mercado simplificado",
-      "Valor mín/central/máx",
-      "PDF para download",
-      "Histórico de avaliações",
+      "1 laudo por compra (pagamento único)",
+      "Ficha técnica básica",
+      "Até 3 fotos (sem análise da IA)",
+      "Comparáveis simples (sem homogeneização)",
+      "Valor estimado sem tratamento estatístico",
+      "PDF simples 4-5 páginas (sem sua marca)",
+      "Sem suporte",
     ],
   },
   {
     code: "profissional" as const,
     nome: "Profissional",
-    preco: "R$ 159,90",
+    preco: "R$ 229",
+    periodo: "/mês",
+    modo: "assinatura" as const,
     destaque: true,
     db: "profissional",
     features: [
-      "Avaliações ilimitadas",
-      "Estudo de mercado completo",
-      "Análise de mercado local",
-      "Dicas de precificação",
-      "8 estratégias de venda",
-      "Dicas de divulgação e anúncio",
-      "PDF profissional",
+      "5 laudos por mês",
+      "Ficha técnica completa",
+      "Até 8 fotos com análise da IA",
+      "Homogeneização dos comparáveis",
+      "Tratamento estatístico básico",
+      "Mapa de localização",
+      "PDF com logo e dados do corretor",
+      "Caracterização do bairro pela IA",
+      "Perfil do público-alvo",
+      "PDF 8-10 páginas",
+      "Suporte por e-mail",
     ],
   },
   {
     code: "expert" as const,
     nome: "Expert",
-    preco: "R$ 297,00",
+    preco: "R$ 377",
+    periodo: "/mês",
+    modo: "assinatura" as const,
     destaque: false,
     db: "expert",
     features: [
-      "Tudo do Profissional",
-      "Laudo NBR 14653-2 completo",
-      "Homogeneização e estatística",
-      "Campo de arbítrio ±15%",
-      "PDF técnico formal",
-      "Marca d'água personalizada",
-      "Selo Avaliador Expert",
+      "Laudos ilimitados",
+      "Tudo do Profissional, mais:",
+      "Até 15 fotos com análise individual da IA",
+      "Gráfico de dispersão e curva de tendência",
+      "Laudo completo NBR 14653-2",
+      "Campo de arbítrio ±15% com justificativa técnica",
+      "Assistente de marketing completo",
+      "Textos de anúncio prontos para portais",
+      "Estratégia de divulgação por canais",
+      "QR Code de autenticidade no laudo",
+      "Número do laudo (LAU-XXXXXX)",
+      "PDF 15+ páginas premium",
+      "Suporte prioritário",
     ],
   },
 ];
@@ -83,12 +101,13 @@ function PlanosPage() {
   useEffect(() => {
     if (search.success && search.session_id) {
       confirm({ data: { session_id: search.session_id } })
-        .then(() => {
-          toast.success("Assinatura ativada com sucesso!");
+        .then((res: any) => {
+          if (res?.plano === "basico") toast.success("Compra confirmada! +1 laudo Básico disponível.");
+          else toast.success("Assinatura ativada com sucesso!");
           refetch();
         })
         .catch(() => {
-          toast.info("Pagamento recebido. A assinatura será ativada em instantes.");
+          toast.info("Pagamento recebido. Será processado em instantes.");
           setTimeout(() => refetch(), 3000);
         });
     } else if (search.canceled) {
@@ -156,8 +175,11 @@ function PlanosPage() {
                 <CardTitle className="text-2xl text-brand-blue">{p.nome}</CardTitle>
                 <div className="mt-2">
                   <span className="text-4xl font-bold">{p.preco}</span>
-                  <span className="text-muted-foreground">/mês</span>
+                  <span className="text-muted-foreground">{p.periodo}</span>
                 </div>
+                {p.modo === "avulso" && (
+                  <p className="text-xs text-muted-foreground mt-1">Pagamento único, não recorrente</p>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-2">
@@ -171,12 +193,12 @@ function PlanosPage() {
                 <Button
                   className={`w-full h-11 ${p.destaque ? "bg-brand-gold text-primary-foreground hover:opacity-90" : ""}`}
                   variant={p.destaque ? "default" : "outline"}
-                  disabled={loading !== null || ehAtual}
+                  disabled={loading !== null || (p.modo === "assinatura" && ehAtual)}
                   onClick={() => assinar(p.code)}
                 >
                   {loading === p.code ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...</>
-                  ) : ehAtual ? "Plano atual" : "Assinar"}
+                  ) : p.modo === "avulso" ? "Comprar laudo" : ehAtual ? "Plano atual" : "Assinar"}
                 </Button>
               </CardContent>
             </Card>

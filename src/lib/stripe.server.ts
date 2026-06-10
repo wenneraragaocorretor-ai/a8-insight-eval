@@ -48,29 +48,32 @@ export async function stripeRequest(method: string, path: string, body?: Record<
 export const PLANS = {
   basico: {
     code: "basico",
-    name: "Plano Básico",
-    price_cents: 9990,
-    lookup_key: "a8_basico_monthly",
-    description: "Até 3 avaliações/mês",
+    name: "Plano Básico — Laudo Avulso",
+    price_cents: 15700,
+    lookup_key: "a8_basico_unit_v2",
+    description: "1 laudo por compra (pagamento único)",
     db_plan: "basico" as const,
-    limit: 3,
+    mode: "payment" as const,
+    limit: 1,
   },
   profissional: {
     code: "profissional",
     name: "Plano Profissional",
-    price_cents: 15990,
-    lookup_key: "a8_profissional_monthly",
-    description: "Avaliações ilimitadas",
+    price_cents: 22900,
+    lookup_key: "a8_profissional_monthly_v2",
+    description: "5 laudos por mês",
     db_plan: "profissional" as const,
-    limit: null as number | null,
+    mode: "subscription" as const,
+    limit: 5,
   },
   expert: {
     code: "expert",
     name: "Plano Expert",
-    price_cents: 29700,
-    lookup_key: "a8_expert_monthly",
-    description: "Ilimitadas + Laudo NBR",
+    price_cents: 37700,
+    lookup_key: "a8_expert_monthly_v2",
+    description: "Laudos ilimitados + NBR 14653-2",
     db_plan: "expert" as const,
+    mode: "subscription" as const,
     limit: null as number | null,
   },
 } as const;
@@ -95,13 +98,17 @@ export async function ensurePrice(plan: (typeof PLANS)[PlanCode]): Promise<strin
     description: plan.description,
   });
 
-  const price = await stripeRequest("POST", "/prices", {
+  const priceBody: Record<string, any> = {
     product: product.id,
     unit_amount: plan.price_cents,
     currency: "brl",
-    recurring: { interval: "month" },
     lookup_key: plan.lookup_key,
-  });
+  };
+  if (plan.mode === "subscription") {
+    priceBody.recurring = { interval: "month" };
+  }
+
+  const price = await stripeRequest("POST", "/prices", priceBody);
 
   return price.id;
 }
