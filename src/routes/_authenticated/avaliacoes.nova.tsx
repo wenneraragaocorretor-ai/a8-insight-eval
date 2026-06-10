@@ -407,6 +407,16 @@ function NovaAvaliacao() {
             conservacao: c.conservacao ? imovel.conservacao : "Bom",
             caracteristicas: c.caracteristicas ? imovel.caracteristicas : [],
             fotos: fotos.filter((f) => f.path && !f.uploading).map((f) => f.path),
+            // Ficha Técnica Detalhada — só envia se Expert
+            idade_real: isExpert ? imovel.idade_real || undefined : undefined,
+            idade_aparente: isExpert ? imovel.idade_aparente || undefined : undefined,
+            posicao_solar: isExpert ? imovel.posicao_solar || undefined : undefined,
+            topografia: isExpert ? imovel.topografia || undefined : undefined,
+            zoneamento: isExpert ? imovel.zoneamento || undefined : undefined,
+            infraestrutura_lazer: isExpert ? imovel.infraestrutura_lazer : [],
+            vagas_cobertas: isExpert ? imovel.vagas_cobertas || undefined : undefined,
+            vagas_descobertas: isExpert ? imovel.vagas_descobertas || undefined : undefined,
+            total_andares: isExpert ? imovel.total_andares || undefined : undefined,
           },
 
           comparaveis: comparaveis.map(({ id, ...c2 }) => ({
