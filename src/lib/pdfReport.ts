@@ -1087,14 +1087,23 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
+export type FotoDetalhada = { dataUrl: string; legenda: string; principal: boolean; comentario_ia: string };
+
 export function gerarPdfAvaliacao(
   avaliacao: any,
   resultado: any,
   comparaveis: any[],
-  opts: { modelo: ModeloPdf; plano: PlanoUsuario; corretor?: CorretorInfo | string; fotosDataUrls?: string[] },
+  opts: {
+    modelo: ModeloPdf;
+    plano: PlanoUsuario;
+    corretor?: CorretorInfo | string;
+    fotosDataUrls?: string[];
+    fotosDetalhadas?: FotoDetalhada[];
+  },
 ) {
   const { modelo, plano } = opts;
   const fotos = Array.isArray(opts.fotosDataUrls) ? opts.fotosDataUrls.filter((s) => typeof s === "string" && s.length > 0) : [];
+  const fotosDet = Array.isArray(opts.fotosDetalhadas) ? opts.fotosDetalhadas.filter((f) => f && f.dataUrl) : [];
   const corretor: CorretorInfo =
     typeof opts.corretor === "string"
       ? { nome: opts.corretor || "Corretor não identificado" }
@@ -1105,7 +1114,7 @@ export function gerarPdfAvaliacao(
 
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);
