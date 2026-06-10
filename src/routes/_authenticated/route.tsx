@@ -18,15 +18,16 @@ function AuthenticatedLayout() {
   return (
     <div className="min-h-screen flex w-full bg-background">
       <div className="flex-1 flex flex-col">
-        <header className="h-16 border-b flex items-center px-6 justify-between glass sticky top-0 z-10">
-          <Link to="/dashboard" className="font-bold text-xl text-brand-blue">
+        <header className="h-16 border-b flex items-center px-6 justify-between glass sticky top-0 z-10" translate="no">
+          <Link to="/dashboard" className="font-bold text-xl text-brand-blue" translate="no">
             A8 <span className="text-brand-gold">Investimentos</span>
           </Link>
-          <nav className="flex items-center gap-5">
+          <nav className="flex items-center gap-5" translate="no">
             <Link
               to="/dashboard"
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
               activeProps={{ className: "text-sm font-medium text-brand-blue" }}
+              translate="no"
             >
               Painel
             </Link>
@@ -34,6 +35,7 @@ function AuthenticatedLayout() {
               to="/planos"
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
               activeProps={{ className: "text-sm font-medium text-brand-blue" }}
+              translate="no"
             >
               Planos
             </Link>
@@ -43,6 +45,7 @@ function AuthenticatedLayout() {
                 window.location.href = "/";
               }}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              translate="no"
             >
               Sair
             </button>
