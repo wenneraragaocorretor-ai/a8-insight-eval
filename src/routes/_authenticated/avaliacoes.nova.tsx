@@ -117,6 +117,7 @@ const camposDoTipo = (tipo: string) => {
     case "Apartamento":
       return { ...base, andar: true };
     case "Casa":
+    case "Sobrado":
       return { ...base, andar: false };
     case "Terreno":
       return {
