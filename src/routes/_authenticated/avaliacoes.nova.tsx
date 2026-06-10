@@ -496,6 +496,27 @@ function NovaAvaliacao() {
               isExpert && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
                 ? imovel.numero_pavimentos || undefined
                 : undefined,
+            ambientes_sociais: [
+              ...imovel.ambientes_sociais,
+              ...imovel.ambientes_sociais_outros
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0),
+            ],
+            ambientes_servico: [
+              ...imovel.ambientes_servico,
+              ...imovel.ambientes_servico_outros
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0),
+            ],
+            ambientes_outros: [
+              ...imovel.ambientes_outros,
+              ...imovel.ambientes_outros_livres
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0),
+            ],
           },
 
           comparaveis: comparaveis.map(({ id, ...c2 }) => ({
