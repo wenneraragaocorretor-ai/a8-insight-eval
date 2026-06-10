@@ -53,6 +53,11 @@ function Dashboard() {
     queryKey: ["assinatura-status"],
     queryFn: () => fetchStatus(),
   });
+  const { data: perfilData } = useQuery({
+    queryKey: ["meu-perfil"],
+    queryFn: () => fetchPerfil(),
+  });
+  const perfilIncompleto = !!perfilData && (!perfilData.profile?.creci || !perfilData.profile?.telefone);
 
   useEffect(() => {
     const sid = search.session_id;
