@@ -1499,11 +1499,144 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
 }
 
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null) {
+function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: CorretorInfo) {
+  // ---- Página 1: Público + Divulgação ----
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Estratégia de Marketing");
+
+  const usable = PW - M * 2;
+  const colW = (usable - 6) / 2;
+  const yTop = 50;
+
+  // Card Público
+  card(doc, M, yTop, colW, 110, { variant: "darkblue" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...GOLD);
+  doc.text("PERFIL DO PÚBLICO-ALVO", M + 8, yTop + 10);
+
+  const pubItems: Array<[string, string]> = [
+    ["Faixa etária", marketing.publico?.faixa_etaria ?? "—"],
+    ["Perfil familiar", marketing.publico?.perfil_familiar ?? "—"],
+    ["Faixa de renda", marketing.publico?.faixa_renda ?? "—"],
+    ["Estilo de vida", marketing.publico?.estilo_vida ?? "—"],
+    ["Motivação de compra", marketing.publico?.motivacao_compra ?? "—"],
+  ];
+  let yp = yTop + 18;
+  pubItems.forEach(([k, v]) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...GOLD);
+    doc.text(k.toUpperCase(), M + 8, yp);
+    yp = textoMultilinha(doc, v, M + 8, yp + 4, colW - 16, {
+      size: 9, color: WHITE, lineHeight: 4,
+    }) + 3;
+  });
+
+  // Card Divulgação
+  const xR = M + colW + 6;
+  card(doc, xR, yTop, colW, 110, { variant: "white", border: "gold" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...BLUE);
+  doc.text("ESTRATÉGIA DE DIVULGAÇÃO", xR + 8, yTop + 10);
+
+  const divItems: Array<[string, string]> = [
+    ["Canais prioritários", (marketing.divulgacao?.canais ?? []).join(", ") || "—"],
+    ["Melhor horário", marketing.divulgacao?.melhor_horario ?? "—"],
+    ["Prazo estimado de venda", marketing.divulgacao?.prazo_venda ?? "—"],
+    ["Dicas de precificação", marketing.divulgacao?.dicas_precificacao ?? "—"],
+    ["Desconto máximo", marketing.divulgacao?.desconto_maximo ?? "—"],
+  ];
+  let yd = yTop + 18;
+  divItems.forEach(([k, v]) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...GOLD);
+    doc.text(k.toUpperCase(), xR + 8, yd);
+    yd = textoMultilinha(doc, v, xR + 8, yd + 4, colW - 16, {
+      size: 9, color: TEXT, lineHeight: 4,
+    }) + 3;
+  });
+
+  // ---- Página 2: Texto de Anúncio ----
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Texto de Anúncio");
+
+  // Título
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("TÍTULO (PORTAIS)", M, 50);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...BLUE);
+  let yT = textoMultilinha(doc, marketing.anuncio?.titulo ?? "—", M, 56, usable, {
+    size: 14, bold: true, color: BLUE, lineHeight: 6,
+  });
+
+  // Descrição portal
+  yT += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("DESCRIÇÃO COMPLETA — ZAP / OLX / VIVA REAL", M, yT);
+  yT = textoMultilinha(doc, marketing.anuncio?.descricao_portal ?? "—", M, yT + 6, usable, {
+    size: 10, color: TEXT, lineHeight: 4.5,
+  });
+
+  // WhatsApp
+  yT += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("VERSÃO WHATSAPP", M, yT);
+  yT = textoMultilinha(doc, marketing.anuncio?.whatsapp ?? "—", M, yT + 6, usable, {
+    size: 10, color: TEXT, lineHeight: 4.5,
+  });
+
+  // Hashtags
+  yT += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("HASHTAGS — INSTAGRAM", M, yT);
+  textoMultilinha(doc, (marketing.anuncio?.hashtags ?? []).join("  "), M, yT + 6, usable, {
+    size: 10, color: BLUE, bold: true, lineHeight: 4.5,
+  });
+}
+
+export type MarketingPdf = {
+  publico?: {
+    faixa_etaria?: string;
+    perfil_familiar?: string;
+    faixa_renda?: string;
+    estilo_vida?: string;
+    motivacao_compra?: string;
+  };
+  divulgacao?: {
+    canais?: string[];
+    melhor_horario?: string;
+    prazo_venda?: string;
+    dicas_precificacao?: string;
+    desconto_maximo?: string;
+  };
+  anuncio?: {
+    titulo?: string;
+    descricao_portal?: string;
+    whatsapp?: string;
+    hashtags?: string[];
+  };
+};
+
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null, marketing?: MarketingPdf | null) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
   const temDocFotos = fotosDet.length > 0;
+  const temMkt = !!marketing;
   paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação");
   paginaSumario(doc, [
     "O Imóvel",
@@ -1519,6 +1652,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
     "Tratamento Estatístico",
     "Campo de Arbítrio",
     "Valor do Imóvel",
+    ...(temMkt ? ["Estratégia de Marketing", "Texto de Anúncio"] : []),
     "Contato",
     "Assinatura",
   ]);
@@ -1537,6 +1671,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaEstatistica(doc, comparaveis, corretor);
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, resultado, corretor);
+  if (temMkt && marketing) paginaMarketing(doc, marketing, corretor);
   paginaContato(doc, corretor);
   paginaAssinatura(doc, corretor);
   rodape(doc);
@@ -1557,6 +1692,7 @@ export function gerarPdfAvaliacao(
     fotosDataUrls?: string[];
     fotosDetalhadas?: FotoDetalhada[];
     mapaDataUrl?: string | null;
+    marketing?: MarketingPdf | null;
   },
 ) {
   const { modelo, plano } = opts;
@@ -1572,7 +1708,7 @@ export function gerarPdfAvaliacao(
 
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);

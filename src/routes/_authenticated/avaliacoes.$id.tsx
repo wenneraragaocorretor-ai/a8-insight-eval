@@ -4,13 +4,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
 import { getMapaEstatico } from "../../lib/mapa.functions";
+import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
 import { supabase } from "../../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy } from "lucide-react";
 
 
 
@@ -66,6 +67,32 @@ function AvaliacaoDetalhe() {
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
 
   const fetchMapa = useServerFn(getMapaEstatico);
+  const fetchMarketing = useServerFn(gerarMarketingAvaliacao);
+  const [marketing, setMarketing] = useState<MarketingResultado | null>(null);
+  const [loadingMkt, setLoadingMkt] = useState(false);
+
+  const handleGerarMarketing = async () => {
+    if (loadingMkt) return;
+    setLoadingMkt(true);
+    try {
+      const res = await fetchMarketing({ data: { id: avaliacao.id } });
+      setMarketing(res);
+      toast.success("Plano de marketing gerado");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao gerar marketing");
+    } finally {
+      setLoadingMkt(false);
+    }
+  };
+
+  const copiar = async (texto: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success(`${label} copiado`);
+    } catch {
+      toast.error("Falha ao copiar");
+    }
+  };
 
   const handleDownload = async () => {
     if (!disponiveis.includes(modelo)) {
@@ -135,6 +162,16 @@ function AvaliacaoDetalhe() {
         }
       }
     }
+    // Marketing (Plano Expert / Modelo 3) — gera silenciosamente se ainda não houver
+    let marketingForPdf: MarketingResultado | null = marketing;
+    if (modelo === 3 && !marketingForPdf) {
+      try {
+        marketingForPdf = await fetchMarketing({ data: { id: avaliacao.id } });
+        setMarketing(marketingForPdf);
+      } catch (e) {
+        console.error("Falha ao gerar marketing:", e);
+      }
+    }
     const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
     gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
       modelo,
@@ -142,6 +179,7 @@ function AvaliacaoDetalhe() {
       fotosDataUrls,
       fotosDetalhadas,
       mapaDataUrl,
+      marketing: marketingForPdf,
       corretor: {
         nome: profile?.nome ?? "Corretor",
         creci: profile?.creci ?? null,
@@ -272,6 +310,132 @@ function AvaliacaoDetalhe() {
           </CardContent>
         </Card>
       )}
+
+      {/* ============ ASSISTENTE DE MARKETING ============ */}
+      <Card className="premium-card border-brand-gold">
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="text-brand-gold" size={20} />
+            Assistente de Marketing
+          </CardTitle>
+          {!marketing && (
+            <Button
+              onClick={handleGerarMarketing}
+              disabled={loadingMkt}
+              className="bg-brand-gold text-primary-foreground gap-2"
+            >
+              <Sparkles size={16} />
+              {loadingMkt ? "Gerando..." : "Gerar com IA"}
+            </Button>
+          )}
+          {marketing && (
+            <Button variant="outline" size="sm" onClick={handleGerarMarketing} disabled={loadingMkt}>
+              {loadingMkt ? "Atualizando..." : "Regenerar"}
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {!marketing && !loadingMkt && (
+            <p className="text-sm text-muted-foreground">
+              Gere um plano de marketing personalizado com perfil do público-alvo, estratégia de divulgação e textos prontos para portais e redes sociais.
+            </p>
+          )}
+          {marketing && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* CARD 1 — Público */}
+              <Card className="bg-muted/40">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users size={16} className="text-brand-gold" /> Público-Alvo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div><span className="font-semibold">Faixa etária:</span> {marketing.publico.faixa_etaria}</div>
+                  <div><span className="font-semibold">Perfil familiar:</span> {marketing.publico.perfil_familiar}</div>
+                  <div><span className="font-semibold">Renda:</span> {marketing.publico.faixa_renda}</div>
+                  <div><span className="font-semibold">Estilo de vida:</span> {marketing.publico.estilo_vida}</div>
+                  <div><span className="font-semibold">Motivação:</span> {marketing.publico.motivacao_compra}</div>
+                </CardContent>
+              </Card>
+
+              {/* CARD 2 — Divulgação */}
+              <Card className="bg-muted/40">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Megaphone size={16} className="text-brand-gold" /> Estratégia de Divulgação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-semibold">Canais:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {marketing.divulgacao.canais.map((c, i) => (
+                        <span key={i} className="text-xs bg-brand-blue text-white px-2 py-0.5 rounded">{c}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div><span className="font-semibold">Melhor horário:</span> {marketing.divulgacao.melhor_horario}</div>
+                  <div><span className="font-semibold">Prazo de venda:</span> {marketing.divulgacao.prazo_venda}</div>
+                  <div><span className="font-semibold">Precificação:</span> {marketing.divulgacao.dicas_precificacao}</div>
+                  <div><span className="font-semibold">Desconto máx:</span> {marketing.divulgacao.desconto_maximo}</div>
+                </CardContent>
+              </Card>
+
+              {/* CARD 3 — Anúncio */}
+              <Card className="bg-muted/40">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText size={16} className="text-brand-gold" /> Texto de Anúncio
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">Título</span>
+                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copiar(marketing.anuncio.titulo, "Título")}>
+                        <Copy size={12} />
+                      </Button>
+                    </div>
+                    <p className="text-xs bg-background p-2 rounded border">{marketing.anuncio.titulo}</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">Descrição (portais)</span>
+                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copiar(marketing.anuncio.descricao_portal, "Descrição")}>
+                        <Copy size={12} />
+                      </Button>
+                    </div>
+                    <p className="text-xs bg-background p-2 rounded border whitespace-pre-wrap max-h-40 overflow-y-auto">
+                      {marketing.anuncio.descricao_portal}
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">WhatsApp</span>
+                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copiar(marketing.anuncio.whatsapp, "Texto WhatsApp")}>
+                        <Copy size={12} />
+                      </Button>
+                    </div>
+                    <p className="text-xs bg-background p-2 rounded border whitespace-pre-wrap">{marketing.anuncio.whatsapp}</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">Hashtags</span>
+                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copiar(marketing.anuncio.hashtags.join(" "), "Hashtags")}>
+                        <Copy size={12} />
+                      </Button>
+                    </div>
+                    <p className="text-xs bg-background p-2 rounded border text-brand-blue font-medium">
+                      {marketing.anuncio.hashtags.join(" ")}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <p className="text-xs text-center text-muted-foreground italic">
         "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional habilitado (CNAI/IBAPE)"
