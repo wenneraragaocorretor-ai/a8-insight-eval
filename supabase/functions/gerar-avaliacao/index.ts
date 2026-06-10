@@ -80,8 +80,11 @@ serve(async (req) => {
 Faça a HOMOGENEIZAÇÃO dos comparáveis em relação ao imóvel avaliando, considerando:
 área (conforme regra abaixo), quartos, suítes, banheiros, vagas, padrão construtivo,
 estado de conservação, posição (esquina, meio de quadra, encravado, gleba),
-andar (se apartamento), idade aproximada, condomínio e características presentes
-(piscina, churrasqueira, elevador, condomínio fechado, área de lazer, etc.).
+andar (se apartamento), idade aproximada, condomínio, características presentes
+(piscina, churrasqueira, elevador, condomínio fechado, área de lazer, etc.) e a
+COMPOSIÇÃO DE AMBIENTES informada (sociais, de serviço e outros) — ambientes
+adicionais como cozinha gourmet, escritório, closet, adega, terraço e similares
+agregam valor e devem ser ponderados na homogeneização.
 
 REGRA DE ÁREA BASE (ABNT NBR 14653-2) — OBRIGATÓRIA para R$/m²:
 - Apartamento: usar a ÁREA PRIVATIVA. Se ausente, usar área total.
