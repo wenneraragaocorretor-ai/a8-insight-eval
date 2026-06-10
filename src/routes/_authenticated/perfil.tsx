@@ -199,8 +199,16 @@ function PerfilPage() {
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>CRECI / CAU / CREA</Label>
-              <Input value={form.creci} onChange={(e) => set("creci", e.target.value)} placeholder="Ex: CRECI-SP 123456, CAU A12345-0, CREA-SP 123456" />
+              <Label>CRECI</Label>
+              <Input value={form.creci} onChange={(e) => set("creci", e.target.value)} placeholder="Ex: CRECI-SP 123456" />
+            </div>
+            <div>
+              <Label>CNAI (Cadastro Nacional de Avaliadores Imobiliários)</Label>
+              <Input value={form.cnai} onChange={(e) => set("cnai", e.target.value)} placeholder="Ex: CNAI 12345" />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Outro registro profissional (CAU / CREA)</Label>
+              <Input value={form.outro_registro} onChange={(e) => set("outro_registro", e.target.value)} placeholder="Ex: CAU A12345-0, CREA-SP 123456" />
             </div>
             <div>
               <Label>Tipo *</Label>
