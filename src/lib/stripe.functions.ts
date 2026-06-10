@@ -46,19 +46,26 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
       .from("profiles")
       .upsert({ id: userId, nome, stripe_customer_id: customerId }, { onConflict: "id" });
 
-    const session = await stripeRequest("POST", "/checkout/sessions", {
-      mode: "subscription",
+    const sessionBody: Record<string, any> = {
+      mode: plan.mode,
       customer: customerId,
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": 1,
-      success_url: `${data.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${data.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}&pagamento=ok`,
       cancel_url: `${data.origin}/planos?canceled=1`,
       "metadata[user_id]": userId,
       "metadata[plan_code]": data.plano,
-      "subscription_data[metadata][user_id]": userId,
-      "subscription_data[metadata][plan_code]": data.plano,
       allow_promotion_codes: "true",
-    });
+    };
+    if (plan.mode === "subscription") {
+      sessionBody["subscription_data[metadata][user_id]"] = userId;
+      sessionBody["subscription_data[metadata][plan_code]"] = data.plano;
+    } else {
+      sessionBody["payment_intent_data[metadata][user_id]"] = userId;
+      sessionBody["payment_intent_data[metadata][plan_code]"] = data.plano;
+    }
+
+    const session = await stripeRequest("POST", "/checkout/sessions", sessionBody);
 
     return { url: session.url as string };
   });
