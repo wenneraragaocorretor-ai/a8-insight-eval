@@ -35,6 +35,25 @@ const POSICOES_COMPARAVEL = ["Meio de quadra", "Esquina", "Encravado"];
 const PADROES = ["Simples", "Normal", "Alto", "Luxo"];
 const CONSERVACOES = ["Novo", "Bom", "Regular", "Ruim"];
 
+const IDADE_APARENTE_OPCOES = [
+  "Aparenta menos que a idade real",
+  "Condizente com a idade real",
+  "Aparenta mais que a idade real",
+];
+const POSICAO_SOLAR_OPCOES = ["Nascente", "Poente", "Norte", "Sul", "Não identificado"];
+const TOPOGRAFIA_OPCOES = ["Plano", "Aclive", "Declive", "Irregular"];
+const INFRA_LAZER_OPCOES = [
+  "Piscina",
+  "Academia",
+  "Salão de Festas",
+  "Churrasqueira",
+  "Playground",
+  "Quadra",
+  "Portaria 24h",
+  "Elevador",
+  "Nenhum",
+];
+
 const TIPOS_IMOVEL = ["Apartamento", "Casa", "Terreno", "Sala Comercial", "Galpão"] as const;
 type TipoImovel = typeof TIPOS_IMOVEL[number];
 
