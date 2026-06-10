@@ -48,9 +48,12 @@ function SiteNav() {
   return (
     <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-[#0A1F44]/40 border-b border-white/10">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 select-none">
+        <Link to="/" className="flex items-center gap-1 select-none">
+          <span className="font-display text-sm tracking-[0.3em] text-[#C8A951] uppercase">
+            A8
+          </span>
           <span className="font-display text-sm tracking-[0.3em] text-white/90 uppercase">
-            A8 Investimentos
+            Investimentos
           </span>
         </Link>
         <div className="hidden md:flex items-center gap-10 text-sm tracking-wide text-white/80">
@@ -489,9 +492,12 @@ function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-1 mb-4">
+              <span className="font-display text-sm tracking-[0.3em] text-[#C8A951] uppercase">
+                A8
+              </span>
               <span className="font-display text-sm tracking-[0.3em] text-white/90 uppercase">
-                A8 Investimentos
+                Investimentos
               </span>
             </div>
             <p className="text-white/60 text-sm font-light max-w-md leading-relaxed">
