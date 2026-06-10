@@ -20,7 +20,10 @@ const perfilSchema = z.object({
   nome: z.string().trim().min(1, "Nome obrigatório").max(120),
   email: z.string().trim().email("E-mail inválido").max(160).optional().or(z.literal("")),
   telefone: z.string().trim().min(1, "Telefone obrigatório").max(40),
-  cpf: z.string().trim().max(20).optional().or(z.literal("")),
+  cpf: z
+    .string()
+    .trim()
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF deve estar no formato 000.000.000-00"),
   creci: z.string().trim().min(1, "CRECI obrigatório").max(40),
   tipo: z.enum(["pessoa_fisica", "imobiliaria"]),
   nome_imobiliaria: z.string().trim().max(160).optional().or(z.literal("")),
