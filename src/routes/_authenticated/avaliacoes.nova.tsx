@@ -224,6 +224,7 @@ function NovaAvaliacao() {
     topografia: "",
     zoneamento: "",
     infraestrutura_lazer: [] as string[],
+    lazer_outros: "",
     vagas_cobertas: 0,
     vagas_descobertas: 0,
     total_andares: 0,
