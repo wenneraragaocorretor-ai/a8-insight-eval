@@ -1403,6 +1403,102 @@ function desenharPlaceholderMapa(doc: jsPDF, x: number, y: number, w: number, h:
 }
 
 
+function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Assinatura e Responsabilidade Técnica");
+
+  // Declaração
+  const declY = 48;
+  card(doc, M, declY, PW - 2 * M, 36, { variant: "blue", border: "gold" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...BLUE);
+  doc.text("DECLARAÇÃO DE RESPONSABILIDADE", M + 6, declY + 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXT);
+  const decl =
+    "Declaro que as informações contidas neste laudo são verdadeiras e foram obtidas através de pesquisa de mercado realizada na data de referência indicada, seguindo as orientações da NBR 14653-2 da ABNT.";
+  const linhas = doc.splitTextToSize(decl, PW - 2 * M - 12);
+  doc.text(linhas, M + 6, declY + 16);
+
+  // Logo
+  const logoY = 92;
+  const logoH = 22;
+  const logoW = 44;
+  const logoX = PW / 2 - logoW / 2;
+  if (corretor.logo_data_url) {
+    try {
+      const fmt = corretor.logo_data_url.includes("image/png") ? "PNG" : "JPEG";
+      doc.addImage(corretor.logo_data_url, fmt, logoX, logoY, logoW, logoH, undefined, "FAST");
+    } catch {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(...BLUE);
+      doc.text("A8", PW / 2, logoY + 14, { align: "center" });
+    }
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(...BLUE);
+    doc.text("A8", PW / 2, logoY + 14, { align: "center" });
+    doc.setFontSize(8);
+    doc.setTextColor(...GOLD);
+    doc.text("INVESTIMENTOS IMOBILIÁRIOS", PW / 2, logoY + 20, { align: "center" });
+  }
+
+  // Linha de assinatura
+  const lineY = logoY + logoH + 12;
+  const lineW = 110;
+  const lineX = PW / 2 - lineW / 2;
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.4);
+  doc.line(lineX, lineY, lineX + lineW, lineY);
+
+  // Nome e registros
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...BLUE);
+  doc.text(corretor.nome.toUpperCase(), PW / 2, lineY + 6, { align: "center" });
+
+  const regs: string[] = [];
+  if (corretor.creci) regs.push(`CRECI ${String(corretor.creci).replace(/^CRECI[\s:-]*/i, "")}`);
+  if (corretor.cnai) regs.push(`CNAI ${String(corretor.cnai).replace(/^CNAI[\s:-]*/i, "")}`);
+  if (corretor.outro_registro) regs.push(String(corretor.outro_registro));
+  if (regs.length) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY);
+    doc.text(regs.join("  •  "), PW / 2, lineY + 11, { align: "center" });
+  }
+
+  // Contato
+  const contato: string[] = [];
+  if (corretor.telefone) contato.push(corretor.telefone);
+  if (corretor.email) contato.push(corretor.email);
+  if (contato.length) {
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY);
+    doc.text(contato.join("  •  "), PW / 2, lineY + 16, { align: "center" });
+  }
+
+  // Data por extenso
+  const meses = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+  ];
+  const d = new Date();
+  const dataExt = `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  const cidadeEstado = [corretor.cidade, corretor.estado].filter(Boolean).join(" / ");
+  const local = cidadeEstado ? `${cidadeEstado}, ${dataExt}.` : `${dataExt}.`;
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXT);
+  doc.text(local, PW / 2, lineY + 24, { align: "center" });
+}
+
+
 function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
