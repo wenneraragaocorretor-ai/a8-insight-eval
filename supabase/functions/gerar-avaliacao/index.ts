@@ -186,16 +186,16 @@ Comparável #${i + 1} (${c.fonte}):
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: systemPrompt,
         messages: [
           {
             role: 'user',
             content: [
-              ...fotosImagens.map((img) => ({
-                type: 'image',
-                source: { type: 'base64', media_type: img.mediaType, data: img.base64 },
-              })),
+              ...fotosImagens.flatMap((img, i) => ([
+                { type: 'text', text: `Foto ${i + 1}:` },
+                { type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } },
+              ])),
               { type: 'text', text: userPrompt },
             ],
           },
