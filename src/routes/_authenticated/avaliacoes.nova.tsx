@@ -1108,6 +1108,11 @@ function NovaAvaliacao() {
                   <Label>Área Total (m²)</Label>
                   <Input type="number" value={c.area}
                     onChange={(e) => updateComp(index, { area: toNum(e.target.value) })} />
+                  {Number(c.valor) > 0 && (!c.area || Number(c.area) <= 0) && (
+                    <p className="text-xs font-medium text-amber-600">
+                      Informe a área para calcular o valor/m²
+                    </p>
+                  )}
                 </div>
                 {campos.areaPrivativa && (
                   <div className="space-y-2">
@@ -1125,6 +1130,18 @@ function NovaAvaliacao() {
                       Valor muito baixo — verifique se esqueceu zeros
                     </p>
                   )}
+                  {(() => {
+                    const vpm2 = calcularValorM2(Number(c.valor), Number(c.area));
+                    if (vpm2 === null) return null;
+                    if (vpm2 < 500 || vpm2 > 50000) {
+                      return (
+                        <p className="text-xs font-medium text-amber-600">
+                          Valor por m² fora do padrão — confira os dados
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 {campos.quartos && (
                   <div className="space-y-2">
