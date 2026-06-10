@@ -678,7 +678,7 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     { align: "center" }
   );
   doc.text(
-    "assinado por profissional habilitado (CNAI/IBAPE).",
+    "aprovado por profissional habilitado (CNAI/IBAPE).",
     PW / 2,
     PH - 27,
     { align: "center" }
