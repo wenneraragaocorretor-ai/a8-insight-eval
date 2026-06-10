@@ -854,6 +854,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
     ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Anúncios na Região", "Valor do Imóvel", "Contato"],
   );
   paginaImovel(doc, avaliacao, rel, corretor);
+  paginaAmbientes(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor);
@@ -873,6 +874,7 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
     ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Perfil do Público", "Anúncios na Região", "Valor do Imóvel", "Contato"],
   );
   paginaImovel(doc, avaliacao, rel, corretor);
+  paginaAmbientes(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
@@ -997,6 +999,60 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
   }
 }
 
+function paginaAmbientes(doc: jsPDF, a: any, corretor: CorretorInfo) {
+  const sociais: string[] = Array.isArray(a.ambientes_sociais)
+    ? a.ambientes_sociais.filter((s: any) => typeof s === "string" && s.trim().length > 0)
+    : [];
+  const servico: string[] = Array.isArray(a.ambientes_servico)
+    ? a.ambientes_servico.filter((s: any) => typeof s === "string" && s.trim().length > 0)
+    : [];
+  const outros: string[] = Array.isArray(a.ambientes_outros)
+    ? a.ambientes_outros.filter((s: any) => typeof s === "string" && s.trim().length > 0)
+    : [];
+  if (sociais.length === 0 && servico.length === 0 && outros.length === 0) return;
+
+  novaPagina(doc);
+  microHeader(doc, corretor);
+  tituloPagina(doc, "Ambientes do Imóvel");
+
+  const usable = PW - M * 2;
+  let y = 50;
+
+  const grupos: Array<[string, string[]]> = [
+    ["Ambientes Sociais", sociais],
+    ["Ambientes de Serviço", servico],
+    ["Outros Ambientes", outros],
+  ];
+
+  grupos.forEach(([titulo, itens]) => {
+    if (itens.length === 0) return;
+    const cols = 3;
+    const lineH = 6;
+    const rows = Math.ceil(itens.length / cols);
+    const boxH = 18 + rows * lineH;
+    card(doc, M, y, usable, boxH, { variant: "white", border: "gold" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...BLUE);
+    doc.text(titulo, M + 8, y + 10);
+    const colInnerW = (usable - 16) / cols;
+    itens.forEach((item, i) => {
+      const c = i % cols;
+      const r = Math.floor(i / cols);
+      const x = M + 8 + c * colInnerW;
+      const yi = y + 18 + r * lineH;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...GOLD);
+      doc.text("•", x, yi);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...TEXT);
+      doc.text(item, x + 4, yi);
+    });
+    y += boxH + 6;
+  });
+}
+
 function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const rel = resultado?.relatorio_json || {};
@@ -1016,6 +1072,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
     "Contato",
   ]);
   paginaImovel(doc, avaliacao, rel, corretor);
+  paginaAmbientes(doc, avaliacao, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);

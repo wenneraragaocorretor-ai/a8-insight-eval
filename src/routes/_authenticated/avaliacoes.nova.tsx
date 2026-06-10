@@ -76,6 +76,31 @@ const TIPO_ACABAMENTO_OPCOES = [
 ];
 const NUMERO_PAVIMENTOS_OPCOES = ["1 pavimento", "2 pavimentos", "3 ou mais pavimentos"];
 
+const AMBIENTES_SOCIAIS_OPCOES = [
+  "Sala de Estar",
+  "Sala de Jantar",
+  "Sala de TV",
+  "Varanda",
+  "Terraço",
+  "Sacada",
+];
+const AMBIENTES_SERVICO_OPCOES = [
+  "Cozinha Simples",
+  "Cozinha Gourmet",
+  "Copa",
+  "Lavanderia",
+  "Área de Serviço",
+  "Quarto de Empregada",
+  "Banheiro de Serviço",
+  "Despensa",
+];
+const AMBIENTES_OUTROS_OPCOES = [
+  "Escritório / Home Office",
+  "Closet",
+  "Adega",
+  "Hall de Entrada",
+];
+
 const TIPOS_IMOVEL = ["Apartamento", "Casa", "Sobrado", "Terreno", "Sala Comercial", "Galpão"] as const;
 type TipoImovel = typeof TIPOS_IMOVEL[number];
 
@@ -246,6 +271,12 @@ function NovaAvaliacao() {
     tipo_acabamento: [] as string[],
     acabamento_outros: "",
     numero_pavimentos: "",
+    ambientes_sociais: [] as string[],
+    ambientes_sociais_outros: "",
+    ambientes_servico: [] as string[],
+    ambientes_servico_outros: "",
+    ambientes_outros: [] as string[],
+    ambientes_outros_livres: "",
   });
 
   const [plano, setPlano] = useState<string>("basico");
@@ -465,6 +496,27 @@ function NovaAvaliacao() {
               isExpert && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
                 ? imovel.numero_pavimentos || undefined
                 : undefined,
+            ambientes_sociais: [
+              ...imovel.ambientes_sociais,
+              ...imovel.ambientes_sociais_outros
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0),
+            ],
+            ambientes_servico: [
+              ...imovel.ambientes_servico,
+              ...imovel.ambientes_servico_outros
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0),
+            ],
+            ambientes_outros: [
+              ...imovel.ambientes_outros,
+              ...imovel.ambientes_outros_livres
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0),
+            ],
           },
 
           comparaveis: comparaveis.map(({ id, ...c2 }) => ({
@@ -628,6 +680,72 @@ function NovaAvaliacao() {
                     </label>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {camposDoTipo(imovel.tipo).caracteristicas && (
+              <div className="md:col-span-2 rounded-lg border border-border bg-muted/30 p-5 space-y-5">
+                <h3 className="text-lg font-semibold text-brand-blue">Ambientes do Imóvel</h3>
+
+                {[
+                  {
+                    titulo: "Ambientes Sociais",
+                    opcoes: AMBIENTES_SOCIAIS_OPCOES,
+                    key: "ambientes_sociais" as const,
+                    outrosKey: "ambientes_sociais_outros" as const,
+                  },
+                  {
+                    titulo: "Ambientes de Serviço",
+                    opcoes: AMBIENTES_SERVICO_OPCOES,
+                    key: "ambientes_servico" as const,
+                    outrosKey: "ambientes_servico_outros" as const,
+                  },
+                  {
+                    titulo: "Outros Ambientes",
+                    opcoes: AMBIENTES_OUTROS_OPCOES,
+                    key: "ambientes_outros" as const,
+                    outrosKey: "ambientes_outros_livres" as const,
+                  },
+                ].map((grupo) => (
+                  <div key={grupo.titulo} className="space-y-3">
+                    <Label className="text-sm font-semibold uppercase tracking-wide text-brand-blue">
+                      {grupo.titulo}
+                    </Label>
+                    <div className="flex flex-wrap gap-4">
+                      {grupo.opcoes.map((opcao) => (
+                        <label key={opcao} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={(imovel[grupo.key] as string[]).includes(opcao)}
+                            onChange={() =>
+                              safe(() =>
+                                setImovel((prev) => {
+                                  const atual = prev[grupo.key] as string[];
+                                  return {
+                                    ...prev,
+                                    [grupo.key]: atual.includes(opcao)
+                                      ? atual.filter((c) => c !== opcao)
+                                      : [...atual, opcao],
+                                  };
+                                }),
+                              )
+                            }
+                            className="h-4 w-4 shrink-0 cursor-pointer rounded-sm accent-brand-blue"
+                          />
+                          <span className="text-sm">{opcao}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <Input
+                      placeholder="Ex: Brinquedoteca, Sala de jogos..."
+                      value={imovel[grupo.outrosKey] as string}
+                      onChange={(e) => setImovelField(grupo.outrosKey, e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Outros ambientes (separe por vírgula)
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
 

@@ -32,6 +32,9 @@ const evaluationSchema = z.object({
     total_andares: z.number().optional(),
     tipo_acabamento: z.array(z.string()).optional().default([]),
     numero_pavimentos: z.string().optional(),
+    ambientes_sociais: z.array(z.string()).optional().default([]),
+    ambientes_servico: z.array(z.string()).optional().default([]),
+    ambientes_outros: z.array(z.string()).optional().default([]),
   }),
   comparaveis: z.array(z.object({
     fonte: z.string(),
@@ -129,6 +132,9 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           total_andares: data.imovel.total_andares ?? null,
           tipo_acabamento: data.imovel.tipo_acabamento ?? [],
           numero_pavimentos: data.imovel.numero_pavimentos ?? null,
+          ambientes_sociais: data.imovel.ambientes_sociais ?? [],
+          ambientes_servico: data.imovel.ambientes_servico ?? [],
+          ambientes_outros: data.imovel.ambientes_outros ?? [],
           status: "concluido",
         })
         .select()
