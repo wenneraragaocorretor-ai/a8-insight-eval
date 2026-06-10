@@ -1375,8 +1375,15 @@ function NovaAvaliacao() {
               <p className="text-muted-foreground">Nossa IA irá analisar os dados e gerar seu relatório.</p>
             </div>
             <div className="flex flex-col gap-4 max-w-sm mx-auto">
-              <Button onClick={handleProcessar} className="bg-brand-gold text-primary-foreground h-12 text-lg font-bold" disabled={isLoading}>
-                {isLoading ? "Processando..." : "Gerar Avaliação com IA"}
+              <Button
+                onClick={handleProcessar}
+                className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold"}
+                disabled={isLoading}
+              >
+                {isEdit ? <Pencil size={18} /> : null}
+                {isLoading
+                  ? (isEdit ? "Regenerando..." : "Processando...")
+                  : (isEdit ? "Regenerar Laudo" : "Gerar Avaliação com IA")}
               </Button>
               <Button variant="ghost" onClick={() => setStep(2)} disabled={isLoading}>Revisar dados</Button>
             </div>
