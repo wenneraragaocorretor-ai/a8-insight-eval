@@ -81,6 +81,7 @@ const PLANOS = [
       "QR Code de autenticidade no laudo",
       "Número do laudo (LAU-XXXXXX)",
       "PDF 15+ páginas premium",
+      "★ Chat com IA especialista integrado ao laudo",
       "Suporte prioritário",
     ],
   },
