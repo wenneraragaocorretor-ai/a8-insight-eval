@@ -40,6 +40,7 @@ function Dashboard() {
   const queryClient = useQueryClient();
   const fetchList = useServerFn(listarAvaliacoes);
   const fetchStatus = useServerFn(getStatusAssinatura);
+  const fetchPerfil = useServerFn(getMeuPerfil);
   const confirmFn = useServerFn(confirmarCheckout);
   const [welcomePlano, setWelcomePlano] = useState<string | null>(null);
   const confirmedRef = useRef(false);
