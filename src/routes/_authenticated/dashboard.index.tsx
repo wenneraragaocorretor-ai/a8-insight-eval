@@ -57,7 +57,7 @@ function Dashboard() {
     queryKey: ["meu-perfil"],
     queryFn: () => fetchPerfil(),
   });
-  const perfilIncompleto = !!perfilData && (!perfilData.profile?.creci || !perfilData.profile?.telefone);
+  const perfilIncompleto = !!perfilData && !perfilData.profile?.telefone;
 
   useEffect(() => {
     const sid = search.session_id;
@@ -153,7 +153,7 @@ function Dashboard() {
             <div className="flex-1">
               <p className="font-semibold text-yellow-900">Complete seu perfil</p>
               <p className="text-sm text-yellow-800">
-                Adicione CRECI e telefone para que seus dados apareçam nos laudos gerados.
+                Adicione telefone para que seus dados apareçam nos laudos gerados.
               </p>
             </div>
             <Link to="/perfil">
