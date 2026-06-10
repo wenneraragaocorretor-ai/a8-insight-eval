@@ -473,6 +473,15 @@ function NovaAvaliacao() {
             conservacao: c.conservacao ? imovel.conservacao : "Bom",
             caracteristicas: c.caracteristicas ? imovel.caracteristicas : [],
             fotos: fotos.filter((f) => f.path && !f.uploading).map((f) => f.path),
+            fotos_meta: (() => {
+              const validas = fotos.filter((f) => f.path && !f.uploading);
+              const temPrincipal = validas.some((f) => f.principal);
+              return validas.map((f, i) => ({
+                path: f.path,
+                legenda: f.legenda || "",
+                principal: temPrincipal ? f.principal : i === 0,
+              }));
+            })(),
             // Ficha Técnica Detalhada — só envia se Expert
             idade_real: isExpert ? imovel.idade_real || undefined : undefined,
             idade_aparente: isExpert ? imovel.idade_aparente || undefined : undefined,
