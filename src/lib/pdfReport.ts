@@ -33,6 +33,8 @@ export type CorretorInfo = {
   cidade?: string | null;
   estado?: string | null;
   email?: string | null;
+  nome_imobiliaria?: string | null;
+  logo_data_url?: string | null;
 };
 
 const fmtBRL = (v: number | null | undefined) =>
