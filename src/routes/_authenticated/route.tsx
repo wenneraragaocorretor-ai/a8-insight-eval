@@ -32,6 +32,14 @@ function AuthenticatedLayout() {
               Painel
             </Link>
             <Link
+              to="/perfil"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              activeProps={{ className: "text-sm font-medium text-brand-blue" }}
+              translate="no"
+            >
+              Meu Perfil
+            </Link>
+            <Link
               to="/planos"
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
               activeProps={{ className: "text-sm font-medium text-brand-blue" }}
