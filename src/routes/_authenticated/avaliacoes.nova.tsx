@@ -235,6 +235,20 @@ const toNum = (v: string) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+const extrairDominio = (url: string): string => {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+};
+
+const calcularValorM2 = (valor: number, area: number): number | null => {
+  if (!area || area <= 0 || !valor || valor <= 0) return null;
+  return valor / area;
+};
+
 function NovaAvaliacao() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
