@@ -51,6 +51,14 @@ const INFRA_LAZER_OPCOES = [
   "Quadra",
   "Portaria 24h",
   "Elevador",
+  "Sauna",
+  "Cinema",
+  "Quadra de Beach Tennis",
+  "Quadra de Tênis",
+  "Espaço Gourmet",
+  "Coworking",
+  "Pet Place",
+  "Brinquedoteca",
   "Nenhum",
 ];
 
