@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Check, ArrowLeft, Loader2 } from "lucide-react";
+import { Check, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { criarCheckoutSession, getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
 import { toast } from "sonner";
 
