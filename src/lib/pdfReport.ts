@@ -667,6 +667,23 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     x += w + 6;
   });
 
+  // Disclaimer técnico (CNAI/IBAPE)
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(...WHITE);
+  doc.text(
+    "Esta avaliação é mercadológica e não substitui laudo técnico",
+    PW / 2,
+    PH - 32,
+    { align: "center" }
+  );
+  doc.text(
+    "assinado por profissional habilitado (CNAI/IBAPE).",
+    PW / 2,
+    PH - 27,
+    { align: "center" }
+  );
+
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   doc.setTextColor(...GOLD);
