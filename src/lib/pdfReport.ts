@@ -281,26 +281,95 @@ function gaugeChart(doc: jsPDF, cx: number, cy: number, r: number, valor: number
 function trendBadge(doc: jsPDF, cx: number, cy: number, w: number, h: number, tendencia: "alta" | "estavel" | "baixa") {
   const cor: [number, number, number] = tendencia === "alta" ? [40, 167, 105]
     : tendencia === "baixa" ? [220, 53, 69] : [240, 180, 60];
-  const seta = tendencia === "alta" ? "^" : tendencia === "baixa" ? "v" : ">";
-  const txt = tendencia === "alta" ? "VALORIZACAO" : tendencia === "baixa" ? "DESVALORIZACAO" : "ESTAVEL";
+  const txt = tendencia === "alta" ? "VALORIZAÇÃO" : tendencia === "baixa" ? "DESVALORIZAÇÃO" : "ESTÁVEL";
   doc.setFillColor(...cor);
-  doc.roundedRect(cx - w / 2, cy - h / 2, w, h, 4, 4, "F");
+  doc.roundedRect(cx - w / 2, cy - h / 2, w, h, 3, 3, "F");
+
+  // arrow icon (triangle)
+  const ax = cx - w / 2 + 6;
+  const ay = cy;
+  const s = 2.6;
+  doc.setFillColor(255, 255, 255);
+  if (tendencia === "alta") {
+    doc.triangle(ax, ay - s, ax - s, ay + s, ax + s, ay + s, "F");
+  } else if (tendencia === "baixa") {
+    doc.triangle(ax, ay + s, ax - s, ay - s, ax + s, ay - s, "F");
+  } else {
+    doc.rect(ax - s, ay - 0.8, s * 2, 1.6, "F");
+  }
+
+  // auto-fit text size
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
-  doc.text(seta, cx - w / 2 + 10, cy + 3);
-  doc.setFontSize(11);
-  doc.text(txt, cx + 4, cy + 3);
+  const textAreaW = w - 14; // leave room for icon + paddings
+  let size = 10;
+  doc.setFontSize(size);
+  while (size > 6 && doc.getTextWidth(txt) > textAreaW) {
+    size -= 0.5;
+    doc.setFontSize(size);
+  }
+  doc.text(txt, ax + 5, cy + size * 0.12);
 }
 
+function infraIcon(doc: jsPDF, kind: string, cx: number, cy: number, r: number, ok: boolean) {
+  const cor: [number, number, number] = ok ? [40, 167, 105] : [200, 200, 205];
+  doc.setFillColor(...cor);
+  doc.circle(cx, cy, r, "F");
+  doc.setDrawColor(255, 255, 255);
+  doc.setFillColor(255, 255, 255);
+  doc.setLineWidth(0.5);
+  const k = kind.toLowerCase();
+  if (k.includes("escola")) {
+    // Mortarboard: trapezoid cap + small tassel
+    doc.triangle(cx - r * 0.7, cy, cx, cy - r * 0.35, cx + r * 0.7, cy, "F");
+    doc.rect(cx - r * 0.35, cy + 0.1, r * 0.7, r * 0.18, "F");
+  } else if (k.includes("hospital")) {
+    // Medical cross
+    const a = r * 0.7, b = r * 0.25;
+    doc.rect(cx - b, cy - a, b * 2, a * 2, "F");
+    doc.rect(cx - a, cy - b, a * 2, b * 2, "F");
+  } else if (k.includes("super")) {
+    // Shopping cart: handle line + basket + wheels
+    doc.line(cx - r * 0.7, cy - r * 0.45, cx - r * 0.35, cy - r * 0.45);
+    doc.rect(cx - r * 0.45, cy - r * 0.3, r * 1.1, r * 0.55, "F");
+    doc.circle(cx - r * 0.25, cy + r * 0.55, r * 0.15, "F");
+    doc.circle(cx + r * 0.25, cy + r * 0.55, r * 0.15, "F");
+  } else if (k.includes("transp") || k.includes("onib") || k.includes("ônib")) {
+    // Bus: rounded rect + 2 wheels
+    doc.roundedRect(cx - r * 0.7, cy - r * 0.55, r * 1.4, r * 0.95, r * 0.2, r * 0.2, "F");
+    doc.setFillColor(...cor);
+    doc.rect(cx - r * 0.55, cy - r * 0.35, r * 0.4, r * 0.3, "F");
+    doc.rect(cx + r * 0.15, cy - r * 0.35, r * 0.4, r * 0.3, "F");
+    doc.setFillColor(255, 255, 255);
+    doc.circle(cx - r * 0.35, cy + r * 0.55, r * 0.15, "F");
+    doc.circle(cx + r * 0.35, cy + r * 0.55, r * 0.15, "F");
+  } else if (k.includes("farm")) {
+    // Plus sign (pharmacy cross)
+    const a = r * 0.65, b = r * 0.22;
+    doc.rect(cx - b, cy - a, b * 2, a * 2, "F");
+    doc.rect(cx - a, cy - b, a * 2, b * 2, "F");
+  } else if (k.includes("lazer") || k.includes("parque") || k.includes("árvore") || k.includes("arvore")) {
+    // Tree: triangle crown + trunk
+    doc.triangle(cx, cy - r * 0.75, cx - r * 0.65, cy + r * 0.2, cx + r * 0.65, cy + r * 0.2, "F");
+    doc.rect(cx - r * 0.15, cy + r * 0.2, r * 0.3, r * 0.45, "F");
+  } else {
+    doc.circle(cx, cy, r * 0.3, "F");
+  }
+  doc.setLineWidth(0.2);
+}
+
+// kept for backwards compatibility
 function checkIcon(doc: jsPDF, cx: number, cy: number, r: number, ok: boolean) {
   const cor: [number, number, number] = ok ? [40, 167, 105] : [200, 200, 205];
   doc.setFillColor(...cor);
   doc.circle(cx, cy, r, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(r * 1.4);
-  doc.setTextColor(255, 255, 255);
-  doc.text(ok ? "v" : "-", cx, cy + r * 0.5, { align: "center" });
+  if (ok) {
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.8);
+    doc.line(cx - r * 0.45, cy + r * 0.05, cx - r * 0.1, cy + r * 0.4);
+    doc.line(cx - r * 0.1, cy + r * 0.4, cx + r * 0.5, cy - r * 0.35);
+    doc.setLineWidth(0.2);
+  }
 }
 
 function badgePadrao(padrao: string): { cor: [number, number, number]; label: string } {
@@ -700,19 +769,22 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const infraAtivos: string[] = Array.isArray(ab.infraestrutura)
     ? ab.infraestrutura.map((s: any) => String(s).toLowerCase())
     : infraDefault.map((s) => s.toLowerCase());
-  const cols = 3;
-  const itemW = (colW - 12) / cols;
+  const cols = 2;
+  const rows = 3;
+  const innerPad = 6;
+  const itemW = (colW - innerPad * 2) / cols;
+  const rowH = (ch - 24) / rows;
   infraDefault.forEach((nome, i) => {
     const c = i % cols;
     const r = Math.floor(i / cols);
-    const ix = x2 + 6 + c * itemW + itemW / 2;
-    const iy = yRow + 22 + r * 28;
+    const ix = x2 + innerPad + c * itemW + itemW / 2;
+    const iy = yRow + 22 + r * rowH;
     const ok = infraAtivos.some((v) => v.includes(nome.toLowerCase()));
-    checkIcon(doc, ix, iy + 4, 4.5, ok);
+    infraIcon(doc, nome, ix, iy + 4, 4.5, ok);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...(ok ? TEXT : GRAY_DIM));
-    doc.text(nome, ix, iy + 16, { align: "center" });
+    doc.text(nome, ix, iy + 15, { align: "center" });
   });
 
   // BLOCO 3 — Tendência de Mercado
