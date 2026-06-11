@@ -1383,110 +1383,205 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
   tituloPagina(doc, "Ficha Técnica");
 
   const usable = PW - M * 2;
-  const yStart = 50;
-  const colW = (usable - 6) / 2;
-  const rowH = 12;
+  const yTop = 50;
 
-  const dados: Array<[string, string]> = [
-    ["Padrão Construtivo", String(a.padrao ?? "—")],
-    ["Estado de Conservação", String(a.conservacao ?? "—")],
-    ["Idade Real (anos)", a.idade_real != null && a.idade_real !== 0 ? String(a.idade_real) : "—"],
-    ["Idade Aparente", String(a.idade_aparente || "—")],
-    ["Posição Solar", String(a.posicao_solar || "—")],
-    ["Topografia", String(a.topografia || "—")],
-    ["Zoneamento", String(a.zoneamento || "—")],
-    ["Posição", String(a.posicao || "—")],
-    ["Vagas Cobertas", a.vagas_cobertas != null && a.vagas_cobertas !== 0 ? String(a.vagas_cobertas) : "—"],
-    ["Vagas Descobertas", a.vagas_descobertas != null && a.vagas_descobertas !== 0 ? String(a.vagas_descobertas) : "—"],
-    ["Andar do Imóvel", a.andar != null && a.andar !== 0 ? String(a.andar) : "—"],
-    ["Total de Andares", a.total_andares != null && a.total_andares !== 0 ? String(a.total_andares) : "—"],
-    ["Número de Pavimentos", String(a.numero_pavimentos || "—")],
-  ];
+  // ===== CARDS PRINCIPAIS =====
+  const principais: Array<{ icon: string; value: string; label: string }> = [];
+  if (a.quartos != null && Number(a.quartos) > 0) principais.push({ icon: "Q", value: String(a.quartos), label: "Quartos" });
+  if (a.suites != null && Number(a.suites) > 0) principais.push({ icon: "S", value: String(a.suites), label: "Suítes" });
+  const vagas = (Number(a.vagas_cobertas) || 0) + (Number(a.vagas_descobertas) || 0) || Number(a.vagas) || 0;
+  if (vagas > 0) principais.push({ icon: "V", value: String(vagas), label: "Vagas" });
+  if (a.area_total) principais.push({ icon: "A", value: String(a.area_total), label: "m² Área" });
 
-  let y = yStart;
-  dados.forEach((d, i) => {
-    const col = i % 2;
-    const x = M + col * (colW + 6);
-    if (col === 0 && i > 0) y += rowH + 2;
-    card(doc, x, y, colW, rowH, { variant: "white", border: "soft" });
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(...GOLD);
-    doc.text(d[0].toUpperCase(), x + 5, y + 5);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...TEXT);
-    doc.text(d[1], x + 5, y + 10);
-  });
-
-  // Tipo de Acabamento
-  const acabamentos: string[] = Array.isArray(a.tipo_acabamento)
-    ? a.tipo_acabamento.filter((s: any) => typeof s === "string" && s.trim().length > 0)
-    : [];
-  const yAcab = y + rowH + 10;
-  const acabBoxH = 32;
-  card(doc, M, yAcab, usable, acabBoxH, { variant: "white", border: "gold" });
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(...BLUE);
-  doc.text("Tipo de Acabamento", M + 8, yAcab + 10);
-  if (acabamentos.length === 0) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(10);
-    doc.setTextColor(...GRAY);
-    doc.text("Nenhum item informado.", M + 8, yAcab + 22);
-  } else {
-    const cols = 3;
-    const colInnerW = (usable - 16) / cols;
-    const lineH = 6;
-    acabamentos.forEach((item, i) => {
-      const c = i % cols;
-      const r = Math.floor(i / cols);
-      const x = M + 8 + c * colInnerW;
-      const yi = yAcab + 22 + r * lineH;
+  if (principais.length) {
+    const gap = 6;
+    const cw = (usable - gap * (principais.length - 1)) / principais.length;
+    const ch = 50;
+    principais.forEach((p, i) => {
+      const x = M + i * (cw + gap);
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x, yTop, cw, ch, 3, 3, "FD");
+      doc.setFillColor(...GOLD);
+      doc.rect(x, yTop, cw, 1.6, "F");
+      iconCircle(doc, x + cw / 2, yTop + 14, 5, p.icon, GOLD);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(...GOLD);
-      doc.text("•", x, yi);
+      doc.setFontSize(28);
+      doc.setTextColor(...BLUE);
+      doc.text(p.value, x + cw / 2, yTop + 36, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...TEXT);
-      doc.text(item, x + 4, yi);
+      doc.setFontSize(9);
+      doc.setTextColor(...GRAY);
+      doc.text(p.label.toUpperCase(), x + cw / 2, yTop + ch - 5, { align: "center" });
     });
   }
 
-  // Infraestrutura de Lazer
+  // ===== CARDS SECUNDÁRIOS =====
+  const ySec = yTop + 56;
+  const sec: Array<(x: number, y: number, w: number, h: number) => void> = [];
+
+  if (a.padrao) {
+    sec.push((x, y, w, h) => {
+      const b = badgePadrao(String(a.padrao));
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(x, y, w, h, 3, 3, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text("PADRÃO CONSTRUTIVO", x + w / 2, y + 8, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      const tw = doc.getTextWidth(b.label) + 12;
+      doc.setFillColor(...b.cor);
+      doc.roundedRect(x + (w - tw) / 2, y + h / 2 - 3, tw, 10, 5, 5, "F");
+      doc.setTextColor(...WHITE);
+      doc.text(b.label, x + w / 2, y + h / 2 + 4, { align: "center" });
+    });
+  }
+  if (a.conservacao) {
+    sec.push((x, y, w, h) => {
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(x, y, w, h, 3, 3, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text("ESTADO DE CONSERVAÇÃO", x + w / 2, y + 8, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(...BLUE);
+      doc.text(String(a.conservacao), x + w / 2, y + h / 2, { align: "center" });
+      progressBar(doc, x + 8, y + h / 2 + 5, w - 16, conservPct(String(a.conservacao)));
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...GRAY);
+      doc.text("Péssimo", x + 8, y + h - 3);
+      doc.text("Ótimo", x + w - 8, y + h - 3, { align: "right" });
+    });
+  }
+  if (a.posicao_solar) {
+    sec.push((x, y, w, h) => {
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(x, y, w, h, 3, 3, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text("POSIÇÃO SOLAR", x + w / 2, y + 8, { align: "center" });
+      iconCircle(doc, x + w / 2, y + h / 2 - 1, 6, "*", GOLD);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...BLUE);
+      doc.text(String(a.posicao_solar), x + w / 2, y + h - 5, { align: "center" });
+    });
+  }
+  if (a.numero_pavimentos || a.total_andares) {
+    sec.push((x, y, w, h) => {
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(x, y, w, h, 3, 3, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text("PAVIMENTOS", x + w / 2, y + 8, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(26);
+      doc.setTextColor(...BLUE);
+      doc.text(String(a.numero_pavimentos || a.total_andares), x + w / 2, y + h / 2 + 8, { align: "center" });
+    });
+  }
+
+  let yAcab = ySec;
+  if (sec.length) {
+    const gap = 6;
+    const cw = (usable - gap * (sec.length - 1)) / sec.length;
+    const ch = 38;
+    sec.forEach((r, i) => r(M + i * (cw + gap), ySec, cw, ch));
+    yAcab = ySec + ch + 10;
+  }
+
+  // ===== AMBIENTES como chips =====
+  const ambientes: string[] = [
+    ...(Array.isArray(a.ambientes_sociais) ? a.ambientes_sociais : []),
+    ...(Array.isArray(a.ambientes_servico) ? a.ambientes_servico : []),
+    ...(Array.isArray(a.ambientes_outros) ? a.ambientes_outros : []),
+  ].filter((s: any) => typeof s === "string" && s.trim().length > 0);
+
+  if (ambientes.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("AMBIENTES", M, yAcab + 4);
+    let cxi = M;
+    let cyi = yAcab + 12;
+    ambientes.slice(0, 28).forEach((it) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const tw = doc.getTextWidth(it) + 10;
+      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      doc.setFillColor(...CARD_BLUE);
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(cxi, cyi - 4, tw, 7, 3.5, 3.5, "FD");
+      doc.setTextColor(...BLUE);
+      doc.text(it, cxi + tw / 2, cyi + 0.8, { align: "center" });
+      cxi += tw + 4;
+    });
+    yAcab = cyi + 10;
+  }
+
+  // ===== ACABAMENTOS =====
+  const acab: string[] = Array.isArray(a.tipo_acabamento)
+    ? a.tipo_acabamento.filter((s: any) => typeof s === "string" && s.trim().length > 0)
+    : [];
+  if (acab.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("ACABAMENTOS", M, yAcab + 4);
+    let cxi = M;
+    let cyi = yAcab + 12;
+    acab.forEach((it) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const tw = doc.getTextWidth(it) + 12;
+      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...GOLD);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(cxi, cyi - 4, tw, 7, 3.5, 3.5, "FD");
+      doc.setFillColor(...GOLD);
+      doc.circle(cxi + 3.5, cyi - 0.6, 1, "F");
+      doc.setTextColor(...TEXT);
+      doc.text(it, cxi + 7, cyi + 0.8);
+      cxi += tw + 4;
+    });
+    yAcab = cyi + 10;
+  }
+
+  // ===== INFRA LAZER =====
   const lazer: string[] = Array.isArray(a.infraestrutura_lazer)
     ? a.infraestrutura_lazer.filter((s: any) => typeof s === "string" && s.trim().length > 0)
     : [];
-  const yLazer = yAcab + acabBoxH + 6;
-  const boxH = PH - yLazer - 18;
-  card(doc, M, yLazer, usable, boxH, { variant: "white", border: "gold" });
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(...BLUE);
-  doc.text("Infraestrutura de Lazer", M + 8, yLazer + 10);
-
-  if (lazer.length === 0) {
-    doc.setFont("helvetica", "italic");
+  if (lazer.length) {
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(...GRAY);
-    doc.text("Nenhum item informado.", M + 8, yLazer + 22);
-  } else {
-    const cols = 3;
-    const colInnerW = (usable - 16) / cols;
-    const lineH = 6;
-    lazer.forEach((item, i) => {
-      const c = i % cols;
-      const r = Math.floor(i / cols);
-      const x = M + 8 + c * colInnerW;
-      const yi = yLazer + 22 + r * lineH;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(...GOLD);
-      doc.text("•", x, yi);
+    doc.setTextColor(...GOLD);
+    doc.text("INFRAESTRUTURA DE LAZER", M, yAcab + 4);
+    let cxi = M;
+    let cyi = yAcab + 12;
+    lazer.forEach((it) => {
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...TEXT);
-      doc.text(item, x + 4, yi);
+      doc.setFontSize(9);
+      const tw = doc.getTextWidth(it) + 10;
+      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      doc.setFillColor(...CARD_BLUE);
+      doc.roundedRect(cxi, cyi - 4, tw, 7, 3.5, 3.5, "F");
+      doc.setTextColor(...BLUE);
+      doc.text(it, cxi + tw / 2, cyi + 0.8, { align: "center" });
+      cxi += tw + 4;
     });
   }
 }
