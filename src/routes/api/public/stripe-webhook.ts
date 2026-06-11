@@ -51,12 +51,13 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
         const sig = request.headers.get("stripe-signature");
         const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-        if (webhookSecret) {
-          const ok = await verifyStripeSignature(payload, sig, webhookSecret);
-          if (!ok) return new Response("Invalid signature", { status: 401 });
-        } else {
-          console.warn("STRIPE_WEBHOOK_SECRET ausente — webhook aceito sem verificação (apenas dev).");
+        if (!webhookSecret) {
+          console.error("STRIPE_WEBHOOK_SECRET não configurado — rejeitando webhook.");
+          return new Response("Webhook secret not configured", { status: 500 });
         }
+        const ok = await verifyStripeSignature(payload, sig, webhookSecret);
+        if (!ok) return new Response("Invalid signature", { status: 401 });
+
 
         const event = JSON.parse(payload);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
