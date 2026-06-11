@@ -1363,14 +1363,15 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // ============================================================
 // Orquestração dos modelos
 // ============================================================
-function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
+function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
+  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotos[0] || null;
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
   paginaSumario(
     doc,
-    ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Anúncios na Região", "Valor do Imóvel", "Contato"],
+    ["O Imóvel", "Ambientes", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Comparáveis", "Valor do Imóvel", "Contato"],
   );
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
@@ -1383,14 +1384,15 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
-function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
+function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
+  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotos[0] || null;
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
   paginaSumario(
     doc,
-    ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Perfil do Público", "Anúncios na Região", "Valor do Imóvel", "Contato"],
+    ["O Imóvel", "Ambientes", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Perfil do Público", "Comparáveis", "Valor do Imóvel", "Contato"],
   );
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
