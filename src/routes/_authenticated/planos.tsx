@@ -149,6 +149,11 @@ function PlanosPage() {
 
   const planoAtual = status?.plano;
   const ativa = status?.assinaturaAtiva;
+  const ehExpert = ativa && planoAtual === "expert";
+  const usoMes = status?.avaliacoesMes ?? 0;
+  const limiteMes = status?.limiteMes ?? null;
+  const creditosAvulsos = status?.creditosAvulsos ?? 0;
+  const atingiuLimiteExpert = ehExpert && limiteMes !== null && usoMes >= limiteMes;
 
   const getButtonProps = (p: (typeof PLANOS)[number]) => {
     if (p.code === "basico") {
