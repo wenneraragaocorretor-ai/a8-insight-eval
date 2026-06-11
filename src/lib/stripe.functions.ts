@@ -222,3 +222,17 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
 
     return { ok: true, plano: dbPlan };
   });
+
+export const listarCobrancasAvulsas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("cobrancas_avulsas")
+      .select("id, tipo, valor_cents, moeda, status, descricao, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
