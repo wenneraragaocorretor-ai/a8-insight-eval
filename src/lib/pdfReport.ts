@@ -1129,19 +1129,15 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
   const norm = (v: any) => String(v ?? "").trim().toLowerCase();
   const ordemPadrao = ["baixo", "simples", "popular", "medio", "médio", "normal", "alto", "luxo", "alto luxo"];
   const ordemConserv = ["ruim", "regular", "bom", "novo", "reformado"];
-  const rank = (lista: string[], v: string) => {
-    const i = lista.indexOf(v);
-    return i === -1 ? 0 : i;
-  };
+  const rank = (lista: string[], v: string) => { const i = lista.indexOf(v); return i === -1 ? 0 : i; };
 
-  const body = comparaveis.map((c, i) => {
+  type Row = { idx: number; fonte: string; fatores: Array<[string, number]>; total: number };
+  const rows: Row[] = comparaveis.map((c, i) => {
     const fOferta = 0.9;
     const areaA = Number(a?.area_total) || 0;
     const areaC = Number(c.area) || 0;
     let fArea = 1.0;
-    if (areaA > 0 && areaC > 0) {
-      fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
-    }
+    if (areaA > 0 && areaC > 0) fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
     const pA = rank(ordemPadrao, norm(a?.padrao));
     const pC = rank(ordemPadrao, norm(c.padrao));
     const fPadrao = pC === pA ? 1.0 : pC < pA ? 1.1 : 0.9;
@@ -1152,27 +1148,75 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
     const locC = norm(c.localizacao);
     const fLocal = !locA || !locC ? 1.0 : locA === locC ? 1.0 : locA.split(",")[0] === locC.split(",")[0] ? 0.98 : 0.95;
     const total = fOferta * fArea * fPadrao * fConserv * fLocal;
-    return [
-      String(i + 1),
-      fmtFonte(c.fonte),
-      fmtNum(fOferta, 2),
-      fmtNum(fArea, 2),
-      fmtNum(fPadrao, 2),
-      fmtNum(fConserv, 2),
-      fmtNum(fLocal, 2),
-      fmtNum(total, 3),
-    ];
+    return {
+      idx: i + 1,
+      fonte: fmtFonte(c.fonte),
+      fatores: [["Oferta", fOferta], ["Área", fArea], ["Padrão", fPadrao], ["Conservação", fConserv], ["Localização", fLocal]],
+      total,
+    };
   });
 
-  autoTable(doc, {
-    startY: 48,
-    head: [["#", "Fonte", "F. Oferta", "F. Área", "F. Padrão", "F. Conserv.", "F. Localiz.", "F. Total"]],
-    body,
-    theme: "grid",
-    headStyles: { fillColor: BLUE, textColor: WHITE, fontSize: 10, halign: "center" },
-    bodyStyles: { fillColor: WHITE, textColor: TEXT, fontSize: 10, halign: "center", lineColor: BORDER },
-    alternateRowStyles: { fillColor: BG_SOFT },
-    margin: { left: M, right: M },
+  const usable = PW - M * 2;
+  const yStart = 50;
+  const available = PH - yStart - 20;
+  const rowH = Math.min(28, available / Math.max(1, rows.length));
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text("Cada barra representa um fator aplicado. Azul = deságio (<1) · Dourado = prêmio (>1)", M, yStart - 4);
+
+  rows.forEach((r, ri) => {
+    const y = yStart + ri * rowH;
+    // Cabeçalho
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...BLUE);
+    doc.text(`#${r.idx} · ${r.fonte}`, M, y + 4);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...GOLD);
+    doc.text(`Fator Total: ${fmtNum(r.total, 3)}`, PW - M, y + 4, { align: "right" });
+
+    // Barras
+    const barH = 2.4;
+    const gap = 1.2;
+    const barAreaY = y + 7;
+    const labelW = 30;
+    const valueW = 14;
+    const barAreaW = usable - labelW - valueW - 6;
+    const refX = M + labelW + barAreaW / 2;
+    r.fatores.forEach((f, fi) => {
+      const [label, val] = f;
+      const by = barAreaY + fi * (barH + gap);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...TEXT);
+      doc.text(label, M, by + 2);
+      doc.setFillColor(...BORDER);
+      doc.rect(M + labelW, by, barAreaW, barH, "F");
+      const cor: [number, number, number] = val < 1 ? BLUE : val > 1 ? GOLD : [120, 125, 135];
+      const delta = val - 1;
+      const half = barAreaW / 2;
+      const len = Math.min(half, Math.abs(delta) * half / 0.2);
+      doc.setFillColor(...cor);
+      if (delta < 0) doc.rect(refX - len, by, len, barH, "F");
+      else if (delta > 0) doc.rect(refX, by, len, barH, "F");
+      else doc.rect(refX - 0.4, by, 0.8, barH, "F");
+      doc.setDrawColor(...GRAY_DIM);
+      doc.setLineWidth(0.2);
+      doc.line(refX, by - 0.4, refX, by + barH + 0.4);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(...cor);
+      doc.text(fmtNum(val, 2), M + labelW + barAreaW + 4, by + 2);
+    });
+
+    if (ri < rows.length - 1) {
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.2);
+      doc.line(M, y + rowH - 1, PW - M, y + rowH - 1);
+    }
   });
 }
 
