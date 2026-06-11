@@ -209,6 +209,103 @@ function textoMultilinha(
   return y + lines.length * lh;
 }
 
+// ============================================================
+// HELPERS VISUAIS (gauges, badges, mini-charts)
+// ============================================================
+function iconCircle(doc: jsPDF, cx: number, cy: number, r: number, glyph: string, cor: [number, number, number] = GOLD) {
+  doc.setFillColor(...cor);
+  doc.circle(cx, cy, r, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(r * 1.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(glyph, cx, cy + r * 0.55, { align: "center" });
+}
+
+function progressBar(doc: jsPDF, x: number, y: number, w: number, pct: number, cor: [number, number, number] = GOLD) {
+  doc.setFillColor(...BORDER);
+  doc.roundedRect(x, y, w, 3, 1.5, 1.5, "F");
+  const p = Math.max(0, Math.min(1, pct));
+  if (p > 0) {
+    doc.setFillColor(...cor);
+    doc.roundedRect(x, y, Math.max(3, w * p), 3, 1.5, 1.5, "F");
+  }
+}
+
+function gaugeChart(doc: jsPDF, cx: number, cy: number, r: number, valor: number) {
+  const v = Math.max(0, Math.min(10, valor));
+  const segs = 40;
+  const start = Math.PI;
+  const end = 0;
+  const colorFor = (t: number): [number, number, number] =>
+    t < 0.4 ? [220, 53, 69] : t < 0.7 ? [240, 180, 60] : [40, 167, 105];
+  doc.setLineWidth(5);
+  for (let i = 0; i < segs; i++) {
+    const t = i / segs;
+    const a1 = start + (end - start) * t;
+    const a2 = start + (end - start) * ((i + 1) / segs);
+    const filled = t <= v / 10;
+    const col: [number, number, number] = filled ? colorFor(t) : [232, 232, 232];
+    doc.setDrawColor(...col);
+    doc.line(cx + Math.cos(a1) * r, cy + Math.sin(a1) * r, cx + Math.cos(a2) * r, cy + Math.sin(a2) * r);
+  }
+  const angP = start + (end - start) * (v / 10);
+  doc.setDrawColor(...BLUE);
+  doc.setLineWidth(1.2);
+  doc.line(cx, cy, cx + Math.cos(angP) * (r - 4), cy + Math.sin(angP) * (r - 4));
+  doc.setFillColor(...BLUE);
+  doc.circle(cx, cy, 2, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(...BLUE);
+  doc.text(v.toFixed(1), cx, cy + 12, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...GRAY);
+  doc.text("/ 10", cx, cy + 17, { align: "center" });
+}
+
+function trendBadge(doc: jsPDF, cx: number, cy: number, w: number, h: number, tendencia: "alta" | "estavel" | "baixa") {
+  const cor: [number, number, number] = tendencia === "alta" ? [40, 167, 105]
+    : tendencia === "baixa" ? [220, 53, 69] : [240, 180, 60];
+  const seta = tendencia === "alta" ? "^" : tendencia === "baixa" ? "v" : ">";
+  const txt = tendencia === "alta" ? "VALORIZACAO" : tendencia === "baixa" ? "DESVALORIZACAO" : "ESTAVEL";
+  doc.setFillColor(...cor);
+  doc.roundedRect(cx - w / 2, cy - h / 2, w, h, 4, 4, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text(seta, cx - w / 2 + 10, cy + 3);
+  doc.setFontSize(11);
+  doc.text(txt, cx + 4, cy + 3);
+}
+
+function checkIcon(doc: jsPDF, cx: number, cy: number, r: number, ok: boolean) {
+  const cor: [number, number, number] = ok ? [40, 167, 105] : [200, 200, 205];
+  doc.setFillColor(...cor);
+  doc.circle(cx, cy, r, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(r * 1.4);
+  doc.setTextColor(255, 255, 255);
+  doc.text(ok ? "v" : "-", cx, cy + r * 0.5, { align: "center" });
+}
+
+function badgePadrao(padrao: string): { cor: [number, number, number]; label: string } {
+  const p = String(padrao || "").toLowerCase();
+  if (p.includes("luxo")) return { cor: [120, 81, 169], label: padrao };
+  if (p.includes("alto")) return { cor: GOLD, label: padrao };
+  if (p.includes("normal") || p.includes("médio") || p.includes("medio")) return { cor: BLUE, label: padrao };
+  return { cor: [120, 125, 135], label: padrao || "—" };
+}
+
+function conservPct(c: string): number {
+  const v = String(c || "").toLowerCase();
+  if (v.includes("péssimo") || v.includes("pessimo") || v.includes("ruim")) return 0.18;
+  if (v.includes("regular")) return 0.45;
+  if (v.includes("bom")) return 0.72;
+  if (v.includes("ótimo") || v.includes("otimo") || v.includes("novo") || v.includes("reformado")) return 1.0;
+  return 0.55;
+}
+
 // ---------- PAGE 1: COVER ----------
 function paginaCapa(
   doc: jsPDF,
@@ -546,44 +643,100 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(...BLUE);
-  doc.text(`◉ ${ab.bairro || a.localizacao || "—"}`, M, 46);
-  if (ab.cidade) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor(...GRAY);
-    doc.text(String(ab.cidade), M, 53);
-  }
+  doc.text(String(ab.bairro || a.localizacao || "—"), M, 46);
 
   const usable = PW - M * 2;
   const gap = 6;
-  const colW = (usable - gap) / 2;
-  const yRow = 62;
-  const ch = 56;
-  card(doc, M, yRow, colW, ch, { variant: "white", border: "gold" });
-  card(doc, M + colW + gap, yRow, colW, ch, { variant: "white", border: "gold" });
+  const colW = (usable - gap * 2) / 3;
+  const yRow = 56;
+  const ch = 84;
 
+  // BLOCO 1 — Gauge Potencial de Valorização
+  const score = Number(ab.score_valorizacao ?? rel?.score_valorizacao ?? 7.5);
+  const pctValor = String(ab.percentual_valorizacao ?? rel?.percentual_valorizacao ?? "+8% a.a.");
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(M, yRow, colW, ch, 3, 3, "FD");
+  doc.setFillColor(...GOLD);
+  doc.rect(M, yRow, colW, 1.6, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setTextColor(...BLUE);
-  doc.text("Potencial de Valorização", M + 8, yRow + 12);
-  doc.text("Tendências de Mercado", M + colW + gap + 8, yRow + 12);
-  textoMultilinha(doc, String(ab.potencial_valorizacao ?? rel?.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
-    size: 10, color: TEXT, lineHeight: 4.6,
-  });
-  textoMultilinha(doc, String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
-    size: 10, color: TEXT, lineHeight: 4.6,
+  doc.text("POTENCIAL DE VALORIZAÇÃO", M + colW / 2, yRow + 10, { align: "center" });
+  gaugeChart(doc, M + colW / 2, yRow + 42, 22, score);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...GOLD);
+  doc.text(pctValor, M + colW / 2, yRow + ch - 8, { align: "center" });
+
+  // BLOCO 2 — Infraestrutura (grid de checks)
+  const x2 = M + colW + gap;
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(x2, yRow, colW, ch, 3, 3, "FD");
+  doc.setFillColor(...GOLD);
+  doc.rect(x2, yRow, colW, 1.6, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...BLUE);
+  doc.text("INFRAESTRUTURA", x2 + colW / 2, yRow + 10, { align: "center" });
+
+  const infraDefault = ["Escola", "Hospital", "Supermercado", "Transporte", "Farmácia", "Lazer"];
+  const infraAtivos: string[] = Array.isArray(ab.infraestrutura)
+    ? ab.infraestrutura.map((s: any) => String(s).toLowerCase())
+    : infraDefault.map((s) => s.toLowerCase());
+  const cols = 3;
+  const itemW = (colW - 12) / cols;
+  infraDefault.forEach((nome, i) => {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    const ix = x2 + 6 + c * itemW + itemW / 2;
+    const iy = yRow + 22 + r * 28;
+    const ok = infraAtivos.some((v) => v.includes(nome.toLowerCase()));
+    checkIcon(doc, ix, iy + 4, 4.5, ok);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...(ok ? TEXT : GRAY_DIM));
+    doc.text(nome, ix, iy + 16, { align: "center" });
   });
 
-  // descrição
-  const yDesc = yRow + ch + 8;
-  card(doc, M, yDesc, usable, PH - yDesc - 18, { variant: "white", border: "gold" });
+  // BLOCO 3 — Tendência de Mercado
+  const x3 = x2 + colW + gap;
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(x3, yRow, colW, ch, 3, 3, "FD");
+  doc.setFillColor(...GOLD);
+  doc.rect(x3, yRow, colW, 1.6, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setTextColor(...BLUE);
-  doc.text("Sobre a Região", M + 8, yDesc + 12);
-  textoMultilinha(doc, String(ab.descricao ?? rel?.resumo_texto ?? ""), M + 8, yDesc + 22, usable - 16, {
-    size: 11, color: TEXT, lineHeight: 5.2,
-  });
+  doc.text("TENDÊNCIA DE MERCADO", x3 + colW / 2, yRow + 10, { align: "center" });
+
+  const tendStr = String(ab.tendencia ?? rel?.tendencia ?? "alta").toLowerCase();
+  const tend: "alta" | "estavel" | "baixa" = tendStr.includes("desv") || tendStr.includes("baix")
+    ? "baixa"
+    : tendStr.includes("estav") ? "estavel" : "alta";
+  trendBadge(doc, x3 + colW / 2, yRow + 36, colW - 16, 20, tend);
+  textoMultilinha(
+    doc,
+    String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Mercado em movimento positivo, com demanda crescente na região."),
+    x3 + 6, yRow + 56, colW - 12,
+    { size: 9, color: TEXT, lineHeight: 4.2 },
+  );
+
+  // Resumo curto (máx 3 linhas)
+  const yDesc = yRow + ch + 10;
+  const resumo = String(ab.descricao ?? "").trim();
+  if (resumo) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("SOBRE A REGIÃO", M, yDesc);
+    textoMultilinha(doc, resumo, M, yDesc + 5, usable, {
+      size: 10, color: TEXT, lineHeight: 4.6,
+    });
+  }
 }
 
 // ---------- PAGE: PERFIL DO PÚBLICO ----------
@@ -593,109 +746,183 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
   tituloPagina(doc, "Perfil do Público");
 
   const pp = rel?.perfil_publico ?? {};
-  const items: Array<[string, string]> = [
-    ["Profissão Predominante", String(pp.profissao ?? rel?.perfil_profissao ?? "—")],
-    ["Renda Média", String(pp.renda_media ?? rel?.perfil_renda ?? "—")],
-    ["Preferências", String(pp.preferencias ?? rel?.perfil_preferencias ?? "—")],
-    ["Interesses", String(pp.interesses ?? rel?.perfil_interesses ?? "—")],
-  ];
   const usable = PW - M * 2;
-  const gap = 6;
-  const cw = (usable - gap) / 2;
-  const ch = 56;
-  const yStart = 56;
-  items.forEach(([label, value], i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = M + col * (cw + gap);
-    const y = yStart + row * (ch + gap);
-    card(doc, x, y, cw, ch, { variant: "darkblue" });
-    doc.setFillColor(...GOLD);
-    doc.circle(x + 12, y + 12, 3, "F");
+  const cx = PW / 2;
+
+  // Avatar centralizado
+  doc.setFillColor(...CARD_BLUE);
+  doc.circle(cx, 64, 14, "F");
+  doc.setFillColor(...BLUE);
+  doc.circle(cx, 60, 4, "F");
+  doc.ellipse(cx, 70, 7, 4, "F");
+
+  // Faixa etária
+  const faixa = String(pp.faixa_etaria ?? pp.idade ?? rel?.perfil_idade ?? "35–50 anos");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(28);
+  doc.setTextColor(...BLUE);
+  doc.text(faixa, cx, 92, { align: "center" });
+
+  // Renda badge dourado
+  const renda = String(pp.faixa_renda ?? pp.renda_media ?? rel?.perfil_renda ?? "R$ 20.000+/mês");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  const tw = doc.getTextWidth(renda) + 18;
+  doc.setFillColor(...GOLD);
+  doc.roundedRect(cx - tw / 2, 100, tw, 10, 5, 5, "F");
+  doc.setTextColor(...WHITE);
+  doc.text(renda, cx, 107, { align: "center" });
+
+  // Perfil familiar
+  const familia = String(pp.perfil_familiar ?? "Famílias com filhos");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...TEXT);
+  doc.text(familia, cx, 122, { align: "center" });
+
+  // 3 motivações com ícones
+  const motivRaw = Array.isArray(pp.motivacoes) && pp.motivacoes.length
+    ? pp.motivacoes.slice(0, 3).map(String)
+    : String(pp.motivacao_compra ?? "Upgrade | Investimento | Família")
+        .split(/[|,/]+/).map((s: string) => s.trim()).filter(Boolean).slice(0, 3);
+  if (motivRaw.length) {
+    const baseY = 138;
+    const blockW = usable / motivRaw.length;
+    const glyphs = ["♥", "★", "▲"];
+    motivRaw.forEach((m: string, i: number) => {
+      const mx = M + blockW * i + blockW / 2;
+      iconCircle(doc, mx, baseY, 6, glyphs[i] || "•", GOLD);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...BLUE);
+      doc.text(m, mx, baseY + 14, { align: "center" });
+    });
+  }
+
+  // Interesses como chips coloridos
+  const interesses: string[] = Array.isArray(pp.interesses)
+    ? pp.interesses.filter(Boolean).map(String)
+    : String(pp.interesses ?? pp.preferencias ?? "").split(/[|,]+/).map((s: string) => s.trim()).filter(Boolean);
+  if (interesses.length) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
+    doc.setFontSize(10);
     doc.setTextColor(...GOLD);
-    doc.text(label, x + 20, y + 14);
-    textoMultilinha(doc, value, x + 8, y + 24, cw - 16, { size: 10, color: WHITE, lineHeight: 4.8 });
-  });
+    doc.text("INTERESSES", M, 168);
+    let cxi = M;
+    let cyi = 175;
+    const cores: Array<[number, number, number]> = [BLUE, GOLD, [120, 81, 169], [40, 167, 105], [220, 100, 80]];
+    interesses.slice(0, 14).forEach((it, i) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      const w = doc.getTextWidth(it) + 10;
+      if (cxi + w > PW - M) { cxi = M; cyi += 9; }
+      const cor = cores[i % cores.length];
+      doc.setFillColor(...cor);
+      doc.roundedRect(cxi, cyi - 4, w, 7, 3.5, 3.5, "F");
+      doc.setTextColor(...WHITE);
+      doc.text(it, cxi + w / 2, cyi + 0.8, { align: "center" });
+      cxi += w + 4;
+    });
+  }
 }
 
 // ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
 function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) {
+  // Referência: mediana de R$/m²
+  const unit = comparaveis
+    .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
+    .map((c) => Number(c.valor_anunciado) / Number(c.area));
+  const sortedRef = [...unit].sort((a, b) => a - b);
+  const ref = sortedRef.length ? sortedRef[Math.floor(sortedRef.length / 2)] : 0;
+
   const PER_PAGE = 4;
   for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
     novaPagina(doc);
     microHeader(doc, corretor);
-    if (p === 0) tituloPagina(doc, "Anúncios na Região");
+    if (p === 0) tituloPagina(doc, "Comparáveis");
 
     const pageItems = comparaveis.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
     const usable = PW - M * 2;
-    const ch = 32;
-    const gap = 4;
-    const yStart = 48;
+    const gap = 6;
+    const cw = (usable - gap) / 2;
+    const ch = 62;
+    const yStart = 50;
+
     pageItems.forEach((c, idx) => {
       const i = p * PER_PAGE + idx;
-      const y = yStart + idx * (ch + gap);
-      const alt = idx % 2 === 1;
-      card(doc, M, y, usable, ch, { variant: alt ? "blue" : "white", border: "soft" });
-      // number badge
-      doc.setFillColor(...BLUE);
-      doc.circle(M + 10, y + ch / 2, 6, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(...WHITE);
-      doc.text(String(i + 1), M + 10, y + ch / 2 + 1.5, { align: "center" });
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const x = M + col * (cw + gap);
+      const y = yStart + row * (ch + gap);
 
-      // cols
-      const x0 = M + 22;
-      const colW = (usable - 30) / 4;
-      // col 1: local + quartos
+      // Card
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x, y, cw, ch, 3, 3, "FD");
+      doc.setFillColor(...GOLD);
+      doc.rect(x, y, cw, 1.4, "F");
+
+      // Número círculo dourado
+      doc.setFillColor(...GOLD);
+      doc.circle(x + 10, y + 13, 5, "F");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
+      doc.setTextColor(...WHITE);
+      doc.text(String(i + 1), x + 10, y + 14.5, { align: "center" });
+
+      // Valor em destaque
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
       doc.setTextColor(...BLUE);
-      const loc = doc.splitTextToSize(String(c.localizacao ?? "—").toUpperCase(), colW - 4);
-      doc.text(loc.slice(0, 2), x0, y + 10);
+      doc.text(fmtBRL(Number(c.valor_anunciado)), x + 20, y + 15);
+
+      // Badge R$/m²
+      const vm = Number(c.area) > 0 ? Number(c.valor_anunciado) / Number(c.area) : 0;
+      if (vm > 0) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        const lbl = `${fmtBRL(vm)}/m²`;
+        const bw = doc.getTextWidth(lbl) + 8;
+        doc.setFillColor(...BLUE);
+        doc.roundedRect(x + cw - bw - 6, y + 8, bw, 8, 4, 4, "F");
+        doc.setTextColor(...WHITE);
+        doc.text(lbl, x + cw - bw / 2 - 6, y + 13.5, { align: "center" });
+      }
+
+      // Ícones quartos/vagas/área
       doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(...TEXT);
+      const linha = `${c.quartos ?? 0} qtos  ·  ${c.vagas ?? 0} vagas  ·  ${c.area ?? "—"} m²`;
+      doc.text(linha, x + 8, y + 28);
+
+      doc.setFont("helvetica", "italic");
       doc.setFontSize(8);
       doc.setTextColor(...GRAY);
-      doc.text(`${c.quartos ?? 0} quartos`, x0, y + 22);
-      doc.text(`${c.suites ?? 0} suítes  •  ${c.vagas ?? 0} vagas`, x0, y + 26);
+      const fonteTxt = `${fmtFonte(c.fonte)} · ${String(c.localizacao || "").slice(0, 42)}`;
+      doc.text(fonteTxt, x + 8, y + 35);
 
-      // col 2: metragem + valor + tempo
-      const x1 = x0 + colW;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...GRAY);
-      doc.text(`Metragem: ${c.area ?? "—"} m²`, x1, y + 10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...BLUE);
-      doc.text(`Valor: ${fmtBRL(Number(c.valor_anunciado))}`, x1, y + 17);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...GRAY);
-      doc.text(`Fonte: ${fmtFonte(c.fonte)}`, x1, y + 24);
-
-      // col 3: R$/m²
-      const x2 = x1 + colW;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...GRAY);
-      doc.text("Valor unitário", x2, y + 10);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.setTextColor(...GOLD);
-      const vm = Number(c.area) > 0 ? fmtBRL(Number(c.valor_anunciado) / Number(c.area)) : "—";
-      doc.text(`${vm}/m²`, x2, y + 19);
-
-      // col 4: conservação
-      const x3 = x2 + colW;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...GRAY);
-      doc.text("Estado de conservação", x3, y + 10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...BLUE);
-      const cons = doc.splitTextToSize(String(c.conservacao ?? "—"), colW - 4);
-      doc.text(cons.slice(0, 2), x3, y + 17);
+      // Barra de comparação relativa ao imóvel avaliado (mediana)
+      if (ref > 0 && vm > 0) {
+        const barX = x + 8;
+        const barY = y + ch - 13;
+        const barW = cw - 16;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(...GRAY);
+        doc.text("ABAIXO", barX, barY - 1);
+        doc.text("SIMILAR", barX + barW / 2, barY - 1, { align: "center" });
+        doc.text("ACIMA", barX + barW, barY - 1, { align: "right" });
+        doc.setFillColor(...BORDER);
+        doc.roundedRect(barX, barY + 1, barW, 3, 1.5, 1.5, "F");
+        const ratio = vm / ref;
+        const t = Math.max(0, Math.min(1, (ratio - 0.7) / 0.6));
+        const mx = barX + t * barW;
+        const cor: [number, number, number] = t < 0.4 ? [40, 167, 105] : t > 0.6 ? [220, 53, 69] : GOLD;
+        doc.setFillColor(...cor);
+        doc.circle(mx, barY + 2.5, 2.5, "F");
+      }
     });
   }
 }
@@ -703,52 +930,74 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
 // ---------- PAGE: VALOR DO IMÓVEL ----------
 function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   novaPagina(doc);
+  // Fundo navy total
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, PW, PH, "F");
   microHeader(doc, corretor);
-  tituloPagina(doc, "Valor do Imóvel");
 
-  const central = resultado?.valor_central;
-  const minV = resultado?.valor_minimo;
-  const maxV = resultado?.valor_maximo;
+  const central = Number(resultado?.valor_central) || 0;
+  const minV = Number(resultado?.valor_minimo) || central * 0.85;
+  const maxV = Number(resultado?.valor_maximo) || central * 1.15;
 
-  // central giant
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...GRAY);
-  doc.text("Valor sugerido de mercado", PW / 2, 60, { align: "center" });
+  // Faixa dourada
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 38, PW, 0.6, "F");
 
+  // Título pequeno
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(58);
-  doc.setTextColor(...BLUE);
-  doc.text(fmtBRL(central), PW / 2, 88, { align: "center" });
-
-  // min / max range
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(...GOLD);
-  doc.text(`Faixa sugerida:  ${fmtBRL(minV)}   —   ${fmtBRL(maxV)}`, PW / 2, 102, { align: "center" });
+  doc.text("VALOR DE MERCADO ESTIMADO", PW / 2, 58, { align: "center" });
 
-  // 3 tip cards
-  const tips: Array<[string, string]> = [
-    ["Comece acima do valor", "Iniciar levemente acima do central permite margem para negociação."],
-    ["Valor é sugestão", "A faixa é mercadológica; o preço final depende de estratégia e momento."],
-    ["IA + mercado local", "Análise considera comparáveis reais e contexto da região informada."],
+  // Valor central enorme dourado
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(72);
+  doc.setTextColor(...GOLD);
+  doc.text(fmtBRL(central), PW / 2, 102, { align: "center" });
+
+  // Termômetro horizontal
+  const tx = M + 30;
+  const tw = PW - M * 2 - 60;
+  const ty = 130;
+  doc.setFillColor(60, 75, 110);
+  doc.roundedRect(tx, ty, tw, 6, 3, 3, "F");
+  doc.setFillColor(...GOLD);
+  doc.roundedRect(tx + tw * 0.15, ty + 1.5, tw * 0.7, 3, 1.5, 1.5, "F");
+  doc.setFillColor(...GOLD);
+  doc.circle(tx + tw / 2, ty + 3, 4.5, "F");
+  doc.setDrawColor(...WHITE);
+  doc.setLineWidth(0.8);
+  doc.circle(tx + tw / 2, ty + 3, 4.5, "S");
+
+  // Labels
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...WHITE);
+  doc.text(fmtBRL(minV), tx, ty + 16, { align: "center" });
+  doc.text(fmtBRL(central), tx + tw / 2, ty + 16, { align: "center" });
+  doc.text(fmtBRL(maxV), tx + tw, ty + 16, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(200, 200, 210);
+  doc.text("Mínimo -15%", tx, ty + 22, { align: "center" });
+  doc.text("Central", tx + tw / 2, ty + 22, { align: "center" });
+  doc.text("Máximo +15%", tx + tw, ty + 22, { align: "center" });
+
+  // 3 ícones informativos
+  const tips = [
+    { glyph: "$", txt: "Inicie acima do central" },
+    { glyph: "#", txt: "Baseado em comparáveis" },
+    { glyph: "@", txt: "Válido por 6 meses" },
   ];
-  const usable = PW - M * 2;
-  const gap = 6;
-  const cw = (usable - gap * 2) / 3;
-  const ch = 50;
-  const yRow = 120;
-  tips.forEach(([t, d], i) => {
-    const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch, { variant: "darkblue" });
-    doc.setFillColor(...GOLD);
-    doc.circle(x + 10, yRow + 8, 2.4, "F");
-
+  const baseY = PH - 38;
+  const tipW = (PW - M * 2) / 3;
+  tips.forEach((t, i) => {
+    const cx = M + tipW * i + tipW / 2;
+    iconCircle(doc, cx, baseY, 6, t.glyph, GOLD);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...GOLD);
-    doc.text(t, x + 16, yRow + 14);
-    textoMultilinha(doc, d, x + 8, yRow + 24, cw - 16, { size: 10, color: WHITE, lineHeight: 4.8 });
+    doc.setFontSize(10);
+    doc.setTextColor(...WHITE);
+    doc.text(t.txt, cx, baseY + 14, { align: "center" });
   });
 }
 
@@ -880,19 +1129,15 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
   const norm = (v: any) => String(v ?? "").trim().toLowerCase();
   const ordemPadrao = ["baixo", "simples", "popular", "medio", "médio", "normal", "alto", "luxo", "alto luxo"];
   const ordemConserv = ["ruim", "regular", "bom", "novo", "reformado"];
-  const rank = (lista: string[], v: string) => {
-    const i = lista.indexOf(v);
-    return i === -1 ? 0 : i;
-  };
+  const rank = (lista: string[], v: string) => { const i = lista.indexOf(v); return i === -1 ? 0 : i; };
 
-  const body = comparaveis.map((c, i) => {
+  type Row = { idx: number; fonte: string; fatores: Array<[string, number]>; total: number };
+  const rows: Row[] = comparaveis.map((c, i) => {
     const fOferta = 0.9;
     const areaA = Number(a?.area_total) || 0;
     const areaC = Number(c.area) || 0;
     let fArea = 1.0;
-    if (areaA > 0 && areaC > 0) {
-      fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
-    }
+    if (areaA > 0 && areaC > 0) fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
     const pA = rank(ordemPadrao, norm(a?.padrao));
     const pC = rank(ordemPadrao, norm(c.padrao));
     const fPadrao = pC === pA ? 1.0 : pC < pA ? 1.1 : 0.9;
@@ -903,27 +1148,75 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
     const locC = norm(c.localizacao);
     const fLocal = !locA || !locC ? 1.0 : locA === locC ? 1.0 : locA.split(",")[0] === locC.split(",")[0] ? 0.98 : 0.95;
     const total = fOferta * fArea * fPadrao * fConserv * fLocal;
-    return [
-      String(i + 1),
-      fmtFonte(c.fonte),
-      fmtNum(fOferta, 2),
-      fmtNum(fArea, 2),
-      fmtNum(fPadrao, 2),
-      fmtNum(fConserv, 2),
-      fmtNum(fLocal, 2),
-      fmtNum(total, 3),
-    ];
+    return {
+      idx: i + 1,
+      fonte: fmtFonte(c.fonte),
+      fatores: [["Oferta", fOferta], ["Área", fArea], ["Padrão", fPadrao], ["Conservação", fConserv], ["Localização", fLocal]],
+      total,
+    };
   });
 
-  autoTable(doc, {
-    startY: 48,
-    head: [["#", "Fonte", "F. Oferta", "F. Área", "F. Padrão", "F. Conserv.", "F. Localiz.", "F. Total"]],
-    body,
-    theme: "grid",
-    headStyles: { fillColor: BLUE, textColor: WHITE, fontSize: 10, halign: "center" },
-    bodyStyles: { fillColor: WHITE, textColor: TEXT, fontSize: 10, halign: "center", lineColor: BORDER },
-    alternateRowStyles: { fillColor: BG_SOFT },
-    margin: { left: M, right: M },
+  const usable = PW - M * 2;
+  const yStart = 50;
+  const available = PH - yStart - 20;
+  const rowH = Math.min(28, available / Math.max(1, rows.length));
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text("Cada barra representa um fator aplicado. Azul = deságio (<1) · Dourado = prêmio (>1)", M, yStart - 4);
+
+  rows.forEach((r, ri) => {
+    const y = yStart + ri * rowH;
+    // Cabeçalho
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...BLUE);
+    doc.text(`#${r.idx} · ${r.fonte}`, M, y + 4);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...GOLD);
+    doc.text(`Fator Total: ${fmtNum(r.total, 3)}`, PW - M, y + 4, { align: "right" });
+
+    // Barras
+    const barH = 2.4;
+    const gap = 1.2;
+    const barAreaY = y + 7;
+    const labelW = 30;
+    const valueW = 14;
+    const barAreaW = usable - labelW - valueW - 6;
+    const refX = M + labelW + barAreaW / 2;
+    r.fatores.forEach((f, fi) => {
+      const [label, val] = f;
+      const by = barAreaY + fi * (barH + gap);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...TEXT);
+      doc.text(label, M, by + 2);
+      doc.setFillColor(...BORDER);
+      doc.rect(M + labelW, by, barAreaW, barH, "F");
+      const cor: [number, number, number] = val < 1 ? BLUE : val > 1 ? GOLD : [120, 125, 135];
+      const delta = val - 1;
+      const half = barAreaW / 2;
+      const len = Math.min(half, Math.abs(delta) * half / 0.2);
+      doc.setFillColor(...cor);
+      if (delta < 0) doc.rect(refX - len, by, len, barH, "F");
+      else if (delta > 0) doc.rect(refX, by, len, barH, "F");
+      else doc.rect(refX - 0.4, by, 0.8, barH, "F");
+      doc.setDrawColor(...GRAY_DIM);
+      doc.setLineWidth(0.2);
+      doc.line(refX, by - 0.4, refX, by + barH + 0.4);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(...cor);
+      doc.text(fmtNum(val, 2), M + labelW + barAreaW + 4, by + 2);
+    });
+
+    if (ri < rows.length - 1) {
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.2);
+      doc.line(M, y + rowH - 1, PW - M, y + rowH - 1);
+    }
   });
 }
 
@@ -946,36 +1239,54 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
     desvio = Math.sqrt(variancia);
     cv = media > 0 ? (desvio / media) * 100 : 0;
   }
-  const items: Array<[string, string]> = [
-    ["Amostras (n)", String(unit.length)],
-    ["Média (R$/m²)", fmtBRL(media)],
-    ["Mediana (R$/m²)", fmtBRL(mediana)],
-    ["Desvio padrão", fmtBRL(desvio)],
-    ["Coef. variação", `${fmtNum(cv, 2)}%`],
-  ];
+
+  const cvColor: [number, number, number] = cv < 15 ? [40, 167, 105] : cv < 30 ? [240, 180, 60] : [220, 53, 69];
+
   const usable = PW - M * 2;
   const gap = 6;
-  const cw = (usable - gap * 4) / 5;
-  const ch = 50;
-  const yRow = 60;
-  items.forEach(([l, v], i) => {
+  const cw = (usable - gap * 3) / 4;
+  const ch = 52;
+  const yRow = 56;
+
+  const cards: Array<{ bg: [number, number, number]; fg: [number, number, number]; accent: [number, number, number]; label: string; value: string }> = [
+    { bg: NAVY, fg: WHITE, accent: GOLD, label: "Média R$/m²", value: fmtBRL(media) },
+    { bg: BLUE, fg: WHITE, accent: GOLD, label: "Mediana R$/m²", value: fmtBRL(mediana) },
+    { bg: WHITE, fg: BLUE, accent: GOLD, label: "Desvio Padrão", value: fmtBRL(desvio) },
+    { bg: WHITE, fg: cvColor, accent: cvColor, label: "Coef. Variação", value: `${fmtNum(cv, 1)}%` },
+  ];
+  cards.forEach((c, i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch, { variant: "blue", border: "soft" });
+    doc.setFillColor(...c.bg);
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, yRow, cw, ch, 3, 3, "FD");
+    doc.setFillColor(...c.accent);
+    doc.rect(x, yRow, cw, 1.6, "F");
+    const isLight = c.bg[0] > 200;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...BLUE);
-    doc.text(l, x + cw / 2, yRow + 14, { align: "center" });
+    doc.setTextColor(...(isLight ? GRAY : ([220, 220, 220] as [number, number, number])));
+    doc.text(c.label.toUpperCase(), x + cw / 2, yRow + 12, { align: "center" });
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(...BLUE);
-    doc.text(v, x + cw / 2, yRow + 30, { align: "center" });
+    doc.setFontSize(c.value.length > 10 ? 14 : 20);
+    doc.setTextColor(...c.fg);
+    doc.text(c.value, x + cw / 2, yRow + 32, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...(isLight ? GRAY : ([200, 200, 200] as [number, number, number])));
+    doc.text(`n = ${unit.length}`, x + cw / 2, yRow + ch - 6, { align: "center" });
   });
 
   doc.setFont("helvetica", "italic");
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
-  const t = "Tratamento por fatores de homogeneização (ABNT NBR 14653-2:2011). A média dos valores unitários, ponderada pela qualidade da amostra, fundamenta o valor central apurado.";
-  textoMultilinha(doc, t, M, yRow + ch + 14, usable, { size: 11, color: TEXT, lineHeight: 5.2 });
+  const cvDesc = cv < 15 ? "amostra muito homogênea" : cv < 30 ? "amostra aceitável" : "amostra com alta dispersão";
+  textoMultilinha(
+    doc,
+    `Tratamento por fatores de homogeneização (ABNT NBR 14653-2). Coef. de variação de ${fmtNum(cv, 1)}% — ${cvDesc}.`,
+    M, yRow + ch + 12, usable,
+    { size: 11, color: TEXT, lineHeight: 5.2 },
+  );
 }
 
 // ---------- EXPERT EXTRA: CAMPO DE ARBÍTRIO ----------
@@ -1072,110 +1383,205 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
   tituloPagina(doc, "Ficha Técnica");
 
   const usable = PW - M * 2;
-  const yStart = 50;
-  const colW = (usable - 6) / 2;
-  const rowH = 12;
+  const yTop = 50;
 
-  const dados: Array<[string, string]> = [
-    ["Padrão Construtivo", String(a.padrao ?? "—")],
-    ["Estado de Conservação", String(a.conservacao ?? "—")],
-    ["Idade Real (anos)", a.idade_real != null && a.idade_real !== 0 ? String(a.idade_real) : "—"],
-    ["Idade Aparente", String(a.idade_aparente || "—")],
-    ["Posição Solar", String(a.posicao_solar || "—")],
-    ["Topografia", String(a.topografia || "—")],
-    ["Zoneamento", String(a.zoneamento || "—")],
-    ["Posição", String(a.posicao || "—")],
-    ["Vagas Cobertas", a.vagas_cobertas != null && a.vagas_cobertas !== 0 ? String(a.vagas_cobertas) : "—"],
-    ["Vagas Descobertas", a.vagas_descobertas != null && a.vagas_descobertas !== 0 ? String(a.vagas_descobertas) : "—"],
-    ["Andar do Imóvel", a.andar != null && a.andar !== 0 ? String(a.andar) : "—"],
-    ["Total de Andares", a.total_andares != null && a.total_andares !== 0 ? String(a.total_andares) : "—"],
-    ["Número de Pavimentos", String(a.numero_pavimentos || "—")],
-  ];
+  // ===== CARDS PRINCIPAIS =====
+  const principais: Array<{ icon: string; value: string; label: string }> = [];
+  if (a.quartos != null && Number(a.quartos) > 0) principais.push({ icon: "Q", value: String(a.quartos), label: "Quartos" });
+  if (a.suites != null && Number(a.suites) > 0) principais.push({ icon: "S", value: String(a.suites), label: "Suítes" });
+  const vagas = (Number(a.vagas_cobertas) || 0) + (Number(a.vagas_descobertas) || 0) || Number(a.vagas) || 0;
+  if (vagas > 0) principais.push({ icon: "V", value: String(vagas), label: "Vagas" });
+  if (a.area_total) principais.push({ icon: "A", value: String(a.area_total), label: "m² Área" });
 
-  let y = yStart;
-  dados.forEach((d, i) => {
-    const col = i % 2;
-    const x = M + col * (colW + 6);
-    if (col === 0 && i > 0) y += rowH + 2;
-    card(doc, x, y, colW, rowH, { variant: "white", border: "soft" });
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(...GOLD);
-    doc.text(d[0].toUpperCase(), x + 5, y + 5);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...TEXT);
-    doc.text(d[1], x + 5, y + 10);
-  });
-
-  // Tipo de Acabamento
-  const acabamentos: string[] = Array.isArray(a.tipo_acabamento)
-    ? a.tipo_acabamento.filter((s: any) => typeof s === "string" && s.trim().length > 0)
-    : [];
-  const yAcab = y + rowH + 10;
-  const acabBoxH = 32;
-  card(doc, M, yAcab, usable, acabBoxH, { variant: "white", border: "gold" });
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(...BLUE);
-  doc.text("Tipo de Acabamento", M + 8, yAcab + 10);
-  if (acabamentos.length === 0) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(10);
-    doc.setTextColor(...GRAY);
-    doc.text("Nenhum item informado.", M + 8, yAcab + 22);
-  } else {
-    const cols = 3;
-    const colInnerW = (usable - 16) / cols;
-    const lineH = 6;
-    acabamentos.forEach((item, i) => {
-      const c = i % cols;
-      const r = Math.floor(i / cols);
-      const x = M + 8 + c * colInnerW;
-      const yi = yAcab + 22 + r * lineH;
+  if (principais.length) {
+    const gap = 6;
+    const cw = (usable - gap * (principais.length - 1)) / principais.length;
+    const ch = 50;
+    principais.forEach((p, i) => {
+      const x = M + i * (cw + gap);
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x, yTop, cw, ch, 3, 3, "FD");
+      doc.setFillColor(...GOLD);
+      doc.rect(x, yTop, cw, 1.6, "F");
+      iconCircle(doc, x + cw / 2, yTop + 14, 5, p.icon, GOLD);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(...GOLD);
-      doc.text("•", x, yi);
+      doc.setFontSize(28);
+      doc.setTextColor(...BLUE);
+      doc.text(p.value, x + cw / 2, yTop + 36, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...TEXT);
-      doc.text(item, x + 4, yi);
+      doc.setFontSize(9);
+      doc.setTextColor(...GRAY);
+      doc.text(p.label.toUpperCase(), x + cw / 2, yTop + ch - 5, { align: "center" });
     });
   }
 
-  // Infraestrutura de Lazer
+  // ===== CARDS SECUNDÁRIOS =====
+  const ySec = yTop + 56;
+  const sec: Array<(x: number, y: number, w: number, h: number) => void> = [];
+
+  if (a.padrao) {
+    sec.push((x, y, w, h) => {
+      const b = badgePadrao(String(a.padrao));
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(x, y, w, h, 3, 3, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text("PADRÃO CONSTRUTIVO", x + w / 2, y + 8, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      const tw = doc.getTextWidth(b.label) + 12;
+      doc.setFillColor(...b.cor);
+      doc.roundedRect(x + (w - tw) / 2, y + h / 2 - 3, tw, 10, 5, 5, "F");
+      doc.setTextColor(...WHITE);
+      doc.text(b.label, x + w / 2, y + h / 2 + 4, { align: "center" });
+    });
+  }
+  if (a.conservacao) {
+    sec.push((x, y, w, h) => {
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(x, y, w, h, 3, 3, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text("ESTADO DE CONSERVAÇÃO", x + w / 2, y + 8, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(...BLUE);
+      doc.text(String(a.conservacao), x + w / 2, y + h / 2, { align: "center" });
+      progressBar(doc, x + 8, y + h / 2 + 5, w - 16, conservPct(String(a.conservacao)));
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...GRAY);
+      doc.text("Péssimo", x + 8, y + h - 3);
+      doc.text("Ótimo", x + w - 8, y + h - 3, { align: "right" });
+    });
+  }
+  if (a.posicao_solar) {
+    sec.push((x, y, w, h) => {
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(x, y, w, h, 3, 3, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text("POSIÇÃO SOLAR", x + w / 2, y + 8, { align: "center" });
+      iconCircle(doc, x + w / 2, y + h / 2 - 1, 6, "*", GOLD);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...BLUE);
+      doc.text(String(a.posicao_solar), x + w / 2, y + h - 5, { align: "center" });
+    });
+  }
+  if (a.numero_pavimentos || a.total_andares) {
+    sec.push((x, y, w, h) => {
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(x, y, w, h, 3, 3, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text("PAVIMENTOS", x + w / 2, y + 8, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(26);
+      doc.setTextColor(...BLUE);
+      doc.text(String(a.numero_pavimentos || a.total_andares), x + w / 2, y + h / 2 + 8, { align: "center" });
+    });
+  }
+
+  let yAcab = ySec;
+  if (sec.length) {
+    const gap = 6;
+    const cw = (usable - gap * (sec.length - 1)) / sec.length;
+    const ch = 38;
+    sec.forEach((r, i) => r(M + i * (cw + gap), ySec, cw, ch));
+    yAcab = ySec + ch + 10;
+  }
+
+  // ===== AMBIENTES como chips =====
+  const ambientes: string[] = [
+    ...(Array.isArray(a.ambientes_sociais) ? a.ambientes_sociais : []),
+    ...(Array.isArray(a.ambientes_servico) ? a.ambientes_servico : []),
+    ...(Array.isArray(a.ambientes_outros) ? a.ambientes_outros : []),
+  ].filter((s: any) => typeof s === "string" && s.trim().length > 0);
+
+  if (ambientes.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("AMBIENTES", M, yAcab + 4);
+    let cxi = M;
+    let cyi = yAcab + 12;
+    ambientes.slice(0, 28).forEach((it) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const tw = doc.getTextWidth(it) + 10;
+      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      doc.setFillColor(...CARD_BLUE);
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(cxi, cyi - 4, tw, 7, 3.5, 3.5, "FD");
+      doc.setTextColor(...BLUE);
+      doc.text(it, cxi + tw / 2, cyi + 0.8, { align: "center" });
+      cxi += tw + 4;
+    });
+    yAcab = cyi + 10;
+  }
+
+  // ===== ACABAMENTOS =====
+  const acab: string[] = Array.isArray(a.tipo_acabamento)
+    ? a.tipo_acabamento.filter((s: any) => typeof s === "string" && s.trim().length > 0)
+    : [];
+  if (acab.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("ACABAMENTOS", M, yAcab + 4);
+    let cxi = M;
+    let cyi = yAcab + 12;
+    acab.forEach((it) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const tw = doc.getTextWidth(it) + 12;
+      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...GOLD);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(cxi, cyi - 4, tw, 7, 3.5, 3.5, "FD");
+      doc.setFillColor(...GOLD);
+      doc.circle(cxi + 3.5, cyi - 0.6, 1, "F");
+      doc.setTextColor(...TEXT);
+      doc.text(it, cxi + 7, cyi + 0.8);
+      cxi += tw + 4;
+    });
+    yAcab = cyi + 10;
+  }
+
+  // ===== INFRA LAZER =====
   const lazer: string[] = Array.isArray(a.infraestrutura_lazer)
     ? a.infraestrutura_lazer.filter((s: any) => typeof s === "string" && s.trim().length > 0)
     : [];
-  const yLazer = yAcab + acabBoxH + 6;
-  const boxH = PH - yLazer - 18;
-  card(doc, M, yLazer, usable, boxH, { variant: "white", border: "gold" });
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(...BLUE);
-  doc.text("Infraestrutura de Lazer", M + 8, yLazer + 10);
-
-  if (lazer.length === 0) {
-    doc.setFont("helvetica", "italic");
+  if (lazer.length) {
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(...GRAY);
-    doc.text("Nenhum item informado.", M + 8, yLazer + 22);
-  } else {
-    const cols = 3;
-    const colInnerW = (usable - 16) / cols;
-    const lineH = 6;
-    lazer.forEach((item, i) => {
-      const c = i % cols;
-      const r = Math.floor(i / cols);
-      const x = M + 8 + c * colInnerW;
-      const yi = yLazer + 22 + r * lineH;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(...GOLD);
-      doc.text("•", x, yi);
+    doc.setTextColor(...GOLD);
+    doc.text("INFRAESTRUTURA DE LAZER", M, yAcab + 4);
+    let cxi = M;
+    let cyi = yAcab + 12;
+    lazer.forEach((it) => {
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...TEXT);
-      doc.text(item, x + 4, yi);
+      doc.setFontSize(9);
+      const tw = doc.getTextWidth(it) + 10;
+      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      doc.setFillColor(...CARD_BLUE);
+      doc.roundedRect(cxi, cyi - 4, tw, 7, 3.5, 3.5, "F");
+      doc.setTextColor(...BLUE);
+      doc.text(it, cxi + tw / 2, cyi + 0.8, { align: "center" });
+      cxi += tw + 4;
     });
   }
 }
@@ -1632,111 +2038,207 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
 
 
 function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: CorretorInfo) {
-  // ---- Página 1: Público + Divulgação ----
+  // ---- Página 1: Estratégia visual ----
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Estratégia de Marketing");
 
   const usable = PW - M * 2;
-  const colW = (usable - 6) / 2;
-  const yTop = 50;
 
-  // Card Público
-  card(doc, M, yTop, colW, 110, { variant: "darkblue" });
+  // BLOCO 1 — Comprador ideal (chips horizontais)
+  let y = 50;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(10);
   doc.setTextColor(...GOLD);
-  doc.text("PERFIL DO PÚBLICO-ALVO", M + 8, yTop + 10);
-
-  const pubItems: Array<[string, string]> = [
-    ["Faixa etária", marketing.publico?.faixa_etaria ?? "—"],
-    ["Perfil familiar", marketing.publico?.perfil_familiar ?? "—"],
-    ["Faixa de renda", marketing.publico?.faixa_renda ?? "—"],
-    ["Estilo de vida", marketing.publico?.estilo_vida ?? "—"],
-    ["Motivação de compra", marketing.publico?.motivacao_compra ?? "—"],
+  doc.text("COMPRADOR IDEAL", M, y);
+  y += 6;
+  const pub = marketing.publico ?? {};
+  const pubChips: Array<[string, string]> = [
+    ["Idade", String(pub.faixa_etaria ?? "—")],
+    ["Renda", String(pub.faixa_renda ?? "—")],
+    ["Perfil", String(pub.perfil_familiar ?? "—")],
   ];
-  let yp = yTop + 18;
-  pubItems.forEach(([k, v]) => {
+  let cx = M;
+  pubChips.forEach(([k, v]) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...GOLD);
-    doc.text(k.toUpperCase(), M + 8, yp);
-    yp = textoMultilinha(doc, v, M + 8, yp + 4, colW - 16, {
-      size: 9, color: WHITE, lineHeight: 4,
-    }) + 3;
+    const txt = `${k}: ${v}`;
+    const w = doc.getTextWidth(txt) + 12;
+    doc.setFillColor(...CARD_BLUE);
+    doc.setDrawColor(...BORDER);
+    doc.roundedRect(cx, y, w, 9, 4.5, 4.5, "FD");
+    doc.setTextColor(...BLUE);
+    doc.text(txt, cx + w / 2, y + 6, { align: "center" });
+    cx += w + 4;
   });
+  y += 16;
 
-  // Card Divulgação
-  const xR = M + colW + 6;
-  card(doc, xR, yTop, colW, 110, { variant: "white", border: "gold" });
+  // BLOCO 2 — Canais com barras de prioridade
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(...BLUE);
-  doc.text("ESTRATÉGIA DE DIVULGAÇÃO", xR + 8, yTop + 10);
-
-  const divItems: Array<[string, string]> = [
-    ["Canais prioritários", (marketing.divulgacao?.canais ?? []).join(", ") || "—"],
-    ["Melhor horário", marketing.divulgacao?.melhor_horario ?? "—"],
-    ["Prazo estimado de venda", marketing.divulgacao?.prazo_venda ?? "—"],
-    ["Dicas de precificação", marketing.divulgacao?.dicas_precificacao ?? "—"],
-    ["Desconto máximo", marketing.divulgacao?.desconto_maximo ?? "—"],
-  ];
-  let yd = yTop + 18;
-  divItems.forEach(([k, v]) => {
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("CANAIS RECOMENDADOS", M, y);
+  y += 6;
+  const canais: string[] = Array.isArray(marketing.divulgacao?.canais) ? marketing.divulgacao!.canais! : [];
+  const prioridades: Array<"Alta" | "Média" | "Baixa"> = ["Alta", "Alta", "Média", "Média", "Baixa"];
+  canais.slice(0, 5).forEach((c, i) => {
+    const pri = prioridades[i] || "Média";
+    const pct = pri === "Alta" ? 1 : pri === "Média" ? 0.6 : 0.3;
+    const cor: [number, number, number] = pri === "Alta" ? GOLD : pri === "Média" ? BLUE : [120, 125, 135];
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...TEXT);
+    doc.text(c, M, y + 4);
+    const barX = M + 60;
+    const barW = usable - 60 - 25;
+    doc.setFillColor(...BORDER);
+    doc.roundedRect(barX, y + 1, barW, 4, 2, 2, "F");
+    doc.setFillColor(...cor);
+    doc.roundedRect(barX, y + 1, barW * pct, 4, 2, 2, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...GOLD);
-    doc.text(k.toUpperCase(), xR + 8, yd);
-    yd = textoMultilinha(doc, v, xR + 8, yd + 4, colW - 16, {
-      size: 9, color: TEXT, lineHeight: 4,
-    }) + 3;
+    doc.setTextColor(...cor);
+    doc.text(pri, PW - M, y + 4, { align: "right" });
+    y += 8;
+  });
+  y += 6;
+
+  // BLOCO 3 — Timeline
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("TIMELINE DE VENDA", M, y);
+  y += 12;
+  const etapas = [
+    { lbl: "Lançamento", prazo: "Dia 1" },
+    { lbl: "Visitas", prazo: "Sem. 1-2" },
+    { lbl: "Proposta", prazo: "Sem. 3-6" },
+    { lbl: "Fechamento", prazo: String(marketing.divulgacao?.prazo_venda ?? "60-90 dias") },
+  ];
+  const stepW = usable / etapas.length;
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(M + stepW / 2, y + 4, M + usable - stepW / 2, y + 4);
+  etapas.forEach((e, i) => {
+    const ex = M + stepW * i + stepW / 2;
+    doc.setFillColor(...GOLD);
+    doc.circle(ex, y + 4, 4, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...WHITE);
+    doc.text(String(i + 1), ex, y + 5.5, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...BLUE);
+    doc.text(e.lbl, ex, y + 14, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
+    doc.text(e.prazo, ex, y + 19, { align: "center" });
+  });
+  y += 28;
+
+  // BLOCO 4 — Precificação (setas)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("PRECIFICAÇÃO", M, y);
+  y += 8;
+  const passos = [
+    { lbl: "Lançamento", val: String(marketing.divulgacao?.dicas_precificacao ?? "Tabela cheia").slice(0, 28) },
+    { lbl: "Negociação", val: "−5% a −10%" },
+    { lbl: "Mínimo", val: String(marketing.divulgacao?.desconto_maximo ?? "Limite").slice(0, 28) },
+  ];
+  const stepX = usable / passos.length;
+  passos.forEach((p, i) => {
+    const px = M + stepX * i + stepX / 2;
+    const cor: [number, number, number] = i === 0 ? GOLD : i === 1 ? BLUE : [120, 125, 135];
+    doc.setFillColor(...cor);
+    doc.roundedRect(px - stepX / 2 + 6, y, stepX - 12, 16, 3, 3, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...WHITE);
+    doc.text(p.lbl, px, y + 6, { align: "center" });
+    doc.setFontSize(9);
+    doc.text(p.val, px, y + 12, { align: "center" });
+    if (i < passos.length - 1) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(...GOLD);
+      doc.text(">", M + stepX * (i + 1) - 1, y + 11, { align: "center" });
+    }
   });
 
-  // ---- Página 2: Texto de Anúncio ----
+  // ---- Página 2: Mockup de anúncio ----
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Texto de Anúncio");
 
+  const an = marketing.anuncio ?? {};
+  const mockW = usable * 0.55;
+  const mockH = 110;
+  const mockX = M;
+  const mockY = 52;
+  // Frame
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(mockX, mockY, mockW, mockH, 4, 4, "FD");
+  // Header app
+  doc.setFillColor(...BLUE);
+  doc.rect(mockX, mockY, mockW, 7, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...WHITE);
+  doc.text("PORTAL IMOBILIÁRIO", mockX + 4, mockY + 5);
+  // Placeholder foto
+  doc.setFillColor(...CARD_BLUE);
+  doc.rect(mockX + 4, mockY + 11, mockW - 8, 50, "F");
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY_DIM);
+  doc.text("[ FOTO DO IMÓVEL ]", mockX + mockW / 2, mockY + 38, { align: "center" });
   // Título
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...GOLD);
-  doc.text("TÍTULO (PORTAIS)", M, 50);
+  doc.setFontSize(12);
+  doc.setTextColor(...BLUE);
+  textoMultilinha(doc, String(an.titulo ?? "—"), mockX + 6, mockY + 68, mockW - 12, {
+    size: 12, bold: true, color: BLUE, lineHeight: 5,
+  });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text("· quartos  · vagas  · m²", mockX + 6, mockY + 86);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.setTextColor(...BLUE);
-  let yT = textoMultilinha(doc, marketing.anuncio?.titulo ?? "—", M, 56, usable, {
-    size: 14, bold: true, color: BLUE, lineHeight: 6,
+  doc.setTextColor(...GOLD);
+  doc.text("Sob consulta", mockX + mockW - 6, mockY + mockH - 6, { align: "right" });
+
+  // WhatsApp à direita
+  const wX = M + mockW + 8;
+  const wW = usable - mockW - 8;
+  const wY = mockY;
+  doc.setFillColor(232, 244, 232);
+  doc.roundedRect(wX, wY, wW, mockH, 4, 4, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(40, 90, 60);
+  doc.text("WHATSAPP", wX + 6, wY + 7);
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(180, 200, 180);
+  doc.roundedRect(wX + 4, wY + 11, wW - 8, mockH - 16, 4, 4, "FD");
+  textoMultilinha(doc, String(an.whatsapp ?? "—"), wX + 8, wY + 18, wW - 16, {
+    size: 9, color: TEXT, lineHeight: 4.4,
   });
 
-  // Descrição portal
-  yT += 6;
+  // Descrição completa
+  const yD = mockY + mockH + 10;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...GOLD);
-  doc.text("DESCRIÇÃO COMPLETA — ZAP / OLX / VIVA REAL", M, yT);
-  yT = textoMultilinha(doc, marketing.anuncio?.descricao_portal ?? "—", M, yT + 6, usable, {
-    size: 10, color: TEXT, lineHeight: 4.5,
-  });
-
-  // WhatsApp
-  yT += 6;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...GOLD);
-  doc.text("VERSÃO WHATSAPP", M, yT);
-  yT = textoMultilinha(doc, marketing.anuncio?.whatsapp ?? "—", M, yT + 6, usable, {
-    size: 10, color: TEXT, lineHeight: 4.5,
-  });
-
-  // Hashtags
-  yT += 6;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...GOLD);
-  doc.text("HASHTAGS — INSTAGRAM", M, yT);
-  textoMultilinha(doc, (marketing.anuncio?.hashtags ?? []).join("  "), M, yT + 6, usable, {
-    size: 10, color: BLUE, bold: true, lineHeight: 4.5,
+  doc.text("DESCRIÇÃO COMPLETA — PORTAIS", M, yD);
+  textoMultilinha(doc, String(an.descricao_portal ?? "—"), M, yD + 6, usable, {
+    size: 9, color: TEXT, lineHeight: 4.2,
   });
 }
 
