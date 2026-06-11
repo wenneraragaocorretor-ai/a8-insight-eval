@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
 import { getMeuPerfil } from "../../lib/perfil.functions";
 import { getStatusAssinatura, confirmarCheckout, listarCobrancasAvulsas } from "../../lib/stripe.functions";
-import { Progress } from "../../components/ui/progress";
 import { ExpertChat } from "../../components/ExpertChat";
 
 type DashboardSearch = { session_id?: string; pagamento?: string };
