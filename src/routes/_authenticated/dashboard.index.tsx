@@ -43,6 +43,7 @@ function Dashboard() {
   const fetchList = useServerFn(listarAvaliacoes);
   const fetchStatus = useServerFn(getStatusAssinatura);
   const fetchPerfil = useServerFn(getMeuPerfil);
+  const fetchCobrancas = useServerFn(listarCobrancasAvulsas);
   const confirmFn = useServerFn(confirmarCheckout);
   const [welcomePlano, setWelcomePlano] = useState<string | null>(null);
   const confirmedRef = useRef(false);
@@ -58,6 +59,10 @@ function Dashboard() {
   const { data: perfilData } = useQuery({
     queryKey: ["meu-perfil"],
     queryFn: () => fetchPerfil(),
+  });
+  const { data: cobrancasExtras = [] } = useQuery({
+    queryKey: ["cobrancas-avulsas"],
+    queryFn: () => fetchCobrancas(),
   });
   const perfilIncompleto = !!perfilData && !perfilData.profile?.telefone;
 
