@@ -2038,111 +2038,207 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
 
 
 function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: CorretorInfo) {
-  // ---- Página 1: Público + Divulgação ----
+  // ---- Página 1: Estratégia visual ----
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Estratégia de Marketing");
 
   const usable = PW - M * 2;
-  const colW = (usable - 6) / 2;
-  const yTop = 50;
 
-  // Card Público
-  card(doc, M, yTop, colW, 110, { variant: "darkblue" });
+  // BLOCO 1 — Comprador ideal (chips horizontais)
+  let y = 50;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(10);
   doc.setTextColor(...GOLD);
-  doc.text("PERFIL DO PÚBLICO-ALVO", M + 8, yTop + 10);
-
-  const pubItems: Array<[string, string]> = [
-    ["Faixa etária", marketing.publico?.faixa_etaria ?? "—"],
-    ["Perfil familiar", marketing.publico?.perfil_familiar ?? "—"],
-    ["Faixa de renda", marketing.publico?.faixa_renda ?? "—"],
-    ["Estilo de vida", marketing.publico?.estilo_vida ?? "—"],
-    ["Motivação de compra", marketing.publico?.motivacao_compra ?? "—"],
+  doc.text("COMPRADOR IDEAL", M, y);
+  y += 6;
+  const pub = marketing.publico ?? {};
+  const pubChips: Array<[string, string]> = [
+    ["Idade", String(pub.faixa_etaria ?? "—")],
+    ["Renda", String(pub.faixa_renda ?? "—")],
+    ["Perfil", String(pub.perfil_familiar ?? "—")],
   ];
-  let yp = yTop + 18;
-  pubItems.forEach(([k, v]) => {
+  let cx = M;
+  pubChips.forEach(([k, v]) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...GOLD);
-    doc.text(k.toUpperCase(), M + 8, yp);
-    yp = textoMultilinha(doc, v, M + 8, yp + 4, colW - 16, {
-      size: 9, color: WHITE, lineHeight: 4,
-    }) + 3;
+    const txt = `${k}: ${v}`;
+    const w = doc.getTextWidth(txt) + 12;
+    doc.setFillColor(...CARD_BLUE);
+    doc.setDrawColor(...BORDER);
+    doc.roundedRect(cx, y, w, 9, 4.5, 4.5, "FD");
+    doc.setTextColor(...BLUE);
+    doc.text(txt, cx + w / 2, y + 6, { align: "center" });
+    cx += w + 4;
   });
+  y += 16;
 
-  // Card Divulgação
-  const xR = M + colW + 6;
-  card(doc, xR, yTop, colW, 110, { variant: "white", border: "gold" });
+  // BLOCO 2 — Canais com barras de prioridade
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(...BLUE);
-  doc.text("ESTRATÉGIA DE DIVULGAÇÃO", xR + 8, yTop + 10);
-
-  const divItems: Array<[string, string]> = [
-    ["Canais prioritários", (marketing.divulgacao?.canais ?? []).join(", ") || "—"],
-    ["Melhor horário", marketing.divulgacao?.melhor_horario ?? "—"],
-    ["Prazo estimado de venda", marketing.divulgacao?.prazo_venda ?? "—"],
-    ["Dicas de precificação", marketing.divulgacao?.dicas_precificacao ?? "—"],
-    ["Desconto máximo", marketing.divulgacao?.desconto_maximo ?? "—"],
-  ];
-  let yd = yTop + 18;
-  divItems.forEach(([k, v]) => {
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("CANAIS RECOMENDADOS", M, y);
+  y += 6;
+  const canais: string[] = Array.isArray(marketing.divulgacao?.canais) ? marketing.divulgacao!.canais! : [];
+  const prioridades: Array<"Alta" | "Média" | "Baixa"> = ["Alta", "Alta", "Média", "Média", "Baixa"];
+  canais.slice(0, 5).forEach((c, i) => {
+    const pri = prioridades[i] || "Média";
+    const pct = pri === "Alta" ? 1 : pri === "Média" ? 0.6 : 0.3;
+    const cor: [number, number, number] = pri === "Alta" ? GOLD : pri === "Média" ? BLUE : [120, 125, 135];
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...TEXT);
+    doc.text(c, M, y + 4);
+    const barX = M + 60;
+    const barW = usable - 60 - 25;
+    doc.setFillColor(...BORDER);
+    doc.roundedRect(barX, y + 1, barW, 4, 2, 2, "F");
+    doc.setFillColor(...cor);
+    doc.roundedRect(barX, y + 1, barW * pct, 4, 2, 2, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...GOLD);
-    doc.text(k.toUpperCase(), xR + 8, yd);
-    yd = textoMultilinha(doc, v, xR + 8, yd + 4, colW - 16, {
-      size: 9, color: TEXT, lineHeight: 4,
-    }) + 3;
+    doc.setTextColor(...cor);
+    doc.text(pri, PW - M, y + 4, { align: "right" });
+    y += 8;
+  });
+  y += 6;
+
+  // BLOCO 3 — Timeline
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("TIMELINE DE VENDA", M, y);
+  y += 12;
+  const etapas = [
+    { lbl: "Lançamento", prazo: "Dia 1" },
+    { lbl: "Visitas", prazo: "Sem. 1-2" },
+    { lbl: "Proposta", prazo: "Sem. 3-6" },
+    { lbl: "Fechamento", prazo: String(marketing.divulgacao?.prazo_venda ?? "60-90 dias") },
+  ];
+  const stepW = usable / etapas.length;
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(M + stepW / 2, y + 4, M + usable - stepW / 2, y + 4);
+  etapas.forEach((e, i) => {
+    const ex = M + stepW * i + stepW / 2;
+    doc.setFillColor(...GOLD);
+    doc.circle(ex, y + 4, 4, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...WHITE);
+    doc.text(String(i + 1), ex, y + 5.5, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...BLUE);
+    doc.text(e.lbl, ex, y + 14, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
+    doc.text(e.prazo, ex, y + 19, { align: "center" });
+  });
+  y += 28;
+
+  // BLOCO 4 — Precificação (setas)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("PRECIFICAÇÃO", M, y);
+  y += 8;
+  const passos = [
+    { lbl: "Lançamento", val: String(marketing.divulgacao?.dicas_precificacao ?? "Tabela cheia").slice(0, 28) },
+    { lbl: "Negociação", val: "−5% a −10%" },
+    { lbl: "Mínimo", val: String(marketing.divulgacao?.desconto_maximo ?? "Limite").slice(0, 28) },
+  ];
+  const stepX = usable / passos.length;
+  passos.forEach((p, i) => {
+    const px = M + stepX * i + stepX / 2;
+    const cor: [number, number, number] = i === 0 ? GOLD : i === 1 ? BLUE : [120, 125, 135];
+    doc.setFillColor(...cor);
+    doc.roundedRect(px - stepX / 2 + 6, y, stepX - 12, 16, 3, 3, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...WHITE);
+    doc.text(p.lbl, px, y + 6, { align: "center" });
+    doc.setFontSize(9);
+    doc.text(p.val, px, y + 12, { align: "center" });
+    if (i < passos.length - 1) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(...GOLD);
+      doc.text(">", M + stepX * (i + 1) - 1, y + 11, { align: "center" });
+    }
   });
 
-  // ---- Página 2: Texto de Anúncio ----
+  // ---- Página 2: Mockup de anúncio ----
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Texto de Anúncio");
 
+  const an = marketing.anuncio ?? {};
+  const mockW = usable * 0.55;
+  const mockH = 110;
+  const mockX = M;
+  const mockY = 52;
+  // Frame
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(mockX, mockY, mockW, mockH, 4, 4, "FD");
+  // Header app
+  doc.setFillColor(...BLUE);
+  doc.rect(mockX, mockY, mockW, 7, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...WHITE);
+  doc.text("PORTAL IMOBILIÁRIO", mockX + 4, mockY + 5);
+  // Placeholder foto
+  doc.setFillColor(...CARD_BLUE);
+  doc.rect(mockX + 4, mockY + 11, mockW - 8, 50, "F");
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY_DIM);
+  doc.text("[ FOTO DO IMÓVEL ]", mockX + mockW / 2, mockY + 38, { align: "center" });
   // Título
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...GOLD);
-  doc.text("TÍTULO (PORTAIS)", M, 50);
+  doc.setFontSize(12);
+  doc.setTextColor(...BLUE);
+  textoMultilinha(doc, String(an.titulo ?? "—"), mockX + 6, mockY + 68, mockW - 12, {
+    size: 12, bold: true, color: BLUE, lineHeight: 5,
+  });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text("· quartos  · vagas  · m²", mockX + 6, mockY + 86);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.setTextColor(...BLUE);
-  let yT = textoMultilinha(doc, marketing.anuncio?.titulo ?? "—", M, 56, usable, {
-    size: 14, bold: true, color: BLUE, lineHeight: 6,
+  doc.setTextColor(...GOLD);
+  doc.text("Sob consulta", mockX + mockW - 6, mockY + mockH - 6, { align: "right" });
+
+  // WhatsApp à direita
+  const wX = M + mockW + 8;
+  const wW = usable - mockW - 8;
+  const wY = mockY;
+  doc.setFillColor(232, 244, 232);
+  doc.roundedRect(wX, wY, wW, mockH, 4, 4, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(40, 90, 60);
+  doc.text("WHATSAPP", wX + 6, wY + 7);
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(180, 200, 180);
+  doc.roundedRect(wX + 4, wY + 11, wW - 8, mockH - 16, 4, 4, "FD");
+  textoMultilinha(doc, String(an.whatsapp ?? "—"), wX + 8, wY + 18, wW - 16, {
+    size: 9, color: TEXT, lineHeight: 4.4,
   });
 
-  // Descrição portal
-  yT += 6;
+  // Descrição completa
+  const yD = mockY + mockH + 10;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...GOLD);
-  doc.text("DESCRIÇÃO COMPLETA — ZAP / OLX / VIVA REAL", M, yT);
-  yT = textoMultilinha(doc, marketing.anuncio?.descricao_portal ?? "—", M, yT + 6, usable, {
-    size: 10, color: TEXT, lineHeight: 4.5,
-  });
-
-  // WhatsApp
-  yT += 6;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...GOLD);
-  doc.text("VERSÃO WHATSAPP", M, yT);
-  yT = textoMultilinha(doc, marketing.anuncio?.whatsapp ?? "—", M, yT + 6, usable, {
-    size: 10, color: TEXT, lineHeight: 4.5,
-  });
-
-  // Hashtags
-  yT += 6;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...GOLD);
-  doc.text("HASHTAGS — INSTAGRAM", M, yT);
-  textoMultilinha(doc, (marketing.anuncio?.hashtags ?? []).join("  "), M, yT + 6, usable, {
-    size: 10, color: BLUE, bold: true, lineHeight: 4.5,
+  doc.text("DESCRIÇÃO COMPLETA — PORTAIS", M, yD);
+  textoMultilinha(doc, String(an.descricao_portal ?? "—"), M, yD + 6, usable, {
+    size: 9, color: TEXT, lineHeight: 4.2,
   });
 }
 
