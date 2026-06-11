@@ -92,7 +92,7 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
 
     const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
     let limite: number | null;
-    if (plano === "expert") limite = null;
+    if (plano === "expert") limite = 20;
     else if (plano === "profissional" || plano === "pro") limite = 5;
     else limite = 1; // básico: laudo avulso
     const ativa = profile?.subscription_status === "active" || profile?.subscription_status === "trialing";
