@@ -1198,25 +1198,49 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   ].filter(Boolean) as string[];
 
   if (items.length) {
-    const pillY = Math.max(yCursor + 14, 130);
     const pillH = 14;
-    const gap = 6;
+    const rowGap = 6;
+    const colGap = 6;
+    const sidePad = 24; // margem horizontal da página
+    const maxRowW = PW - sidePad * 2;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
-    const widths = items.map((t) => doc.getTextWidth(t) + 20);
-    const totalW = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
-    let x = (PW - totalW) / 2;
+    const widths = items.map((t) => Math.min(doc.getTextWidth(t) + 20, maxRowW));
+
+    // Distribui em linhas que caibam dentro de maxRowW
+    const rows: { items: string[]; widths: number[]; total: number }[] = [];
+    let cur: { items: string[]; widths: number[]; total: number } = { items: [], widths: [], total: 0 };
     items.forEach((t, i) => {
       const w = widths[i];
-      doc.setDrawColor(...GOLD);
-      doc.setLineWidth(0.8);
-      doc.setFillColor(...BLUE);
-      doc.roundedRect(x, pillY, w, pillH, 7, 7, "FD");
-      doc.setTextColor(...WHITE);
-      doc.text(t, x + w / 2, pillY + 9.2, { align: "center" });
-      x += w + gap;
+      const projected = cur.total + (cur.items.length ? colGap : 0) + w;
+      if (cur.items.length && projected > maxRowW) {
+        rows.push(cur);
+        cur = { items: [t], widths: [w], total: w };
+      } else {
+        cur.items.push(t);
+        cur.widths.push(w);
+        cur.total = projected;
+      }
+    });
+    if (cur.items.length) rows.push(cur);
+
+    let pillY = Math.max(yCursor + 14, 130);
+    rows.forEach((row) => {
+      let x = (PW - row.total) / 2;
+      row.items.forEach((t, i) => {
+        const w = row.widths[i];
+        doc.setDrawColor(...GOLD);
+        doc.setLineWidth(0.8);
+        doc.setFillColor(...BLUE);
+        doc.roundedRect(x, pillY, w, pillH, 7, 7, "FD");
+        doc.setTextColor(...WHITE);
+        doc.text(t, x + w / 2, pillY + 9.2, { align: "center", maxWidth: w - 8 });
+        x += w + colGap;
+      });
+      pillY += pillH + rowGap;
     });
   }
+
 
   // Disclaimer técnico (CNAI/IBAPE)
   doc.setFont("helvetica", "italic");
