@@ -2374,8 +2374,8 @@ export function gerarPdfAvaliacao(
     modelo === 3
       ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null)
       : modelo === 2
-      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
-      : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);
+      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
+      : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
 
   const nome = `A8-Avaliacao-M${modelo}-${(avaliacao?.id || "").slice(0, 8)}.pdf`;
   doc.save(nome);
