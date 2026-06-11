@@ -12,12 +12,72 @@ serve(async (req) => {
   }
 
   try {
+    // Authorize caller: must be a valid Supabase user
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const authHeader = req.headers.get('Authorization') ?? ''
+    if (!authHeader.toLowerCase().startsWith('bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: userData, error: userErr } = await userClient.auth.getUser()
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const userId = userData.user.id
+
+    // Plan/credit gate (defense in depth — main check is in server fn)
+    const admin = createClient(supabaseUrl, serviceKey)
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('plano, creditos_avulsos')
+      .eq('id', userId)
+      .maybeSingle()
+    if (!profile) {
+      return new Response(JSON.stringify({ error: 'Perfil não encontrado' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const plano = profile.plano as string | null
+    const creditos = Number(profile.creditos_avulsos ?? 0)
+    if (plano === 'basico' && creditos < 1) {
+      return new Response(JSON.stringify({ error: 'Sem créditos disponíveis' }), {
+        status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    if (plano === 'expert') {
+      const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
+      const { count } = await admin
+        .from('avaliacoes')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', inicioMes.toISOString())
+      if ((count ?? 0) >= 20 && creditos < 1) {
+        return new Response(JSON.stringify({ error: 'Limite mensal Expert atingido' }), {
+          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+    if (!plano || (plano !== 'basico' && plano !== 'profissional' && plano !== 'expert')) {
+      return new Response(JSON.stringify({ error: 'Plano inválido' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const { imovel, comparaveis } = await req.json()
     const anthropicApiKey = Deno.env.get('CHAVE_API_ANTROPICA')
 
     if (!anthropicApiKey) {
       throw new Error('CHAVE_API_ANTROPICA não configurada')
     }
+
 
     console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
 
