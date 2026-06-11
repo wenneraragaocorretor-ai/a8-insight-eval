@@ -61,6 +61,8 @@ function PerfilPage() {
   const [form, setForm] = useState<FormState>(empty);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -133,18 +135,22 @@ function PerfilPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErrorMsg(null);
     try {
       await saveFn({ data: form as any });
       setSavedFlash(true);
-      toast.success("Perfil salvo com sucesso");
+      toast.success("Perfil salvo com sucesso!");
       setTimeout(() => setSavedFlash(false), 3000);
       await refetch();
     } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao salvar");
+      const msg = err?.message || "Erro ao salvar — tente novamente";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
   };
+
 
   const isImobiliaria = form.tipo === "imobiliaria";
 
@@ -281,16 +287,22 @@ function PerfilPage() {
           </CardContent>
         </Card>
 
+        {errorMsg && (
+          <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {errorMsg}
+          </div>
+        )}
+        {savedFlash && (
+          <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 inline-flex items-center gap-2">
+            <CheckCircle2 size={16} /> Perfil salvo com sucesso!
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={saving} className="bg-brand-gold text-primary-foreground h-11 px-6">
             {saving ? "Salvando..." : "Salvar Perfil"}
           </Button>
-          {savedFlash && (
-            <span className="inline-flex items-center gap-1 text-sm text-green-600 font-medium">
-              <CheckCircle2 size={16} /> Salvo com sucesso
-            </span>
-          )}
         </div>
+
       </form>
       )}
     </div>
