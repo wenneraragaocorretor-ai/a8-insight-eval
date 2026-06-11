@@ -198,14 +198,27 @@ function textoMultilinha(
   x: number,
   y: number,
   w: number,
-  opts: { size?: number; color?: [number, number, number]; bold?: boolean; lineHeight?: number } = {},
+  opts: { size?: number; color?: [number, number, number]; bold?: boolean; lineHeight?: number; maxLines?: number; maxHeight?: number } = {},
 ) {
   const size = opts.size ?? 10;
   doc.setFont("helvetica", opts.bold ? "bold" : "normal");
   doc.setFontSize(size);
   doc.setTextColor(...(opts.color ?? GRAY));
-  const lines = doc.splitTextToSize(texto, w);
   const lh = opts.lineHeight ?? size * 0.42;
+  let lines: string[] = doc.splitTextToSize(texto, w);
+  let cap = lines.length;
+  if (typeof opts.maxHeight === "number" && opts.maxHeight > 0) {
+    cap = Math.min(cap, Math.max(1, Math.floor(opts.maxHeight / lh)));
+  }
+  if (typeof opts.maxLines === "number" && opts.maxLines > 0) {
+    cap = Math.min(cap, opts.maxLines);
+  }
+  if (cap < lines.length) {
+    const kept = lines.slice(0, cap);
+    const last = kept[kept.length - 1] ?? "";
+    kept[kept.length - 1] = last.replace(/\s+\S*$/, "") + "…";
+    lines = kept;
+  }
   doc.text(lines, x, y);
   return y + lines.length * lh;
 }
@@ -629,7 +642,7 @@ function paginaFotos(doc: jsPDF, rel: any, fotos: string[], corretor: CorretorIn
       ? rel.analise_fotos
       : "Análise visual das imagens não disponível.";
   textoMultilinha(doc, analiseTxt, M + 8, yAn + 18, usable - 16, {
-    size: 10, color: TEXT, lineHeight: 4.6,
+    size: 10, color: TEXT, lineHeight: 4.6, maxHeight: (analiseH - 12) - 22,
   });
 }
 
@@ -723,7 +736,7 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc,
     String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Mercado em movimento positivo, com demanda crescente na região."),
     x3 + 6, yRow + 56, colW - 12,
-    { size: 9, color: TEXT, lineHeight: 4.2 },
+    { size: 9, color: TEXT, lineHeight: 4.2, maxHeight: ch - 60 },
   );
 
   // Resumo curto (máx 3 linhas)
@@ -735,7 +748,7 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc.setTextColor(...GOLD);
     doc.text("SOBRE A REGIÃO", M, yDesc);
     textoMultilinha(doc, resumo, M, yDesc + 5, usable, {
-      size: 10, color: TEXT, lineHeight: 4.6,
+      size: 10, color: TEXT, lineHeight: 4.6, maxHeight: PH - 22 - (yDesc + 5),
     });
   }
 }
