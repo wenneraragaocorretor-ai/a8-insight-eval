@@ -748,7 +748,7 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc.setTextColor(...GOLD);
     doc.text("SOBRE A REGIÃO", M, yDesc);
     textoMultilinha(doc, resumo, M, yDesc + 5, usable, {
-      size: 10, color: TEXT, lineHeight: 4.6,
+      size: 10, color: TEXT, lineHeight: 4.6, maxHeight: PH - 22 - (yDesc + 5),
     });
   }
 }
