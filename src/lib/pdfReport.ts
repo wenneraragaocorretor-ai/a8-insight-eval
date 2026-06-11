@@ -828,80 +828,101 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 
 // ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
 function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) {
+  // Referência: mediana de R$/m²
+  const unit = comparaveis
+    .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
+    .map((c) => Number(c.valor_anunciado) / Number(c.area));
+  const sortedRef = [...unit].sort((a, b) => a - b);
+  const ref = sortedRef.length ? sortedRef[Math.floor(sortedRef.length / 2)] : 0;
+
   const PER_PAGE = 4;
   for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
     novaPagina(doc);
     microHeader(doc, corretor);
-    if (p === 0) tituloPagina(doc, "Anúncios na Região");
+    if (p === 0) tituloPagina(doc, "Comparáveis");
 
     const pageItems = comparaveis.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
     const usable = PW - M * 2;
-    const ch = 32;
-    const gap = 4;
-    const yStart = 48;
+    const gap = 6;
+    const cw = (usable - gap) / 2;
+    const ch = 62;
+    const yStart = 50;
+
     pageItems.forEach((c, idx) => {
       const i = p * PER_PAGE + idx;
-      const y = yStart + idx * (ch + gap);
-      const alt = idx % 2 === 1;
-      card(doc, M, y, usable, ch, { variant: alt ? "blue" : "white", border: "soft" });
-      // number badge
-      doc.setFillColor(...BLUE);
-      doc.circle(M + 10, y + ch / 2, 6, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(...WHITE);
-      doc.text(String(i + 1), M + 10, y + ch / 2 + 1.5, { align: "center" });
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const x = M + col * (cw + gap);
+      const y = yStart + row * (ch + gap);
 
-      // cols
-      const x0 = M + 22;
-      const colW = (usable - 30) / 4;
-      // col 1: local + quartos
+      // Card
+      doc.setFillColor(...WHITE);
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x, y, cw, ch, 3, 3, "FD");
+      doc.setFillColor(...GOLD);
+      doc.rect(x, y, cw, 1.4, "F");
+
+      // Número círculo dourado
+      doc.setFillColor(...GOLD);
+      doc.circle(x + 10, y + 13, 5, "F");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
+      doc.setTextColor(...WHITE);
+      doc.text(String(i + 1), x + 10, y + 14.5, { align: "center" });
+
+      // Valor em destaque
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
       doc.setTextColor(...BLUE);
-      const loc = doc.splitTextToSize(String(c.localizacao ?? "—").toUpperCase(), colW - 4);
-      doc.text(loc.slice(0, 2), x0, y + 10);
+      doc.text(fmtBRL(Number(c.valor_anunciado)), x + 20, y + 15);
+
+      // Badge R$/m²
+      const vm = Number(c.area) > 0 ? Number(c.valor_anunciado) / Number(c.area) : 0;
+      if (vm > 0) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        const lbl = `${fmtBRL(vm)}/m²`;
+        const bw = doc.getTextWidth(lbl) + 8;
+        doc.setFillColor(...BLUE);
+        doc.roundedRect(x + cw - bw - 6, y + 8, bw, 8, 4, 4, "F");
+        doc.setTextColor(...WHITE);
+        doc.text(lbl, x + cw - bw / 2 - 6, y + 13.5, { align: "center" });
+      }
+
+      // Ícones quartos/vagas/área
       doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(...TEXT);
+      const linha = `${c.quartos ?? 0} qtos  ·  ${c.vagas ?? 0} vagas  ·  ${c.area ?? "—"} m²`;
+      doc.text(linha, x + 8, y + 28);
+
+      doc.setFont("helvetica", "italic");
       doc.setFontSize(8);
       doc.setTextColor(...GRAY);
-      doc.text(`${c.quartos ?? 0} quartos`, x0, y + 22);
-      doc.text(`${c.suites ?? 0} suítes  •  ${c.vagas ?? 0} vagas`, x0, y + 26);
+      const fonteTxt = `${fmtFonte(c.fonte)} · ${String(c.localizacao || "").slice(0, 42)}`;
+      doc.text(fonteTxt, x + 8, y + 35);
 
-      // col 2: metragem + valor + tempo
-      const x1 = x0 + colW;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...GRAY);
-      doc.text(`Metragem: ${c.area ?? "—"} m²`, x1, y + 10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...BLUE);
-      doc.text(`Valor: ${fmtBRL(Number(c.valor_anunciado))}`, x1, y + 17);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...GRAY);
-      doc.text(`Fonte: ${fmtFonte(c.fonte)}`, x1, y + 24);
-
-      // col 3: R$/m²
-      const x2 = x1 + colW;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...GRAY);
-      doc.text("Valor unitário", x2, y + 10);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.setTextColor(...GOLD);
-      const vm = Number(c.area) > 0 ? fmtBRL(Number(c.valor_anunciado) / Number(c.area)) : "—";
-      doc.text(`${vm}/m²`, x2, y + 19);
-
-      // col 4: conservação
-      const x3 = x2 + colW;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...GRAY);
-      doc.text("Estado de conservação", x3, y + 10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...BLUE);
-      const cons = doc.splitTextToSize(String(c.conservacao ?? "—"), colW - 4);
-      doc.text(cons.slice(0, 2), x3, y + 17);
+      // Barra de comparação relativa ao imóvel avaliado (mediana)
+      if (ref > 0 && vm > 0) {
+        const barX = x + 8;
+        const barY = y + ch - 13;
+        const barW = cw - 16;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(...GRAY);
+        doc.text("ABAIXO", barX, barY - 1);
+        doc.text("SIMILAR", barX + barW / 2, barY - 1, { align: "center" });
+        doc.text("ACIMA", barX + barW, barY - 1, { align: "right" });
+        doc.setFillColor(...BORDER);
+        doc.roundedRect(barX, barY + 1, barW, 3, 1.5, 1.5, "F");
+        const ratio = vm / ref;
+        const t = Math.max(0, Math.min(1, (ratio - 0.7) / 0.6));
+        const mx = barX + t * barW;
+        const cor: [number, number, number] = t < 0.4 ? [40, 167, 105] : t > 0.6 ? [220, 53, 69] : GOLD;
+        doc.setFillColor(...cor);
+        doc.circle(mx, barY + 2.5, 2.5, "F");
+      }
     });
   }
 }
