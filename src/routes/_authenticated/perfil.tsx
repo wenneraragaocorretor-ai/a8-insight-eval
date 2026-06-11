@@ -287,16 +287,22 @@ function PerfilPage() {
           </CardContent>
         </Card>
 
+        {errorMsg && (
+          <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {errorMsg}
+          </div>
+        )}
+        {savedFlash && (
+          <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 inline-flex items-center gap-2">
+            <CheckCircle2 size={16} /> Perfil salvo com sucesso!
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={saving} className="bg-brand-gold text-primary-foreground h-11 px-6">
             {saving ? "Salvando..." : "Salvar Perfil"}
           </Button>
-          {savedFlash && (
-            <span className="inline-flex items-center gap-1 text-sm text-green-600 font-medium">
-              <CheckCircle2 size={16} /> Salvo com sucesso
-            </span>
-          )}
         </div>
+
       </form>
       )}
     </div>
