@@ -186,6 +186,36 @@ function PlanosPage() {
         <p className="text-muted-foreground">Avaliações imobiliárias inteligentes com IA</p>
       </div>
 
+      {ehExpert && (
+        <Card className={`border-2 ${atingiuLimiteExpert ? "border-[#C8A951] bg-[#C8A951]/5" : "border-brand-blue/20"}`}>
+          <CardContent className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="font-semibold text-brand-blue">
+                {atingiuLimiteExpert ? "Limite mensal atingido" : "Laudos extras do Plano Expert"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Uso este mês: <strong>{usoMes}</strong>{limiteMes ? ` / ${limiteMes}` : ""} laudos
+                {creditosAvulsos > 0 && <> · Créditos avulsos disponíveis: <strong>{creditosAvulsos}</strong></>}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {atingiuLimiteExpert
+                  ? "Você atingiu os 20 laudos inclusos. Compre laudos adicionais por R$ 12,00 cada para continuar emitindo este mês."
+                  : "Precisa de mais que 20 laudos/mês? Compre laudos adicionais por R$ 12,00 cada — ficam disponíveis na sua conta."}
+              </p>
+            </div>
+            <Button
+              className="bg-[#C8A951] text-[#0A1F44] hover:opacity-90 h-11 px-6 shrink-0"
+              disabled={loading !== null}
+              onClick={() => assinar("expert_extra")}
+            >
+              {loading === "expert_extra" ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...</>
+              ) : "Comprar laudo extra (R$ 12,00)"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {PLANOS.map((p) => {
           const ehAtual = ativa && planoAtual === p.db;
