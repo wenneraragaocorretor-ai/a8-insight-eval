@@ -94,11 +94,15 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
       const creditos = profile?.creditos_avulsos ?? 0;
 
+      // Flag: este laudo consome 1 crédito avulso?
+      let consomeCredito = false;
+
       if (plano === "basico" || plano === "user") {
         // Plano Básico: pay-per-laudo. Precisa ter pelo menos 1 crédito.
         if (creditos < 1) {
           throw new Error("Você não tem laudos avulsos disponíveis. Compre um novo laudo Básico (R$ 157,00) em /planos.");
         }
+        consomeCredito = true;
       } else if (plano === "profissional" || plano === "pro") {
         const inicioMes = new Date();
         inicioMes.setDate(1);
@@ -111,8 +115,23 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         if ((count ?? 0) >= 5) {
           throw new Error("Limite de 8 laudos/mês do Plano Profissional atingido. Faça upgrade para Expert em /planos.");
         }
+      } else if (plano === "expert") {
+        // Expert: 20 laudos/mês. Acima disso, consome créditos avulsos (R$ 12,00/laudo).
+        const inicioMes = new Date();
+        inicioMes.setDate(1);
+        inicioMes.setHours(0, 0, 0, 0);
+        const { count } = await supabase
+          .from("avaliacoes")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("created_at", inicioMes.toISOString());
+        if ((count ?? 0) >= 20) {
+          if (creditos < 1) {
+            throw new Error("Limite de 20 laudos/mês do Plano Expert atingido. Compre laudos adicionais por R$ 12,00 em /planos.");
+          }
+          consomeCredito = true;
+        }
       }
-      // expert: sem limite
 
       const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
         body: data,
