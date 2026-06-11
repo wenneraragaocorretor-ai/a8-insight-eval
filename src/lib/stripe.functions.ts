@@ -6,7 +6,7 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z.object({
-      plano: z.enum(["basico", "profissional", "expert"]),
+      plano: z.enum(["basico", "profissional", "expert", "expert_extra"]),
       origin: z.string().url(),
     }).parse(data),
   )
