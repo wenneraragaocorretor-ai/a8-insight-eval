@@ -253,6 +253,68 @@ function Dashboard() {
         </Card>
       </div>
 
+      {ehExpert && (() => {
+        const limExpert = limite ?? 20;
+        const restantes = Math.max(0, limExpert - usadas);
+        const pct = Math.min(100, (usadas / limExpert) * 100);
+        const atingiu = usadas >= limExpert;
+        const proximo = !atingiu && restantes <= 2;
+        const barColor = atingiu ? "bg-orange-500" : proximo ? "bg-yellow-500" : "bg-brand-gold";
+        return (
+          <Card className="premium-card">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-base text-brand-blue">Uso mensal do Plano Expert</CardTitle>
+                <span className="text-sm font-semibold text-brand-blue">
+                  Laudos utilizados: {usadas} / {limExpert}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="w-full h-3 rounded-full bg-muted overflow-hidden">
+                <div className={`h-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
+              </div>
+              {atingiu && (
+                <div className="flex items-start gap-2 rounded-lg border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-orange-900">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span><strong>Limite atingido</strong> — próximos laudos: <strong>R$ 12,00/cada</strong>.{creditos > 0 ? ` Você tem ${creditos} crédito(s) avulso(s) disponível(eis).` : ""}</span>
+                </div>
+              )}
+              {proximo && (
+                <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-900">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>Você está próximo do limite — <strong>{restantes} laudo(s) restante(s)</strong>.</span>
+                </div>
+              )}
+              {cobrancasExtras.filter((c: any) => c.tipo === "expert_extra").length > 0 && (
+                <div className="pt-2 border-t">
+                  <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-brand-blue">
+                    <Receipt className="h-4 w-4" /> Histórico de laudos adicionais
+                  </div>
+                  <ul className="space-y-1 text-sm">
+                    {cobrancasExtras
+                      .filter((c: any) => c.tipo === "expert_extra")
+                      .slice(0, 10)
+                      .map((c: any) => (
+                        <li key={c.id} className="flex items-center justify-between text-muted-foreground">
+                          <span>
+                            {new Date(c.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                            {" · "}{c.descricao ?? "Laudo adicional Expert"}
+                          </span>
+                          <span className="font-semibold text-brand-blue">
+                            {((c.valor_cents ?? 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: (c.moeda ?? "BRL").toUpperCase() })}
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+
       {limiteAtingido && (
         <Card className="premium-card border-brand-gold border-2">
           <CardContent className="flex items-center justify-between py-4 gap-4">
