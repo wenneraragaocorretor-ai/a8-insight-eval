@@ -642,7 +642,7 @@ function paginaFotos(doc: jsPDF, rel: any, fotos: string[], corretor: CorretorIn
       ? rel.analise_fotos
       : "Análise visual das imagens não disponível.";
   textoMultilinha(doc, analiseTxt, M + 8, yAn + 18, usable - 16, {
-    size: 10, color: TEXT, lineHeight: 4.6,
+    size: 10, color: TEXT, lineHeight: 4.6, maxHeight: (analiseH - 12) - 22,
   });
 }
 
