@@ -168,6 +168,22 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       if (planCode === "basico") upsertData.plano = "basico";
       const { error } = await supabase.from("profiles").upsert(upsertData, { onConflict: "id" });
       if (error) throw new Error(`Falha ao creditar laudo: ${error.message}`);
+
+      // Registra cobrança avulsa (idempotente via unique stripe_session_id)
+      const valorCents = typeof session.amount_total === "number"
+        ? session.amount_total
+        : plan.price_cents;
+      await supabase.from("cobrancas_avulsas").upsert({
+        user_id: userId,
+        tipo: planCode === "expert_extra" ? "expert_extra" : "basico_laudo",
+        valor_cents: valorCents,
+        moeda: session.currency ?? "brl",
+        stripe_session_id: session.id,
+        stripe_payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+        status: "paid",
+        descricao: planCode === "expert_extra" ? "Laudo adicional Expert" : "Laudo avulso Básico",
+      }, { onConflict: "stripe_session_id" });
+
       return { ok: true, plano: planCode, creditosAvulsos: novosCreditos };
     }
 
