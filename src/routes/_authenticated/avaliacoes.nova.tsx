@@ -307,6 +307,25 @@ function NovaAvaliacao() {
 
   const [plano, setPlano] = useState<string>("basico");
   const isExpert = plano === "expert";
+  const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number } | null>(null);
+  const [showLimiteModal, setShowLimiteModal] = useState(false);
+  const [comprandoExtra, setComprandoExtra] = useState(false);
+  const fetchStatusFn = useServerFn(getStatusAssinatura);
+  const checkoutFn = useServerFn(criarCheckoutSession);
+
+  const recarregarStatus = async () => {
+    try {
+      const s = await fetchStatusFn();
+      setStatusUso({
+        avaliacoesMes: s.avaliacoesMes ?? 0,
+        limiteMes: s.limiteMes ?? null,
+        creditosAvulsos: (s as any).creditosAvulsos ?? 0,
+      });
+      if (s.plano) setPlano(s.plano);
+    } catch (e) {
+      console.error("[status]", e);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -315,8 +334,41 @@ function NovaAvaliacao() {
       if (!uid) return;
       const { data } = await supabase.from("profiles").select("plano").eq("id", uid).maybeSingle();
       if (data?.plano) setPlano(data.plano);
+      await recarregarStatus();
     })();
   }, []);
+
+  const expertAtingiuLimite =
+    plano === "expert" &&
+    statusUso !== null &&
+    statusUso.limiteMes !== null &&
+    statusUso.avaliacoesMes >= statusUso.limiteMes &&
+    statusUso.creditosAvulsos < 1;
+
+  const comprarLaudoExtra = async () => {
+    try {
+      setComprandoExtra(true);
+      const origin =
+        (window.top && window.top !== window.self ? window.top.location.origin : null) ??
+        window.location.origin;
+      const { url } = await checkoutFn({ data: { plano: "expert_extra", origin } });
+      if (!url) throw new Error("URL de checkout não recebida");
+      const win = window.open(url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        try {
+          if (window.top) window.top.location.href = url;
+          else window.location.href = url;
+        } catch {
+          window.location.href = url;
+        }
+      }
+    } catch (e: any) {
+      console.error("[expert_extra]", e);
+      toast.error(e?.message ?? "Erro ao iniciar pagamento. Tente novamente.");
+    } finally {
+      setComprandoExtra(false);
+    }
+  };
 
   const [comparaveis, setComparaveis] = useState<Comparavel[]>([
     novoComparavel(1),
