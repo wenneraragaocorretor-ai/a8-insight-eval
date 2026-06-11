@@ -930,52 +930,74 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
 // ---------- PAGE: VALOR DO IMÓVEL ----------
 function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   novaPagina(doc);
+  // Fundo navy total
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, PW, PH, "F");
   microHeader(doc, corretor);
-  tituloPagina(doc, "Valor do Imóvel");
 
-  const central = resultado?.valor_central;
-  const minV = resultado?.valor_minimo;
-  const maxV = resultado?.valor_maximo;
+  const central = Number(resultado?.valor_central) || 0;
+  const minV = Number(resultado?.valor_minimo) || central * 0.85;
+  const maxV = Number(resultado?.valor_maximo) || central * 1.15;
 
-  // central giant
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...GRAY);
-  doc.text("Valor sugerido de mercado", PW / 2, 60, { align: "center" });
+  // Faixa dourada
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 38, PW, 0.6, "F");
 
+  // Título pequeno
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(58);
-  doc.setTextColor(...BLUE);
-  doc.text(fmtBRL(central), PW / 2, 88, { align: "center" });
-
-  // min / max range
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(...GOLD);
-  doc.text(`Faixa sugerida:  ${fmtBRL(minV)}   —   ${fmtBRL(maxV)}`, PW / 2, 102, { align: "center" });
+  doc.text("VALOR DE MERCADO ESTIMADO", PW / 2, 58, { align: "center" });
 
-  // 3 tip cards
-  const tips: Array<[string, string]> = [
-    ["Comece acima do valor", "Iniciar levemente acima do central permite margem para negociação."],
-    ["Valor é sugestão", "A faixa é mercadológica; o preço final depende de estratégia e momento."],
-    ["IA + mercado local", "Análise considera comparáveis reais e contexto da região informada."],
+  // Valor central enorme dourado
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(72);
+  doc.setTextColor(...GOLD);
+  doc.text(fmtBRL(central), PW / 2, 102, { align: "center" });
+
+  // Termômetro horizontal
+  const tx = M + 30;
+  const tw = PW - M * 2 - 60;
+  const ty = 130;
+  doc.setFillColor(60, 75, 110);
+  doc.roundedRect(tx, ty, tw, 6, 3, 3, "F");
+  doc.setFillColor(...GOLD);
+  doc.roundedRect(tx + tw * 0.15, ty + 1.5, tw * 0.7, 3, 1.5, 1.5, "F");
+  doc.setFillColor(...GOLD);
+  doc.circle(tx + tw / 2, ty + 3, 4.5, "F");
+  doc.setDrawColor(...WHITE);
+  doc.setLineWidth(0.8);
+  doc.circle(tx + tw / 2, ty + 3, 4.5, "S");
+
+  // Labels
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...WHITE);
+  doc.text(fmtBRL(minV), tx, ty + 16, { align: "center" });
+  doc.text(fmtBRL(central), tx + tw / 2, ty + 16, { align: "center" });
+  doc.text(fmtBRL(maxV), tx + tw, ty + 16, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(200, 200, 210);
+  doc.text("Mínimo -15%", tx, ty + 22, { align: "center" });
+  doc.text("Central", tx + tw / 2, ty + 22, { align: "center" });
+  doc.text("Máximo +15%", tx + tw, ty + 22, { align: "center" });
+
+  // 3 ícones informativos
+  const tips = [
+    { glyph: "$", txt: "Inicie acima do central" },
+    { glyph: "#", txt: "Baseado em comparáveis" },
+    { glyph: "@", txt: "Válido por 6 meses" },
   ];
-  const usable = PW - M * 2;
-  const gap = 6;
-  const cw = (usable - gap * 2) / 3;
-  const ch = 50;
-  const yRow = 120;
-  tips.forEach(([t, d], i) => {
-    const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch, { variant: "darkblue" });
-    doc.setFillColor(...GOLD);
-    doc.circle(x + 10, yRow + 8, 2.4, "F");
-
+  const baseY = PH - 38;
+  const tipW = (PW - M * 2) / 3;
+  tips.forEach((t, i) => {
+    const cx = M + tipW * i + tipW / 2;
+    iconCircle(doc, cx, baseY, 6, t.glyph, GOLD);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...GOLD);
-    doc.text(t, x + 16, yRow + 14);
-    textoMultilinha(doc, d, x + 8, yRow + 24, cw - 16, { size: 10, color: WHITE, lineHeight: 4.8 });
+    doc.setFontSize(10);
+    doc.setTextColor(...WHITE);
+    doc.text(t.txt, cx, baseY + 14, { align: "center" });
   });
 }
 
