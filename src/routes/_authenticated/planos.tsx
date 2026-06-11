@@ -32,10 +32,11 @@ const PLANOS = [
     features: [
       "1 laudo por compra (pagamento único)",
       "Ficha técnica básica",
-      "Até 3 fotos (sem análise da IA)",
+      "Até 3 fotos com análise da IA",
       "Comparáveis simples (sem homogeneização)",
       "Valor estimado sem tratamento estatístico",
       "PDF com logo e dados do corretor",
+      "Laudo com marca d'água A8",
       "Mapa de localização",
       "1 edição permitida por laudo",
     ],
@@ -43,7 +44,7 @@ const PLANOS = [
   {
     code: "profissional" as const,
     nome: "Profissional",
-    preco: "R$ 229",
+    preco: "R$ 249",
     periodo: "/mês",
     modo: "assinatura" as const,
     destaque: false,
@@ -59,8 +60,9 @@ const PLANOS = [
       "PDF com logo e dados do corretor",
       "Caracterização do bairro pela IA",
       "Perfil do público-alvo",
+      "Laudo sem marca d'água",
       "PDF 8-10 páginas",
-      "1 edição permitida por laudo",
+      "1 edição por laudo",
     ],
   },
   {
@@ -85,12 +87,14 @@ const PLANOS = [
       "Estratégia de divulgação por canais",
       "QR Code de autenticidade no laudo",
       "Número do laudo (LAU-XXXXXX)",
+      "Laudo sem marca d'água",
       "PDF 15+ páginas premium",
-      "1 edição permitida por laudo",
+      "1 edição por laudo",
       "★ Chat com IA especialista integrado ao laudo",
     ],
   },
 ];
+
 
 function PlanosPage() {
   const search = useSearch({ from: "/_authenticated/planos" });
