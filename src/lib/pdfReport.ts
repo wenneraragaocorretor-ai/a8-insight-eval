@@ -746,31 +746,84 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
   tituloPagina(doc, "Perfil do Público");
 
   const pp = rel?.perfil_publico ?? {};
-  const items: Array<[string, string]> = [
-    ["Profissão Predominante", String(pp.profissao ?? rel?.perfil_profissao ?? "—")],
-    ["Renda Média", String(pp.renda_media ?? rel?.perfil_renda ?? "—")],
-    ["Preferências", String(pp.preferencias ?? rel?.perfil_preferencias ?? "—")],
-    ["Interesses", String(pp.interesses ?? rel?.perfil_interesses ?? "—")],
-  ];
   const usable = PW - M * 2;
-  const gap = 6;
-  const cw = (usable - gap) / 2;
-  const ch = 56;
-  const yStart = 56;
-  items.forEach(([label, value], i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = M + col * (cw + gap);
-    const y = yStart + row * (ch + gap);
-    card(doc, x, y, cw, ch, { variant: "darkblue" });
-    doc.setFillColor(...GOLD);
-    doc.circle(x + 12, y + 12, 3, "F");
+  const cx = PW / 2;
+
+  // Avatar centralizado
+  doc.setFillColor(...CARD_BLUE);
+  doc.circle(cx, 64, 14, "F");
+  doc.setFillColor(...BLUE);
+  doc.circle(cx, 60, 4, "F");
+  doc.ellipse(cx, 70, 7, 4, "F");
+
+  // Faixa etária
+  const faixa = String(pp.faixa_etaria ?? pp.idade ?? rel?.perfil_idade ?? "35–50 anos");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(28);
+  doc.setTextColor(...BLUE);
+  doc.text(faixa, cx, 92, { align: "center" });
+
+  // Renda badge dourado
+  const renda = String(pp.faixa_renda ?? pp.renda_media ?? rel?.perfil_renda ?? "R$ 20.000+/mês");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  const tw = doc.getTextWidth(renda) + 18;
+  doc.setFillColor(...GOLD);
+  doc.roundedRect(cx - tw / 2, 100, tw, 10, 5, 5, "F");
+  doc.setTextColor(...WHITE);
+  doc.text(renda, cx, 107, { align: "center" });
+
+  // Perfil familiar
+  const familia = String(pp.perfil_familiar ?? "Famílias com filhos");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...TEXT);
+  doc.text(familia, cx, 122, { align: "center" });
+
+  // 3 motivações com ícones
+  const motivRaw = Array.isArray(pp.motivacoes) && pp.motivacoes.length
+    ? pp.motivacoes.slice(0, 3).map(String)
+    : String(pp.motivacao_compra ?? "Upgrade | Investimento | Família")
+        .split(/[|,/]+/).map((s: string) => s.trim()).filter(Boolean).slice(0, 3);
+  if (motivRaw.length) {
+    const baseY = 138;
+    const blockW = usable / motivRaw.length;
+    const glyphs = ["♥", "★", "▲"];
+    motivRaw.forEach((m: string, i: number) => {
+      const mx = M + blockW * i + blockW / 2;
+      iconCircle(doc, mx, baseY, 6, glyphs[i] || "•", GOLD);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...BLUE);
+      doc.text(m, mx, baseY + 14, { align: "center" });
+    });
+  }
+
+  // Interesses como chips coloridos
+  const interesses: string[] = Array.isArray(pp.interesses)
+    ? pp.interesses.filter(Boolean).map(String)
+    : String(pp.interesses ?? pp.preferencias ?? "").split(/[|,]+/).map((s: string) => s.trim()).filter(Boolean);
+  if (interesses.length) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
+    doc.setFontSize(10);
     doc.setTextColor(...GOLD);
-    doc.text(label, x + 20, y + 14);
-    textoMultilinha(doc, value, x + 8, y + 24, cw - 16, { size: 10, color: WHITE, lineHeight: 4.8 });
-  });
+    doc.text("INTERESSES", M, 168);
+    let cxi = M;
+    let cyi = 175;
+    const cores: Array<[number, number, number]> = [BLUE, GOLD, [120, 81, 169], [40, 167, 105], [220, 100, 80]];
+    interesses.slice(0, 14).forEach((it, i) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      const w = doc.getTextWidth(it) + 10;
+      if (cxi + w > PW - M) { cxi = M; cyi += 9; }
+      const cor = cores[i % cores.length];
+      doc.setFillColor(...cor);
+      doc.roundedRect(cxi, cyi - 4, w, 7, 3.5, 3.5, "F");
+      doc.setTextColor(...WHITE);
+      doc.text(it, cxi + w / 2, cyi + 0.8, { align: "center" });
+      cxi += w + 4;
+    });
+  }
 }
 
 // ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
