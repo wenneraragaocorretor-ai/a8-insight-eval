@@ -3,8 +3,9 @@ import autoTable from "jspdf-autotable";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 
 // ============================================================
-// A8 Investimentos — PDF Premium (dark, landscape A4)
-// 297mm x 210mm | Fundo escuro | Dourado #C8A951 | Azul #0F2D5C
+// A8 Investimentos — PDF Premium (portrait A4)
+// 210mm x 297mm | Fundo branco | Dourado #C8A951 | Azul #0F2D5C
+// Margens: 25mm laterais / 20mm topo-base
 // ============================================================
 
 const BG: [number, number, number] = [255, 255, 255];        // #FFFFFF
@@ -22,9 +23,9 @@ const TEXT: [number, number, number] = [44, 44, 42];         // #2C2C2A
 const GRAY: [number, number, number] = [90, 95, 105];
 const GRAY_DIM: [number, number, number] = [140, 145, 155];
 
-const PW = 297; // page width landscape
-const PH = 210; // page height landscape
-const M = 18;   // margin
+const PW = 210; // page width portrait A4
+const PH = 297; // page height portrait A4
+const M = 25;   // horizontal margin (vertical bands use literals ~12-20mm)
 
 export type PlanoUsuario = "basico" | "profissional" | "expert" | "user" | "pro" | string;
 export type ModeloPdf = 1 | 2 | 3;
@@ -317,7 +318,7 @@ function paginaCapa(
   pintarFundo(doc);
 
   // ===== TOPO (60% da página): foto do imóvel com overlay marinho =====
-  const fotoH = PH * 0.6; // ~126mm
+  const fotoH = PH * 0.5; // 50% topo da capa (portrait)
   try {
     const img = capaFoto || COVER_BG_BASE64;
     const fmt = typeof img === "string" && img.includes("image/png") ? "PNG" : "JPEG";
@@ -1337,7 +1338,7 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // Orquestração dos modelos
 // ============================================================
 function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
@@ -1357,7 +1358,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
 }
 
 function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
@@ -2266,7 +2267,7 @@ export type MarketingPdf = {
 };
 
 function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null, marketing?: MarketingPdf | null) {
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
   const temDocFotos = fotosDet.length > 0;
