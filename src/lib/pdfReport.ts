@@ -3,8 +3,9 @@ import autoTable from "jspdf-autotable";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 
 // ============================================================
-// A8 Investimentos — PDF Premium (dark, landscape A4)
-// 297mm x 210mm | Fundo escuro | Dourado #C8A951 | Azul #0F2D5C
+// A8 Investimentos — PDF Premium (portrait A4)
+// 210mm x 297mm | Fundo branco | Dourado #C8A951 | Azul #0F2D5C
+// Margens: 25mm laterais / 20mm topo-base
 // ============================================================
 
 const BG: [number, number, number] = [255, 255, 255];        // #FFFFFF
@@ -22,9 +23,9 @@ const TEXT: [number, number, number] = [44, 44, 42];         // #2C2C2A
 const GRAY: [number, number, number] = [90, 95, 105];
 const GRAY_DIM: [number, number, number] = [140, 145, 155];
 
-const PW = 297; // page width landscape
-const PH = 210; // page height landscape
-const M = 18;   // margin
+const PW = 210; // page width portrait A4
+const PH = 297; // page height portrait A4
+const M = 25;   // horizontal margin (vertical bands use literals ~12-20mm)
 
 export type PlanoUsuario = "basico" | "profissional" | "expert" | "user" | "pro" | string;
 export type ModeloPdf = 1 | 2 | 3;
