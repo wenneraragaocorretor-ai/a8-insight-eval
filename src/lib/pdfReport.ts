@@ -1035,63 +1035,46 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   doc.setFillColor(...BLUE);
   doc.rect(0, 0, PW, PH, "F");
 
+  // Faixa dourada superior
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 0, PW, 4, "F");
+
+  // Título
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...GOLD);
+  doc.text("CONTATO", PW / 2, 28, { align: "center" });
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(PW / 2 - 14, 31, PW / 2 + 14, 31);
+
   // Logo do corretor (se disponível)
+  let yCursor = 48;
   if (corretor.logo_data_url) {
     try {
       const fmt = corretor.logo_data_url.includes("image/png") ? "PNG" : "JPEG";
-      doc.addImage(corretor.logo_data_url, fmt, PW / 2 - 18, 18, 36, 18, undefined, "FAST");
+      doc.addImage(corretor.logo_data_url, fmt, PW / 2 - 22, yCursor, 44, 22, undefined, "FAST");
+      yCursor += 30;
     } catch { /* ignore */ }
   }
 
+  // Imobiliária (se houver)
+  if (corretor.nome_imobiliaria) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...GOLD);
+    doc.text(corretor.nome_imobiliaria.toUpperCase(), PW / 2, yCursor, { align: "center" });
+    yCursor += 10;
+  }
+
+  // Nome do corretor
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(28);
   doc.setTextColor(...WHITE);
-  doc.text(
-    (corretor.nome_imobiliaria || "A8 INVESTIMENTOS IMOBILIÁRIOS").toUpperCase(),
-    PW / 2, 44, { align: "center" }
-  );
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...GOLD);
-  doc.text(corretor.nome.toUpperCase(), PW / 2, 52, { align: "center" });
+  doc.text(corretor.nome.toUpperCase(), PW / 2, yCursor + 6, { align: "center" });
+  yCursor += 16;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(96);
-  doc.setTextColor(...WHITE);
-  doc.text("Obrigado!", PW / 2, 114, { align: "center" });
-
-  // contact pills (outlined gold)
-  const localCidade = [corretor.cidade, corretor.estado].filter(Boolean).join(" / ");
-  const items = [
-    corretor.telefone ? `Tel  ${corretor.telefone}` : null,
-    corretor.email ? `Email  ${corretor.email}` : null,
-    localCidade ? `Local  ${localCidade}` : null,
-  ].filter(Boolean) as string[];
-
-  let totalW = 0;
-  const pads: number[] = [];
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  items.forEach((t) => {
-    const w = doc.getTextWidth(t) + 18;
-    pads.push(w);
-    totalW += w;
-  });
-  totalW += (items.length - 1) * 6;
-  let x = (PW - totalW) / 2;
-  const y = 140;
-  items.forEach((t, i) => {
-    const w = pads[i];
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.8);
-    doc.setFillColor(...BLUE);
-    doc.roundedRect(x, y, w, 14, 7, 7, "FD");
-    doc.setTextColor(...WHITE);
-    doc.text(t, x + w / 2, y + 9.2, { align: "center" });
-    x += w + 6;
-  });
-
-  // Registros profissionais (um abaixo do outro)
+  // Registros profissionais
   const stripPrefix = (v: string, prefixes: string[]) => {
     let s = v.trim();
     for (const p of prefixes) {
@@ -1107,44 +1090,65 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     return { label: "Registro", value: s };
   };
   const registros: string[] = [];
-  if (corretor.creci) registros.push(`CRECI: ${stripPrefix(corretor.creci, ["CRECI"])}`);
-  if (corretor.cnai) registros.push(`CNAI: ${stripPrefix(corretor.cnai, ["CNAI"])}`);
+  if (corretor.creci) registros.push(`CRECI ${stripPrefix(corretor.creci, ["CRECI"])}`);
+  if (corretor.cnai) registros.push(`CNAI ${stripPrefix(corretor.cnai, ["CNAI"])}`);
   if (corretor.outro_registro) {
     const { label, value } = detectarLabel(corretor.outro_registro);
-    registros.push(`${label}: ${value}`);
+    registros.push(`${label} ${value}`);
   }
   if (registros.length) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     doc.setTextColor(...GOLD);
-    let yr = y + 24;
-    registros.forEach((r) => {
-      doc.text(r, PW / 2, yr, { align: "center" });
-      yr += 6;
+    doc.text(registros.join("  •  "), PW / 2, yCursor + 4, { align: "center" });
+    yCursor += 12;
+  }
+
+  // Pílulas de contato (telefone/whatsapp, email, cidade)
+  const localCidade = [corretor.cidade, corretor.estado].filter(Boolean).join(" / ");
+  const items = [
+    corretor.telefone ? `WhatsApp  ${corretor.telefone}` : null,
+    corretor.email ? `E-mail  ${corretor.email}` : null,
+    localCidade ? `Local  ${localCidade}` : null,
+  ].filter(Boolean) as string[];
+
+  if (items.length) {
+    const pillY = Math.max(yCursor + 14, 130);
+    const pillH = 14;
+    const gap = 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    const widths = items.map((t) => doc.getTextWidth(t) + 20);
+    const totalW = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
+    let x = (PW - totalW) / 2;
+    items.forEach((t, i) => {
+      const w = widths[i];
+      doc.setDrawColor(...GOLD);
+      doc.setLineWidth(0.8);
+      doc.setFillColor(...BLUE);
+      doc.roundedRect(x, pillY, w, pillH, 7, 7, "FD");
+      doc.setTextColor(...WHITE);
+      doc.text(t, x + w / 2, pillY + 9.2, { align: "center" });
+      x += w + gap;
     });
   }
 
   // Disclaimer técnico (CNAI/IBAPE)
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
-  doc.setTextColor(...WHITE);
+  doc.setTextColor(220, 220, 230);
   doc.text(
     "Esta avaliação é mercadológica e não substitui laudo técnico",
-    PW / 2,
-    PH - 32,
-    { align: "center" }
+    PW / 2, PH - 22, { align: "center" },
   );
   doc.text(
     "aprovado por profissional habilitado (CNAI/IBAPE).",
-    PW / 2,
-    PH - 27,
-    { align: "center" }
+    PW / 2, PH - 17, { align: "center" },
   );
 
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(...GOLD);
-  doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", PW / 2, PH - 18, { align: "center" });
+  // Faixa dourada inferior
+  doc.setFillColor(...GOLD);
+  doc.rect(0, PH - 4, PW, 4, "F");
 }
 
 // ---------- EXPERT EXTRA: HOMOGENEIZAÇÃO ----------
