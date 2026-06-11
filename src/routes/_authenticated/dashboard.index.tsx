@@ -31,6 +31,7 @@ const PLAN_LABEL: Record<string, string> = {
   user: "Básico",
   pro: "Profissional",
   expert: "Expert",
+  expert_extra: "Expert (Laudo Avulso)",
 };
 
 function Dashboard() {
