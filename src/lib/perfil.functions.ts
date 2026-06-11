@@ -43,18 +43,6 @@ export const salvarMeuPerfil = createServerFn({ method: "POST" })
     if (cpfDigits.length !== 11) {
       throw new Error("CPF inválido");
     }
-    // Verifica unicidade do CPF (comparando apenas dígitos)
-    const { data: existing, error: checkError } = await supabase
-      .from("profiles")
-      .select("id, cpf")
-      .neq("id", userId);
-    if (checkError) throw new Error(checkError.message);
-    const conflict = (existing ?? []).some(
-      (p: any) => (p.cpf ?? "").replace(/\D/g, "") === cpfDigits,
-    );
-    if (conflict) {
-      throw new Error("CPF já cadastrado no sistema");
-    }
     const payload = {
       id: userId,
       nome: data.nome,
@@ -72,10 +60,11 @@ export const salvarMeuPerfil = createServerFn({ method: "POST" })
     };
     const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
     if (error) {
-      if (error.code === "23505" || /profiles_cpf_unique/.test(error.message)) {
+      if (error.code === "23505" || /profiles_cpf_unique/i.test(error.message)) {
         throw new Error("CPF já cadastrado no sistema");
       }
-      throw new Error(error.message);
+      throw new Error(error.message || "Erro ao salvar — tente novamente");
     }
     return { ok: true };
   });
+
