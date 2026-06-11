@@ -175,6 +175,45 @@ export type Database = {
           },
         ]
       }
+      cobrancas_avulsas: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          moeda: string
+          status: string
+          stripe_payment_intent: string | null
+          stripe_session_id: string | null
+          tipo: string
+          user_id: string
+          valor_cents: number
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          moeda?: string
+          status?: string
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          tipo: string
+          user_id: string
+          valor_cents: number
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          moeda?: string
+          status?: string
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          tipo?: string
+          user_id?: string
+          valor_cents?: number
+        }
+        Relationships: []
+      }
       comparaveis: {
         Row: {
           andar: number | null

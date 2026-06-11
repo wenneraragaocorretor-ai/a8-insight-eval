@@ -2,14 +2,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { processarAvaliacaoIA, regerarAvaliacao, getAvaliacaoDetalhe, limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
+import { getStatusAssinatura, criarCheckoutSession } from "../../lib/stripe.functions";
 import { supabase } from "../../integrations/supabase/client";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../../components/ui/dialog";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle } from "lucide-react";
 
 
 const CARACTERISTICAS_OPCOES = [
@@ -305,6 +307,25 @@ function NovaAvaliacao() {
 
   const [plano, setPlano] = useState<string>("basico");
   const isExpert = plano === "expert";
+  const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number } | null>(null);
+  const [showLimiteModal, setShowLimiteModal] = useState(false);
+  const [comprandoExtra, setComprandoExtra] = useState(false);
+  const fetchStatusFn = useServerFn(getStatusAssinatura);
+  const checkoutFn = useServerFn(criarCheckoutSession);
+
+  const recarregarStatus = async () => {
+    try {
+      const s = await fetchStatusFn();
+      setStatusUso({
+        avaliacoesMes: s.avaliacoesMes ?? 0,
+        limiteMes: s.limiteMes ?? null,
+        creditosAvulsos: (s as any).creditosAvulsos ?? 0,
+      });
+      if (s.plano) setPlano(s.plano);
+    } catch (e) {
+      console.error("[status]", e);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -313,8 +334,41 @@ function NovaAvaliacao() {
       if (!uid) return;
       const { data } = await supabase.from("profiles").select("plano").eq("id", uid).maybeSingle();
       if (data?.plano) setPlano(data.plano);
+      await recarregarStatus();
     })();
   }, []);
+
+  const expertAtingiuLimite =
+    plano === "expert" &&
+    statusUso !== null &&
+    statusUso.limiteMes !== null &&
+    statusUso.avaliacoesMes >= statusUso.limiteMes &&
+    statusUso.creditosAvulsos < 1;
+
+  const comprarLaudoExtra = async () => {
+    try {
+      setComprandoExtra(true);
+      const origin =
+        (window.top && window.top !== window.self ? window.top.location.origin : null) ??
+        window.location.origin;
+      const { url } = await checkoutFn({ data: { plano: "expert_extra", origin } });
+      if (!url) throw new Error("URL de checkout não recebida");
+      const win = window.open(url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        try {
+          if (window.top) window.top.location.href = url;
+          else window.location.href = url;
+        } catch {
+          window.location.href = url;
+        }
+      }
+    } catch (e: any) {
+      console.error("[expert_extra]", e);
+      toast.error(e?.message ?? "Erro ao iniciar pagamento. Tente novamente.");
+    } finally {
+      setComprandoExtra(false);
+    }
+  };
 
   const [comparaveis, setComparaveis] = useState<Comparavel[]>([
     novoComparavel(1),
@@ -573,6 +627,11 @@ function NovaAvaliacao() {
   };
 
   const handleProcessar = async () => {
+    // Expert que atingiu 20/mês sem créditos: abrir modal em vez de bloquear
+    if (!isEdit && expertAtingiuLimite) {
+      setShowLimiteModal(true);
+      return;
+    }
     setIsLoading(true);
     try {
       const c = camposDoTipo(imovel.tipo);
@@ -1394,6 +1453,41 @@ function NovaAvaliacao() {
       <p className="mt-8 text-xs text-center text-muted-foreground italic">
         "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional habilitado (CNAI/IBAPE)"
       </p>
+
+      <Dialog open={showLimiteModal} onOpenChange={setShowLimiteModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-2 rounded-full bg-orange-100 p-3 w-fit">
+              <AlertTriangle className="h-6 w-6 text-orange-600" />
+            </div>
+            <DialogTitle className="text-center text-brand-blue">Você atingiu seu limite mensal</DialogTitle>
+            <DialogDescription className="text-center">
+              Você já utilizou seus {statusUso?.limiteMes ?? 20} laudos deste mês.<br />
+              Deseja gerar laudos adicionais por <strong>R$ 12,00</strong> cada?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => setShowLimiteModal(false)}
+              disabled={comprandoExtra}
+            >
+              Aguardar renovação
+            </Button>
+            <Button
+              className="w-full sm:w-auto bg-brand-gold text-primary-foreground hover:opacity-90"
+              onClick={comprarLaudoExtra}
+              disabled={comprandoExtra}
+            >
+              {comprandoExtra ? "Redirecionando..." : "Gerar laudo por R$ 12,00"}
+            </Button>
+          </DialogFooter>
+          <p className="text-[11px] text-muted-foreground text-center mt-2">
+            Após o pagamento, volte aqui e clique em "Gerar Avaliação" novamente — o crédito é aplicado automaticamente.
+          </p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
