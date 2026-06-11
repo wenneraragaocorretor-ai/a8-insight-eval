@@ -209,6 +209,103 @@ function textoMultilinha(
   return y + lines.length * lh;
 }
 
+// ============================================================
+// HELPERS VISUAIS (gauges, badges, mini-charts)
+// ============================================================
+function iconCircle(doc: jsPDF, cx: number, cy: number, r: number, glyph: string, cor: [number, number, number] = GOLD) {
+  doc.setFillColor(...cor);
+  doc.circle(cx, cy, r, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(r * 1.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(glyph, cx, cy + r * 0.55, { align: "center" });
+}
+
+function progressBar(doc: jsPDF, x: number, y: number, w: number, pct: number, cor: [number, number, number] = GOLD) {
+  doc.setFillColor(...BORDER);
+  doc.roundedRect(x, y, w, 3, 1.5, 1.5, "F");
+  const p = Math.max(0, Math.min(1, pct));
+  if (p > 0) {
+    doc.setFillColor(...cor);
+    doc.roundedRect(x, y, Math.max(3, w * p), 3, 1.5, 1.5, "F");
+  }
+}
+
+function gaugeChart(doc: jsPDF, cx: number, cy: number, r: number, valor: number) {
+  const v = Math.max(0, Math.min(10, valor));
+  const segs = 40;
+  const start = Math.PI;
+  const end = 0;
+  const colorFor = (t: number): [number, number, number] =>
+    t < 0.4 ? [220, 53, 69] : t < 0.7 ? [240, 180, 60] : [40, 167, 105];
+  doc.setLineWidth(5);
+  for (let i = 0; i < segs; i++) {
+    const t = i / segs;
+    const a1 = start + (end - start) * t;
+    const a2 = start + (end - start) * ((i + 1) / segs);
+    const filled = t <= v / 10;
+    const col: [number, number, number] = filled ? colorFor(t) : [232, 232, 232];
+    doc.setDrawColor(...col);
+    doc.line(cx + Math.cos(a1) * r, cy + Math.sin(a1) * r, cx + Math.cos(a2) * r, cy + Math.sin(a2) * r);
+  }
+  const angP = start + (end - start) * (v / 10);
+  doc.setDrawColor(...BLUE);
+  doc.setLineWidth(1.2);
+  doc.line(cx, cy, cx + Math.cos(angP) * (r - 4), cy + Math.sin(angP) * (r - 4));
+  doc.setFillColor(...BLUE);
+  doc.circle(cx, cy, 2, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(...BLUE);
+  doc.text(v.toFixed(1), cx, cy + 12, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...GRAY);
+  doc.text("/ 10", cx, cy + 17, { align: "center" });
+}
+
+function trendBadge(doc: jsPDF, cx: number, cy: number, w: number, h: number, tendencia: "alta" | "estavel" | "baixa") {
+  const cor: [number, number, number] = tendencia === "alta" ? [40, 167, 105]
+    : tendencia === "baixa" ? [220, 53, 69] : [240, 180, 60];
+  const seta = tendencia === "alta" ? "^" : tendencia === "baixa" ? "v" : ">";
+  const txt = tendencia === "alta" ? "VALORIZACAO" : tendencia === "baixa" ? "DESVALORIZACAO" : "ESTAVEL";
+  doc.setFillColor(...cor);
+  doc.roundedRect(cx - w / 2, cy - h / 2, w, h, 4, 4, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text(seta, cx - w / 2 + 10, cy + 3);
+  doc.setFontSize(11);
+  doc.text(txt, cx + 4, cy + 3);
+}
+
+function checkIcon(doc: jsPDF, cx: number, cy: number, r: number, ok: boolean) {
+  const cor: [number, number, number] = ok ? [40, 167, 105] : [200, 200, 205];
+  doc.setFillColor(...cor);
+  doc.circle(cx, cy, r, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(r * 1.4);
+  doc.setTextColor(255, 255, 255);
+  doc.text(ok ? "v" : "-", cx, cy + r * 0.5, { align: "center" });
+}
+
+function badgePadrao(padrao: string): { cor: [number, number, number]; label: string } {
+  const p = String(padrao || "").toLowerCase();
+  if (p.includes("luxo")) return { cor: [120, 81, 169], label: padrao };
+  if (p.includes("alto")) return { cor: GOLD, label: padrao };
+  if (p.includes("normal") || p.includes("médio") || p.includes("medio")) return { cor: BLUE, label: padrao };
+  return { cor: [120, 125, 135], label: padrao || "—" };
+}
+
+function conservPct(c: string): number {
+  const v = String(c || "").toLowerCase();
+  if (v.includes("péssimo") || v.includes("pessimo") || v.includes("ruim")) return 0.18;
+  if (v.includes("regular")) return 0.45;
+  if (v.includes("bom")) return 0.72;
+  if (v.includes("ótimo") || v.includes("otimo") || v.includes("novo") || v.includes("reformado")) return 1.0;
+  return 0.55;
+}
+
 // ---------- PAGE 1: COVER ----------
 function paginaCapa(
   doc: jsPDF,
