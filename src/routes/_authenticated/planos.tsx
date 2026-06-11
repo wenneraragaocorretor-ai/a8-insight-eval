@@ -27,6 +27,7 @@ const PLANOS = [
     periodo: "/laudo",
     modo: "avulso" as const,
     destaque: false,
+    badge: null as string | null,
     db: "basico",
     features: [
       "1 laudo por compra (pagamento único)",
@@ -34,7 +35,9 @@ const PLANOS = [
       "Até 3 fotos (sem análise da IA)",
       "Comparáveis simples (sem homogeneização)",
       "Valor estimado sem tratamento estatístico",
-      "PDF simples 4-5 páginas (sem sua marca)",
+      "PDF com logo e dados do corretor",
+      "Mapa de localização",
+      "1 edição permitida por laudo",
     ],
   },
   {
@@ -43,7 +46,8 @@ const PLANOS = [
     preco: "R$ 229",
     periodo: "/mês",
     modo: "assinatura" as const,
-    destaque: true,
+    destaque: false,
+    badge: "Melhor Custo-Benefício" as string | null,
     db: "profissional",
     features: [
       "8 laudos por mês",
@@ -56,6 +60,7 @@ const PLANOS = [
       "Caracterização do bairro pela IA",
       "Perfil do público-alvo",
       "PDF 8-10 páginas",
+      "1 edição permitida por laudo",
     ],
   },
   {
@@ -64,12 +69,14 @@ const PLANOS = [
     preco: "R$ 377",
     periodo: "/mês",
     modo: "assinatura" as const,
-    destaque: false,
+    destaque: true,
+    badge: "MAIS POPULAR" as string | null,
     db: "expert",
     features: [
-      "Laudos ilimitados",
+      "20 laudos por mês",
+      "Laudos adicionais por R$ 9,00/laudo",
       "Tudo do Profissional, mais:",
-      "Até 15 fotos com análise individual da IA",
+      "Até 10 fotos com análise individual da IA",
       "Gráfico de dispersão e curva de tendência",
       "Laudo completo NBR 14653-2",
       "Campo de arbítrio ±15% com justificativa técnica",
@@ -79,6 +86,7 @@ const PLANOS = [
       "QR Code de autenticidade no laudo",
       "Número do laudo (LAU-XXXXXX)",
       "PDF 15+ páginas premium",
+      "1 edição permitida por laudo",
       "★ Chat com IA especialista integrado ao laudo",
     ],
   },
@@ -122,9 +130,6 @@ function PlanosPage() {
       const { url } = await startCheckout({ data: { plano, origin } });
       if (!url) throw new Error("URL de checkout não recebida");
 
-      // Em iframes (ex.: preview do Lovable) navegar window.location pode falhar
-      // silenciosamente. Tentamos abrir em nova aba primeiro; se bloqueado,
-      // caímos para navegação top-level.
       const win = window.open(url, "_blank", "noopener,noreferrer");
       if (!win) {
         try {
@@ -145,6 +150,26 @@ function PlanosPage() {
   const planoAtual = status?.plano;
   const ativa = status?.assinaturaAtiva;
 
+  const getButtonProps = (p: (typeof PLANOS)[number]) => {
+    if (p.code === "basico") {
+      return {
+        variant: "outline" as const,
+        className: "w-full h-11 border-[#0A1F44] text-[#0A1F44] hover:bg-[#0A1F44] hover:text-white",
+      };
+    }
+    if (p.code === "profissional") {
+      return {
+        variant: "default" as const,
+        className: "w-full h-11 bg-[#C8A951] text-[#0A1F44] hover:opacity-90",
+      };
+    }
+    // expert
+    return {
+      variant: "default" as const,
+      className: "w-full h-11 bg-[#0A1F44] text-white hover:bg-[#0F2D5C]",
+    };
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -159,14 +184,15 @@ function PlanosPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {PLANOS.map((p) => {
           const ehAtual = ativa && planoAtual === p.db;
+          const btn = getButtonProps(p);
           return (
             <Card
               key={p.code}
               className={`premium-card relative ${p.destaque ? "border-brand-gold border-2 shadow-xl scale-[1.02]" : ""}`}
             >
-              {p.destaque && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-gold text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
-                  MAIS POPULAR
+              {p.badge && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C8A951] text-[#0A1F44] text-xs font-bold px-3 py-1 rounded-full">
+                  {p.badge}
                 </div>
               )}
               <CardHeader>
@@ -200,8 +226,8 @@ function PlanosPage() {
                   })}
                 </ul>
                 <Button
-                  className={`w-full h-11 ${p.destaque ? "bg-brand-gold text-primary-foreground hover:opacity-90" : ""}`}
-                  variant={p.destaque ? "default" : "outline"}
+                  className={btn.className}
+                  variant={btn.variant}
                   disabled={loading !== null || (p.modo === "assinatura" && ehAtual)}
                   onClick={() => assinar(p.code)}
                 >
