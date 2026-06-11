@@ -318,7 +318,7 @@ function paginaCapa(
   pintarFundo(doc);
 
   // ===== TOPO (60% da página): foto do imóvel com overlay marinho =====
-  const fotoH = PH * 0.6; // ~126mm
+  const fotoH = PH * 0.5; // 50% topo da capa (portrait)
   try {
     const img = capaFoto || COVER_BG_BASE64;
     const fmt = typeof img === "string" && img.includes("image/png") ? "PNG" : "JPEG";
@@ -1338,7 +1338,7 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // Orquestração dos modelos
 // ============================================================
 function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
@@ -1358,7 +1358,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
 }
 
 function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
@@ -2267,7 +2267,7 @@ export type MarketingPdf = {
 };
 
 function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null, marketing?: MarketingPdf | null) {
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
   const temDocFotos = fotosDet.length > 0;
