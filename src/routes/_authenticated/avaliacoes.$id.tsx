@@ -479,6 +479,7 @@ function AvaliacaoDetalhe() {
           )}
         </CardContent>
       </Card>
+      )}
 
 
       <p className="text-xs text-center text-muted-foreground italic">
