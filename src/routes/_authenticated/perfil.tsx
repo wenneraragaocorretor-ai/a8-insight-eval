@@ -135,18 +135,22 @@ function PerfilPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErrorMsg(null);
     try {
       await saveFn({ data: form as any });
       setSavedFlash(true);
-      toast.success("Perfil salvo com sucesso");
+      toast.success("Perfil salvo com sucesso!");
       setTimeout(() => setSavedFlash(false), 3000);
       await refetch();
     } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao salvar");
+      const msg = err?.message || "Erro ao salvar — tente novamente";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
   };
+
 
   const isImobiliaria = form.tipo === "imobiliaria";
 
