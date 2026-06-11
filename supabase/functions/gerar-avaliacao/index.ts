@@ -76,7 +76,11 @@ serve(async (req) => {
     const basesComparaveis = comparaveis.map((c: any) => areaBaseDe(c, imovel.tipo))
     const areaBaseDescricao = `Cálculo baseado em ${baseImovel.label}: ${baseImovel.area}m²`
 
-    const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653-2).
+    const padraoStr = String(imovel.padrao ?? "").toLowerCase()
+    const tomGuia = padraoStr.includes("alto") || padraoStr.includes("luxo")
+      ? "TOM DOS TEXTOS: sofisticado e valorizado, destacando exclusividade, requinte e acabamentos premium."
+      : "TOM DOS TEXTOS: objetivo, claro e direto. NÃO use termos como 'alto padrão', 'luxo', 'sofisticado', 'premium' ou 'requintado'. Foque em funcionalidade, custo-benefício e adequação ao perfil real do imóvel."
+    const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653-2). Adapte sempre a linguagem ao padrão construtivo informado pelo corretor — não assuma que o imóvel é de alto padrão. ${tomGuia}
 Faça a HOMOGENEIZAÇÃO dos comparáveis em relação ao imóvel avaliando, considerando:
 área (conforme regra abaixo), quartos, suítes, banheiros, vagas, padrão construtivo,
 estado de conservação, posição (esquina, meio de quadra, encravado, gleba),
