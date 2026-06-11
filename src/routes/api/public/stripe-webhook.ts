@@ -125,25 +125,29 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                 }
                 await applySubscription(sub, session);
               } else if (session.mode === "payment" && session.payment_status === "paid") {
-                // Pagamento único — Plano Básico (laudo avulso): +1 crédito
+                // Pagamento único — Básico (laudo avulso) ou Expert Extra: +1 crédito
                 const userId = session.metadata?.user_id;
+                const planCode = session.metadata?.plan_code;
                 if (userId) {
                   const { data: existing } = await supabaseAdmin
                     .from("profiles")
-                    .select("nome, creditos_avulsos")
+                    .select("nome, creditos_avulsos, plano")
                     .eq("id", userId)
                     .maybeSingle();
                   const nome = existing?.nome || session.customer_details?.name || session.customer_details?.email?.split("@")[0] || "Usuário";
                   const novosCreditos = (existing?.creditos_avulsos ?? 0) + 1;
-                  const { error } = await supabaseAdmin.from("profiles").upsert({
+                  const upsertData: any = {
                     id: userId,
                     nome,
-                    plano: "basico" as any,
                     creditos_avulsos: novosCreditos,
                     stripe_customer_id: session.customer ?? null,
-                  }, { onConflict: "id" });
+                  };
+                  // Só vira plano "basico" se for compra de laudo Básico.
+                  // Para "expert_extra", preserva o plano atual (Expert).
+                  if (planCode === "basico") upsertData.plano = "basico";
+                  const { error } = await supabaseAdmin.from("profiles").upsert(upsertData, { onConflict: "id" });
                   if (error) throw error;
-                  console.log("[stripe-webhook] +1 crédito Básico", { userId, novosCreditos });
+                  console.log("[stripe-webhook] +1 crédito", { userId, planCode, novosCreditos });
                 }
               }
               break;
