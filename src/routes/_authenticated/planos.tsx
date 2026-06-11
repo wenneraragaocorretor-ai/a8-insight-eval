@@ -121,7 +121,7 @@ function PlanosPage() {
     }
   }, [search.success, search.canceled, search.session_id]);
 
-  async function assinar(plano: "basico" | "profissional" | "expert") {
+  async function assinar(plano: "basico" | "profissional" | "expert" | "expert_extra") {
     try {
       setLoading(plano);
       const origin =
