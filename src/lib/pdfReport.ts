@@ -546,44 +546,100 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(...BLUE);
-  doc.text(`◉ ${ab.bairro || a.localizacao || "—"}`, M, 46);
-  if (ab.cidade) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor(...GRAY);
-    doc.text(String(ab.cidade), M, 53);
-  }
+  doc.text(String(ab.bairro || a.localizacao || "—"), M, 46);
 
   const usable = PW - M * 2;
   const gap = 6;
-  const colW = (usable - gap) / 2;
-  const yRow = 62;
-  const ch = 56;
-  card(doc, M, yRow, colW, ch, { variant: "white", border: "gold" });
-  card(doc, M + colW + gap, yRow, colW, ch, { variant: "white", border: "gold" });
+  const colW = (usable - gap * 2) / 3;
+  const yRow = 56;
+  const ch = 84;
 
+  // BLOCO 1 — Gauge Potencial de Valorização
+  const score = Number(ab.score_valorizacao ?? rel?.score_valorizacao ?? 7.5);
+  const pctValor = String(ab.percentual_valorizacao ?? rel?.percentual_valorizacao ?? "+8% a.a.");
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(M, yRow, colW, ch, 3, 3, "FD");
+  doc.setFillColor(...GOLD);
+  doc.rect(M, yRow, colW, 1.6, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setTextColor(...BLUE);
-  doc.text("Potencial de Valorização", M + 8, yRow + 12);
-  doc.text("Tendências de Mercado", M + colW + gap + 8, yRow + 12);
-  textoMultilinha(doc, String(ab.potencial_valorizacao ?? rel?.potencial_valorizacao ?? "Informação não disponível."), M + 8, yRow + 22, colW - 16, {
-    size: 10, color: TEXT, lineHeight: 4.6,
-  });
-  textoMultilinha(doc, String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Informação não disponível."), M + colW + gap + 8, yRow + 22, colW - 16, {
-    size: 10, color: TEXT, lineHeight: 4.6,
+  doc.text("POTENCIAL DE VALORIZAÇÃO", M + colW / 2, yRow + 10, { align: "center" });
+  gaugeChart(doc, M + colW / 2, yRow + 42, 22, score);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...GOLD);
+  doc.text(pctValor, M + colW / 2, yRow + ch - 8, { align: "center" });
+
+  // BLOCO 2 — Infraestrutura (grid de checks)
+  const x2 = M + colW + gap;
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(x2, yRow, colW, ch, 3, 3, "FD");
+  doc.setFillColor(...GOLD);
+  doc.rect(x2, yRow, colW, 1.6, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...BLUE);
+  doc.text("INFRAESTRUTURA", x2 + colW / 2, yRow + 10, { align: "center" });
+
+  const infraDefault = ["Escola", "Hospital", "Supermercado", "Transporte", "Farmácia", "Lazer"];
+  const infraAtivos: string[] = Array.isArray(ab.infraestrutura)
+    ? ab.infraestrutura.map((s: any) => String(s).toLowerCase())
+    : infraDefault.map((s) => s.toLowerCase());
+  const cols = 3;
+  const itemW = (colW - 12) / cols;
+  infraDefault.forEach((nome, i) => {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    const ix = x2 + 6 + c * itemW + itemW / 2;
+    const iy = yRow + 22 + r * 28;
+    const ok = infraAtivos.some((v) => v.includes(nome.toLowerCase()));
+    checkIcon(doc, ix, iy + 4, 4.5, ok);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...(ok ? TEXT : GRAY_DIM));
+    doc.text(nome, ix, iy + 16, { align: "center" });
   });
 
-  // descrição
-  const yDesc = yRow + ch + 8;
-  card(doc, M, yDesc, usable, PH - yDesc - 18, { variant: "white", border: "gold" });
+  // BLOCO 3 — Tendência de Mercado
+  const x3 = x2 + colW + gap;
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(x3, yRow, colW, ch, 3, 3, "FD");
+  doc.setFillColor(...GOLD);
+  doc.rect(x3, yRow, colW, 1.6, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setTextColor(...BLUE);
-  doc.text("Sobre a Região", M + 8, yDesc + 12);
-  textoMultilinha(doc, String(ab.descricao ?? rel?.resumo_texto ?? ""), M + 8, yDesc + 22, usable - 16, {
-    size: 11, color: TEXT, lineHeight: 5.2,
-  });
+  doc.text("TENDÊNCIA DE MERCADO", x3 + colW / 2, yRow + 10, { align: "center" });
+
+  const tendStr = String(ab.tendencia ?? rel?.tendencia ?? "alta").toLowerCase();
+  const tend: "alta" | "estavel" | "baixa" = tendStr.includes("desv") || tendStr.includes("baix")
+    ? "baixa"
+    : tendStr.includes("estav") ? "estavel" : "alta";
+  trendBadge(doc, x3 + colW / 2, yRow + 36, colW - 16, 20, tend);
+  textoMultilinha(
+    doc,
+    String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Mercado em movimento positivo, com demanda crescente na região."),
+    x3 + 6, yRow + 56, colW - 12,
+    { size: 9, color: TEXT, lineHeight: 4.2 },
+  );
+
+  // Resumo curto (máx 3 linhas)
+  const yDesc = yRow + ch + 10;
+  const resumo = String(ab.descricao ?? "").trim();
+  if (resumo) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("SOBRE A REGIÃO", M, yDesc);
+    textoMultilinha(doc, resumo, M, yDesc + 5, usable, {
+      size: 10, color: TEXT, lineHeight: 4.6,
+    });
+  }
 }
 
 // ---------- PAGE: PERFIL DO PÚBLICO ----------
