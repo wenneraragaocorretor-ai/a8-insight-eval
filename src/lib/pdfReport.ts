@@ -769,19 +769,22 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const infraAtivos: string[] = Array.isArray(ab.infraestrutura)
     ? ab.infraestrutura.map((s: any) => String(s).toLowerCase())
     : infraDefault.map((s) => s.toLowerCase());
-  const cols = 3;
-  const itemW = (colW - 12) / cols;
+  const cols = 2;
+  const rows = 3;
+  const innerPad = 6;
+  const itemW = (colW - innerPad * 2) / cols;
+  const rowH = (ch - 24) / rows;
   infraDefault.forEach((nome, i) => {
     const c = i % cols;
     const r = Math.floor(i / cols);
-    const ix = x2 + 6 + c * itemW + itemW / 2;
-    const iy = yRow + 22 + r * 28;
+    const ix = x2 + innerPad + c * itemW + itemW / 2;
+    const iy = yRow + 22 + r * rowH;
     const ok = infraAtivos.some((v) => v.includes(nome.toLowerCase()));
-    checkIcon(doc, ix, iy + 4, 4.5, ok);
+    infraIcon(doc, nome, ix, iy + 4, 4.5, ok);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...(ok ? TEXT : GRAY_DIM));
-    doc.text(nome, ix, iy + 16, { align: "center" });
+    doc.text(nome, ix, iy + 15, { align: "center" });
   });
 
   // BLOCO 3 — Tendência de Mercado
