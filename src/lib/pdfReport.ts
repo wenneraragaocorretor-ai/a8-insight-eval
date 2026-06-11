@@ -984,17 +984,43 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   doc.text("Central", tx + tw / 2, ty + 22, { align: "center" });
   doc.text("Máximo +15%", tx + tw, ty + 22, { align: "center" });
 
-  // 3 ícones informativos
-  const tips = [
-    { glyph: "$", txt: "Inicie acima do central" },
-    { glyph: "#", txt: "Baseado em comparáveis" },
-    { glyph: "@", txt: "Válido por 6 meses" },
-  ];
+  // 3 ícones informativos (vetoriais)
   const baseY = PH - 38;
   const tipW = (PW - M * 2) / 3;
+  const tips: Array<{ kind: "bulb" | "chart" | "cal"; txt: string }> = [
+    { kind: "bulb", txt: "Inicie acima do central" },
+    { kind: "chart", txt: "Baseado em comparáveis" },
+    { kind: "cal", txt: "Válido por 6 meses" },
+  ];
   tips.forEach((t, i) => {
     const cx = M + tipW * i + tipW / 2;
-    iconCircle(doc, cx, baseY, 6, t.glyph, GOLD);
+    // Círculo dourado de fundo
+    doc.setFillColor(...GOLD);
+    doc.circle(cx, baseY, 6, "F");
+    doc.setDrawColor(...WHITE);
+    doc.setFillColor(...WHITE);
+    doc.setLineWidth(0.8);
+    if (t.kind === "bulb") {
+      // Lâmpada: bulbo + base
+      doc.circle(cx, baseY - 1, 2.2, "F");
+      doc.setFillColor(...GOLD);
+      doc.rect(cx - 1.4, baseY + 1.2, 2.8, 1.6, "F");
+      doc.setFillColor(...WHITE);
+      doc.rect(cx - 1, baseY + 2.6, 2, 0.8, "F");
+    } else if (t.kind === "chart") {
+      // Gráfico de barras
+      doc.rect(cx - 3, baseY + 0.5, 1.4, -2, "F");
+      doc.rect(cx - 0.7, baseY + 0.5, 1.4, -3.4, "F");
+      doc.rect(cx + 1.6, baseY + 0.5, 1.4, -4.6, "F");
+    } else {
+      // Calendário
+      doc.rect(cx - 3, baseY - 2.5, 6, 5, "F");
+      doc.setFillColor(...GOLD);
+      doc.rect(cx - 3, baseY - 2.5, 6, 1.3, "F");
+      doc.setFillColor(...WHITE);
+      doc.rect(cx - 2.4, baseY - 3.4, 0.7, 1.3, "F");
+      doc.rect(cx + 1.7, baseY - 3.4, 0.7, 1.3, "F");
+    }
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...WHITE);
