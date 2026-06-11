@@ -627,6 +627,11 @@ function NovaAvaliacao() {
   };
 
   const handleProcessar = async () => {
+    // Expert que atingiu 20/mês sem créditos: abrir modal em vez de bloquear
+    if (!isEdit && expertAtingiuLimite) {
+      setShowLimiteModal(true);
+      return;
+    }
     setIsLoading(true);
     try {
       const c = camposDoTipo(imovel.tipo);
