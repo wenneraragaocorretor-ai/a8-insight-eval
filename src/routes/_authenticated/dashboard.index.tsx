@@ -204,7 +204,7 @@ function Dashboard() {
         <Card className="premium-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {ehBasico ? "Laudos Avulsos" : ehExpert ? "Avaliações no Mês" : "Avaliações no Mês"}
+              {ehBasico ? "Laudos Avulsos" : "Avaliações no Mês"}
             </CardTitle>
             <History className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -213,7 +213,7 @@ function Dashboard() {
               {ehBasico
                 ? `${creditos} disponível${creditos === 1 ? "" : "s"}`
                 : ehExpert
-                  ? `${usadas} (ilimitado)`
+                  ? `${usadas} / ${limite ?? 20}`
                   : `${usadas} / ${limite ?? 5}`}
             </div>
             <p className="text-xs text-muted-foreground">
