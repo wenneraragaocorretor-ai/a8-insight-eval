@@ -198,14 +198,27 @@ function textoMultilinha(
   x: number,
   y: number,
   w: number,
-  opts: { size?: number; color?: [number, number, number]; bold?: boolean; lineHeight?: number } = {},
+  opts: { size?: number; color?: [number, number, number]; bold?: boolean; lineHeight?: number; maxLines?: number; maxHeight?: number } = {},
 ) {
   const size = opts.size ?? 10;
   doc.setFont("helvetica", opts.bold ? "bold" : "normal");
   doc.setFontSize(size);
   doc.setTextColor(...(opts.color ?? GRAY));
-  const lines = doc.splitTextToSize(texto, w);
   const lh = opts.lineHeight ?? size * 0.42;
+  let lines: string[] = doc.splitTextToSize(texto, w);
+  let cap = lines.length;
+  if (typeof opts.maxHeight === "number" && opts.maxHeight > 0) {
+    cap = Math.min(cap, Math.max(1, Math.floor(opts.maxHeight / lh)));
+  }
+  if (typeof opts.maxLines === "number" && opts.maxLines > 0) {
+    cap = Math.min(cap, opts.maxLines);
+  }
+  if (cap < lines.length) {
+    const kept = lines.slice(0, cap);
+    const last = kept[kept.length - 1] ?? "";
+    kept[kept.length - 1] = last.replace(/\s+\S*$/, "") + "…";
+    lines = kept;
+  }
   doc.text(lines, x, y);
   return y + lines.length * lh;
 }
