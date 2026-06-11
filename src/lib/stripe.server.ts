@@ -59,8 +59,8 @@ export const PLANS = {
   profissional: {
     code: "profissional",
     name: "Plano Profissional",
-    price_cents: 22900,
-    lookup_key: "a8_profissional_monthly_v2",
+    price_cents: 24900,
+    lookup_key: "a8_profissional_monthly_v3",
     description: "8 laudos por mês",
     db_plan: "profissional" as const,
     mode: "subscription" as const,
