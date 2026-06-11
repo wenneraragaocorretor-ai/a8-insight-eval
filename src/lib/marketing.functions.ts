@@ -55,7 +55,11 @@ export const gerarMarketingAvaliacao = createServerFn({ method: "POST" })
     const valorMin = Number(res?.valor_minimo ?? 0);
     const valorMax = Number(res?.valor_maximo ?? 0);
 
-    const sistema = `Você é um especialista em marketing imobiliário de alto padrão no Brasil. Gere um plano de marketing personalizado e prático para o imóvel descrito, baseando-se nos dados reais informados (valor, localização, padrão, ambientes, lazer, acabamentos, análise de fotos). Não invente diferenciais que não existem. Use linguagem clara, persuasiva e profissional. Retorne APENAS JSON estruturado conforme o schema exato. Sem markdown, sem comentários.`;
+    const padraoStr = String(av.padrao ?? "").toLowerCase();
+    const tomGuia = padraoStr.includes("alto") || padraoStr.includes("luxo")
+      ? "Tom SOFISTICADO e valorizado, destacando exclusividade, requinte e acabamentos premium."
+      : "Tom OBJETIVO, claro e direto, sem exageros nem termos como 'alto padrão', 'luxo' ou 'sofisticado'. Foque em utilidade, custo-benefício e funcionalidade para o dia a dia.";
+    const sistema = `Você é um especialista em marketing imobiliário no Brasil. Adapte o tom dos textos ao padrão construtivo informado: ${tomGuia} Não assuma que o imóvel é de alto padrão por padrão. Gere um plano de marketing personalizado e prático para o imóvel descrito, baseando-se nos dados reais informados (valor, localização, padrão, ambientes, lazer, acabamentos, análise de fotos). Não invente diferenciais que não existem. Retorne APENAS JSON estruturado conforme o schema exato. Sem markdown, sem comentários.`;
 
     const userPrompt = `DADOS DO IMÓVEL:
 - Tipo: ${av.tipo_imovel}

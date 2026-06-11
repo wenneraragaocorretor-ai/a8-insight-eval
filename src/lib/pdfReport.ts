@@ -836,7 +836,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
   const sortedRef = [...unit].sort((a, b) => a - b);
   const ref = sortedRef.length ? sortedRef[Math.floor(sortedRef.length / 2)] : 0;
 
-  const PER_PAGE = 4;
+  const PER_PAGE = 6;
   for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
     novaPagina(doc);
     microHeader(doc, corretor);
@@ -844,9 +844,9 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
 
     const pageItems = comparaveis.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
     const usable = PW - M * 2;
-    const gap = 6;
+    const gap = 5;
     const cw = (usable - gap) / 2;
-    const ch = 62;
+    const ch = 52;
     const yStart = 50;
 
     pageItems.forEach((c, idx) => {
@@ -984,17 +984,43 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   doc.text("Central", tx + tw / 2, ty + 22, { align: "center" });
   doc.text("Máximo +15%", tx + tw, ty + 22, { align: "center" });
 
-  // 3 ícones informativos
-  const tips = [
-    { glyph: "$", txt: "Inicie acima do central" },
-    { glyph: "#", txt: "Baseado em comparáveis" },
-    { glyph: "@", txt: "Válido por 6 meses" },
-  ];
+  // 3 ícones informativos (vetoriais)
   const baseY = PH - 38;
   const tipW = (PW - M * 2) / 3;
+  const tips: Array<{ kind: "bulb" | "chart" | "cal"; txt: string }> = [
+    { kind: "bulb", txt: "Inicie acima do central" },
+    { kind: "chart", txt: "Baseado em comparáveis" },
+    { kind: "cal", txt: "Válido por 6 meses" },
+  ];
   tips.forEach((t, i) => {
     const cx = M + tipW * i + tipW / 2;
-    iconCircle(doc, cx, baseY, 6, t.glyph, GOLD);
+    // Círculo dourado de fundo
+    doc.setFillColor(...GOLD);
+    doc.circle(cx, baseY, 6, "F");
+    doc.setDrawColor(...WHITE);
+    doc.setFillColor(...WHITE);
+    doc.setLineWidth(0.8);
+    if (t.kind === "bulb") {
+      // Lâmpada: bulbo + base
+      doc.circle(cx, baseY - 1, 2.2, "F");
+      doc.setFillColor(...GOLD);
+      doc.rect(cx - 1.4, baseY + 1.2, 2.8, 1.6, "F");
+      doc.setFillColor(...WHITE);
+      doc.rect(cx - 1, baseY + 2.6, 2, 0.8, "F");
+    } else if (t.kind === "chart") {
+      // Gráfico de barras
+      doc.rect(cx - 3, baseY + 0.5, 1.4, -2, "F");
+      doc.rect(cx - 0.7, baseY + 0.5, 1.4, -3.4, "F");
+      doc.rect(cx + 1.6, baseY + 0.5, 1.4, -4.6, "F");
+    } else {
+      // Calendário
+      doc.rect(cx - 3, baseY - 2.5, 6, 5, "F");
+      doc.setFillColor(...GOLD);
+      doc.rect(cx - 3, baseY - 2.5, 6, 1.3, "F");
+      doc.setFillColor(...WHITE);
+      doc.rect(cx - 2.4, baseY - 3.4, 0.7, 1.3, "F");
+      doc.rect(cx + 1.7, baseY - 3.4, 0.7, 1.3, "F");
+    }
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...WHITE);
@@ -1009,63 +1035,46 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   doc.setFillColor(...BLUE);
   doc.rect(0, 0, PW, PH, "F");
 
+  // Faixa dourada superior
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 0, PW, 4, "F");
+
+  // Título
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...GOLD);
+  doc.text("CONTATO", PW / 2, 28, { align: "center" });
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(PW / 2 - 14, 31, PW / 2 + 14, 31);
+
   // Logo do corretor (se disponível)
+  let yCursor = 48;
   if (corretor.logo_data_url) {
     try {
       const fmt = corretor.logo_data_url.includes("image/png") ? "PNG" : "JPEG";
-      doc.addImage(corretor.logo_data_url, fmt, PW / 2 - 18, 18, 36, 18, undefined, "FAST");
+      doc.addImage(corretor.logo_data_url, fmt, PW / 2 - 22, yCursor, 44, 22, undefined, "FAST");
+      yCursor += 30;
     } catch { /* ignore */ }
   }
 
+  // Imobiliária (se houver)
+  if (corretor.nome_imobiliaria) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...GOLD);
+    doc.text(corretor.nome_imobiliaria.toUpperCase(), PW / 2, yCursor, { align: "center" });
+    yCursor += 10;
+  }
+
+  // Nome do corretor
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(28);
   doc.setTextColor(...WHITE);
-  doc.text(
-    (corretor.nome_imobiliaria || "A8 INVESTIMENTOS IMOBILIÁRIOS").toUpperCase(),
-    PW / 2, 44, { align: "center" }
-  );
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...GOLD);
-  doc.text(corretor.nome.toUpperCase(), PW / 2, 52, { align: "center" });
+  doc.text(corretor.nome.toUpperCase(), PW / 2, yCursor + 6, { align: "center" });
+  yCursor += 16;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(96);
-  doc.setTextColor(...WHITE);
-  doc.text("Obrigado!", PW / 2, 114, { align: "center" });
-
-  // contact pills (outlined gold)
-  const localCidade = [corretor.cidade, corretor.estado].filter(Boolean).join(" / ");
-  const items = [
-    corretor.telefone ? `Tel  ${corretor.telefone}` : null,
-    corretor.email ? `Email  ${corretor.email}` : null,
-    localCidade ? `Local  ${localCidade}` : null,
-  ].filter(Boolean) as string[];
-
-  let totalW = 0;
-  const pads: number[] = [];
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  items.forEach((t) => {
-    const w = doc.getTextWidth(t) + 18;
-    pads.push(w);
-    totalW += w;
-  });
-  totalW += (items.length - 1) * 6;
-  let x = (PW - totalW) / 2;
-  const y = 140;
-  items.forEach((t, i) => {
-    const w = pads[i];
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.8);
-    doc.setFillColor(...BLUE);
-    doc.roundedRect(x, y, w, 14, 7, 7, "FD");
-    doc.setTextColor(...WHITE);
-    doc.text(t, x + w / 2, y + 9.2, { align: "center" });
-    x += w + 6;
-  });
-
-  // Registros profissionais (um abaixo do outro)
+  // Registros profissionais
   const stripPrefix = (v: string, prefixes: string[]) => {
     let s = v.trim();
     for (const p of prefixes) {
@@ -1081,44 +1090,65 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     return { label: "Registro", value: s };
   };
   const registros: string[] = [];
-  if (corretor.creci) registros.push(`CRECI: ${stripPrefix(corretor.creci, ["CRECI"])}`);
-  if (corretor.cnai) registros.push(`CNAI: ${stripPrefix(corretor.cnai, ["CNAI"])}`);
+  if (corretor.creci) registros.push(`CRECI ${stripPrefix(corretor.creci, ["CRECI"])}`);
+  if (corretor.cnai) registros.push(`CNAI ${stripPrefix(corretor.cnai, ["CNAI"])}`);
   if (corretor.outro_registro) {
     const { label, value } = detectarLabel(corretor.outro_registro);
-    registros.push(`${label}: ${value}`);
+    registros.push(`${label} ${value}`);
   }
   if (registros.length) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     doc.setTextColor(...GOLD);
-    let yr = y + 24;
-    registros.forEach((r) => {
-      doc.text(r, PW / 2, yr, { align: "center" });
-      yr += 6;
+    doc.text(registros.join("  •  "), PW / 2, yCursor + 4, { align: "center" });
+    yCursor += 12;
+  }
+
+  // Pílulas de contato (telefone/whatsapp, email, cidade)
+  const localCidade = [corretor.cidade, corretor.estado].filter(Boolean).join(" / ");
+  const items = [
+    corretor.telefone ? `WhatsApp  ${corretor.telefone}` : null,
+    corretor.email ? `E-mail  ${corretor.email}` : null,
+    localCidade ? `Local  ${localCidade}` : null,
+  ].filter(Boolean) as string[];
+
+  if (items.length) {
+    const pillY = Math.max(yCursor + 14, 130);
+    const pillH = 14;
+    const gap = 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    const widths = items.map((t) => doc.getTextWidth(t) + 20);
+    const totalW = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
+    let x = (PW - totalW) / 2;
+    items.forEach((t, i) => {
+      const w = widths[i];
+      doc.setDrawColor(...GOLD);
+      doc.setLineWidth(0.8);
+      doc.setFillColor(...BLUE);
+      doc.roundedRect(x, pillY, w, pillH, 7, 7, "FD");
+      doc.setTextColor(...WHITE);
+      doc.text(t, x + w / 2, pillY + 9.2, { align: "center" });
+      x += w + gap;
     });
   }
 
   // Disclaimer técnico (CNAI/IBAPE)
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
-  doc.setTextColor(...WHITE);
+  doc.setTextColor(220, 220, 230);
   doc.text(
     "Esta avaliação é mercadológica e não substitui laudo técnico",
-    PW / 2,
-    PH - 32,
-    { align: "center" }
+    PW / 2, PH - 22, { align: "center" },
   );
   doc.text(
     "aprovado por profissional habilitado (CNAI/IBAPE).",
-    PW / 2,
-    PH - 27,
-    { align: "center" }
+    PW / 2, PH - 17, { align: "center" },
   );
 
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(...GOLD);
-  doc.text("Gerado pela plataforma A8 Investimentos Imobiliários", PW / 2, PH - 18, { align: "center" });
+  // Faixa dourada inferior
+  doc.setFillColor(...GOLD);
+  doc.rect(0, PH - 4, PW, 4, "F");
 }
 
 // ---------- EXPERT EXTRA: HOMOGENEIZAÇÃO ----------
@@ -1337,14 +1367,15 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // ============================================================
 // Orquestração dos modelos
 // ============================================================
-function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
+function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
+  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotos[0] || null;
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
   paginaSumario(
     doc,
-    ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Anúncios na Região", "Valor do Imóvel", "Contato"],
+    ["O Imóvel", "Ambientes", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Comparáveis", "Valor do Imóvel", "Contato"],
   );
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
@@ -1357,14 +1388,15 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
-function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[]) {
+function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado");
+  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotos[0] || null;
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
   paginaSumario(
     doc,
-    ["O Imóvel", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Perfil do Público", "Anúncios na Região", "Valor do Imóvel", "Contato"],
+    ["O Imóvel", "Ambientes", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Perfil do Público", "Comparáveis", "Valor do Imóvel", "Contato"],
   );
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
@@ -2346,8 +2378,8 @@ export function gerarPdfAvaliacao(
     modelo === 3
       ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null)
       : modelo === 2
-      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos)
-      : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos);
+      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
+      : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
 
   const nome = `A8-Avaliacao-M${modelo}-${(avaliacao?.id || "").slice(0, 8)}.pdf`;
   doc.save(nome);
