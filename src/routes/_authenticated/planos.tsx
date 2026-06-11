@@ -73,8 +73,8 @@ const PLANOS = [
     badge: "MAIS POPULAR" as string | null,
     db: "expert",
     features: [
-      "20 laudos por mês",
-      "Laudos adicionais por R$ 9,00/laudo",
+      "Limite de 20 laudos por mês",
+      "Laudos adicionais por R$ 12,00/laudo",
       "Tudo do Profissional, mais:",
       "Até 10 fotos com análise individual da IA",
       "Gráfico de dispersão e curva de tendência",
