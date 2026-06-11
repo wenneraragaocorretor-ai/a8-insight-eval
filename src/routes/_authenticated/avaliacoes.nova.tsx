@@ -2,14 +2,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { processarAvaliacaoIA, regerarAvaliacao, getAvaliacaoDetalhe, limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
+import { getStatusAssinatura, criarCheckoutSession } from "../../lib/stripe.functions";
 import { supabase } from "../../integrations/supabase/client";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../../components/ui/dialog";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle } from "lucide-react";
 
 
 const CARACTERISTICAS_OPCOES = [
