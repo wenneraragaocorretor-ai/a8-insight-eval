@@ -148,6 +148,25 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   const { error } = await supabaseAdmin.from("profiles").upsert(upsertData, { onConflict: "id" });
                   if (error) throw error;
                   console.log("[stripe-webhook] +1 crédito", { userId, planCode, novosCreditos });
+
+                  // Registra no histórico de cobranças avulsas (idempotente via unique session_id)
+                  const valorCents = typeof session.amount_total === "number"
+                    ? session.amount_total
+                    : (planCode === "expert_extra" ? 1200 : 15700);
+                  const tipo = planCode === "expert_extra" ? "expert_extra" : "basico_laudo";
+                  const descricao = planCode === "expert_extra"
+                    ? "Laudo adicional Expert"
+                    : "Laudo avulso Básico";
+                  await supabaseAdmin.from("cobrancas_avulsas").upsert({
+                    user_id: userId,
+                    tipo,
+                    valor_cents: valorCents,
+                    moeda: session.currency ?? "brl",
+                    stripe_session_id: session.id,
+                    stripe_payment_intent: (typeof session.payment_intent === "string" ? session.payment_intent : null),
+                    status: "paid",
+                    descricao,
+                  }, { onConflict: "stripe_session_id" });
                 }
               }
               break;
