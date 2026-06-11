@@ -201,8 +201,8 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
 
       if (errA) throw errA;
 
-      // Decrementa crédito avulso para Básico.
-      if (plano === "basico" || plano === "user") {
+      // Decrementa crédito avulso (Básico sempre; Expert quando excede 20/mês).
+      if (consomeCredito) {
         await supabase
           .from("profiles")
           .update({ creditos_avulsos: Math.max(0, creditos - 1) })
