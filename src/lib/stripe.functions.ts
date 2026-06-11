@@ -153,22 +153,22 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       userData.user?.email?.split("@")[0] ||
       "Usuário";
 
-    // ---- BÁSICO: pagamento único, soma 1 crédito de laudo avulso ----
+    // ---- BÁSICO ou EXPERT_EXTRA: pagamento único, soma 1 crédito de laudo avulso ----
     if (plan.mode === "payment") {
       if (session.payment_status !== "paid") return { ok: false };
       const novosCreditos = (existing?.creditos_avulsos ?? 0) + 1;
-      const { error } = await supabase.from("profiles").upsert(
-        {
-          id: userId,
-          nome,
-          plano: "basico" as any,
-          creditos_avulsos: novosCreditos,
-          stripe_customer_id: (session.customer as string) ?? undefined,
-        },
-        { onConflict: "id" },
-      );
+      const upsertData: any = {
+        id: userId,
+        nome,
+        creditos_avulsos: novosCreditos,
+        stripe_customer_id: (session.customer as string) ?? undefined,
+      };
+      // Só altera o plano para 'basico' se for compra avulsa de Plano Básico.
+      // Para 'expert_extra', mantém o plano atual do usuário (Expert).
+      if (planCode === "basico") upsertData.plano = "basico";
+      const { error } = await supabase.from("profiles").upsert(upsertData, { onConflict: "id" });
       if (error) throw new Error(`Falha ao creditar laudo: ${error.message}`);
-      return { ok: true, plano: "basico", creditosAvulsos: novosCreditos };
+      return { ok: true, plano: planCode, creditosAvulsos: novosCreditos };
     }
 
     // ---- PROFISSIONAL/EXPERT: assinatura recorrente ----
