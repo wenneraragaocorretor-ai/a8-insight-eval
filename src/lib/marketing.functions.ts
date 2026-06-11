@@ -35,6 +35,17 @@ export const gerarMarketingAvaliacao = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY ausente no servidor");
 
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("plano")
+      .eq("id", userId)
+      .maybeSingle();
+    const plano = String((prof as any)?.plano ?? "basico").toLowerCase();
+    if (plano !== "expert") {
+      throw new Error("Assistente de Marketing disponível apenas no plano Expert");
+    }
+
+
     const { data: avRaw, error: e1 } = await supabase
       .from("avaliacoes")
       .select("*")
