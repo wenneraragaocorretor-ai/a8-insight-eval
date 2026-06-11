@@ -281,8 +281,7 @@ function AvaliacaoDetalhe() {
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><TrendingDown size={16} /> Valor Mínimo</CardTitle></CardHeader>
           <CardContent><div className="text-2xl font-bold">{fmtBRL(resultado?.valor_minimo)}</div></CardContent>
         </Card>
-      {plano === "expert" && (
-      <Card className="premium-card border-brand-gold">
+        <Card className="premium-card border-brand-gold">
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Target size={16} /> Valor Central</CardTitle></CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-brand-gold">{fmtBRL(resultado?.valor_central)}</div>
