@@ -71,10 +71,20 @@ export const PLANS = {
     name: "Plano Expert",
     price_cents: 37700,
     lookup_key: "a8_expert_monthly_v2",
-    description: "Laudos ilimitados + NBR 14653-2",
+    description: "20 laudos por mês + NBR 14653-2",
     db_plan: "expert" as const,
     mode: "subscription" as const,
-    limit: null as number | null,
+    limit: 20 as number | null,
+  },
+  expert_extra: {
+    code: "expert_extra",
+    name: "Laudo Extra Expert",
+    price_cents: 1200,
+    lookup_key: "a8_expert_extra_unit_v1",
+    description: "1 laudo adicional do Plano Expert (pagamento único)",
+    db_plan: "expert" as const,
+    mode: "payment" as const,
+    limit: 1,
   },
 } as const;
 
