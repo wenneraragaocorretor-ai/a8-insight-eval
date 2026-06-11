@@ -736,7 +736,7 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc,
     String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Mercado em movimento positivo, com demanda crescente na região."),
     x3 + 6, yRow + 56, colW - 12,
-    { size: 9, color: TEXT, lineHeight: 4.2 },
+    { size: 9, color: TEXT, lineHeight: 4.2, maxHeight: ch - 60 },
   );
 
   // Resumo curto (máx 3 linhas)
