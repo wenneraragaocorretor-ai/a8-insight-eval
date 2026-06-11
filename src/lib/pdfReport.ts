@@ -1239,36 +1239,54 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
     desvio = Math.sqrt(variancia);
     cv = media > 0 ? (desvio / media) * 100 : 0;
   }
-  const items: Array<[string, string]> = [
-    ["Amostras (n)", String(unit.length)],
-    ["Média (R$/m²)", fmtBRL(media)],
-    ["Mediana (R$/m²)", fmtBRL(mediana)],
-    ["Desvio padrão", fmtBRL(desvio)],
-    ["Coef. variação", `${fmtNum(cv, 2)}%`],
-  ];
+
+  const cvColor: [number, number, number] = cv < 15 ? [40, 167, 105] : cv < 30 ? [240, 180, 60] : [220, 53, 69];
+
   const usable = PW - M * 2;
   const gap = 6;
-  const cw = (usable - gap * 4) / 5;
-  const ch = 50;
-  const yRow = 60;
-  items.forEach(([l, v], i) => {
+  const cw = (usable - gap * 3) / 4;
+  const ch = 52;
+  const yRow = 56;
+
+  const cards: Array<{ bg: [number, number, number]; fg: [number, number, number]; accent: [number, number, number]; label: string; value: string }> = [
+    { bg: NAVY, fg: WHITE, accent: GOLD, label: "Média R$/m²", value: fmtBRL(media) },
+    { bg: BLUE, fg: WHITE, accent: GOLD, label: "Mediana R$/m²", value: fmtBRL(mediana) },
+    { bg: WHITE, fg: BLUE, accent: GOLD, label: "Desvio Padrão", value: fmtBRL(desvio) },
+    { bg: WHITE, fg: cvColor, accent: cvColor, label: "Coef. Variação", value: `${fmtNum(cv, 1)}%` },
+  ];
+  cards.forEach((c, i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch, { variant: "blue", border: "soft" });
+    doc.setFillColor(...c.bg);
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, yRow, cw, ch, 3, 3, "FD");
+    doc.setFillColor(...c.accent);
+    doc.rect(x, yRow, cw, 1.6, "F");
+    const isLight = c.bg[0] > 200;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...BLUE);
-    doc.text(l, x + cw / 2, yRow + 14, { align: "center" });
+    doc.setTextColor(...(isLight ? GRAY : ([220, 220, 220] as [number, number, number])));
+    doc.text(c.label.toUpperCase(), x + cw / 2, yRow + 12, { align: "center" });
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(...BLUE);
-    doc.text(v, x + cw / 2, yRow + 30, { align: "center" });
+    doc.setFontSize(c.value.length > 10 ? 14 : 20);
+    doc.setTextColor(...c.fg);
+    doc.text(c.value, x + cw / 2, yRow + 32, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...(isLight ? GRAY : ([200, 200, 200] as [number, number, number])));
+    doc.text(`n = ${unit.length}`, x + cw / 2, yRow + ch - 6, { align: "center" });
   });
 
   doc.setFont("helvetica", "italic");
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
-  const t = "Tratamento por fatores de homogeneização (ABNT NBR 14653-2:2011). A média dos valores unitários, ponderada pela qualidade da amostra, fundamenta o valor central apurado.";
-  textoMultilinha(doc, t, M, yRow + ch + 14, usable, { size: 11, color: TEXT, lineHeight: 5.2 });
+  const cvDesc = cv < 15 ? "amostra muito homogênea" : cv < 30 ? "amostra aceitável" : "amostra com alta dispersão";
+  textoMultilinha(
+    doc,
+    `Tratamento por fatores de homogeneização (ABNT NBR 14653-2). Coef. de variação de ${fmtNum(cv, 1)}% — ${cvDesc}.`,
+    M, yRow + ch + 12, usable,
+    { size: 11, color: TEXT, lineHeight: 5.2 },
+  );
 }
 
 // ---------- EXPERT EXTRA: CAMPO DE ARBÍTRIO ----------
