@@ -836,7 +836,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
   const sortedRef = [...unit].sort((a, b) => a - b);
   const ref = sortedRef.length ? sortedRef[Math.floor(sortedRef.length / 2)] : 0;
 
-  const PER_PAGE = 4;
+  const PER_PAGE = 6;
   for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
     novaPagina(doc);
     microHeader(doc, corretor);
@@ -844,9 +844,9 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
 
     const pageItems = comparaveis.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
     const usable = PW - M * 2;
-    const gap = 6;
+    const gap = 5;
     const cw = (usable - gap) / 2;
-    const ch = 62;
+    const ch = 52;
     const yStart = 50;
 
     pageItems.forEach((c, idx) => {
