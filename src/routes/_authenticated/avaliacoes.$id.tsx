@@ -354,7 +354,8 @@ function AvaliacaoDetalhe() {
         </Card>
       )}
 
-      {/* ============ ASSISTENTE DE MARKETING ============ */}
+      {/* ============ ASSISTENTE DE MARKETING (somente Expert) ============ */}
+      {plano === "expert" && (
       <Card className="premium-card border-brand-gold">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
@@ -478,6 +479,7 @@ function AvaliacaoDetalhe() {
           )}
         </CardContent>
       </Card>
+      )}
 
 
       <p className="text-xs text-center text-muted-foreground italic">
