@@ -243,7 +243,7 @@ function Planos() {
     },
     {
       nome: "Profissional",
-      preco: "R$ 229",
+      preco: "R$ 249",
       periodo: "/mês",
       desc: "Para corretores em ritmo de produção",
       itens: [
