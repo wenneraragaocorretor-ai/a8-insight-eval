@@ -68,56 +68,58 @@ function Dashboard() {
 
   useEffect(() => {
     const sid = search.session_id;
-    const triggered = sid || search.pagamento === "sucesso";
+    const triggered = sid || search.pagamento === "sucesso" || search.pagamento === "ok";
     if (!triggered || confirmedRef.current) return;
     confirmedRef.current = true;
 
     const run = async () => {
-      let plano = "basico";
+      let plano: string = "basico";
+      let isPayment = false; // pagamento avulso (basico / expert_extra)
       if (sid) {
         try {
-          const res = await confirmFn({ data: { session_id: sid } });
+          const res: any = await confirmFn({ data: { session_id: sid } });
           if (res?.plano) plano = res.plano;
-          queryClient.setQueryData(["assinatura-status"], (current: any) => ({
-            ...(current ?? {}),
-            plano,
-            assinaturaAtiva: plano !== "basico" && plano !== "user",
-          }));
+          isPayment = plano === "basico" || plano === "expert_extra";
           if (import.meta.env.DEV) {
-            console.debug("[confirmarCheckout] plano atualizado:", plano);
+            console.debug("[confirmarCheckout] plano retornado:", plano);
           }
         } catch (e) {
           console.error("[confirmarCheckout]", e);
         }
       }
-      // Força refetch imediato do perfil
-      await queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
-      // Poll para garantir consistência (webhook pode chegar depois)
-      let attempts = 0;
-      while (attempts < 8) {
-        const r = await refetchStatus();
-        if (r.data?.plano && r.data.plano !== "basico" && r.data.plano !== "user") {
-          plano = r.data.plano;
-          break;
-        }
-        if (r.data?.assinaturaAtiva) {
-          plano = r.data.plano ?? plano;
-          break;
-        }
-        attempts++;
-        await new Promise((res) => setTimeout(res, 1200));
-      }
-      const label = PLAN_LABEL[plano] ?? "Básico";
-      setWelcomePlano(label);
-      if (plano === "expert_extra") {
-        toast.success("Pagamento confirmado! +1 laudo Expert adicional disponível.");
-      } else if (plano === "basico" || plano === "user") {
-        toast.success("Compra confirmada! +1 laudo Básico disponível.");
-      } else {
-        toast.success(`Plano ${label} ativado com sucesso!`);
-      }
+
       await queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
       await queryClient.invalidateQueries({ queryKey: ["cobrancas-avulsas"] });
+
+      if (isPayment) {
+        // Compra avulsa — não tem subscription pra "esperar ativar".
+        // Refaz uma vez e exibe a mensagem correta para o plano comprado.
+        await refetchStatus();
+        if (plano === "expert_extra") {
+          setWelcomePlano("Expert (Laudo Avulso)");
+          toast.success("Pagamento confirmado! +1 laudo Expert adicional disponível.");
+        } else {
+          setWelcomePlano("Básico");
+          toast.success("Compra confirmada! +1 laudo Básico disponível.");
+        }
+      } else {
+        // Assinatura recorrente — pode levar alguns segundos pro webhook chegar.
+        let detected = plano;
+        let attempts = 0;
+        while (attempts < 8) {
+          const r = await refetchStatus();
+          if (r.data?.assinaturaAtiva && r.data?.plano && r.data.plano !== "basico" && r.data.plano !== "user") {
+            detected = r.data.plano;
+            break;
+          }
+          attempts++;
+          await new Promise((res) => setTimeout(res, 1200));
+        }
+        const label = PLAN_LABEL[detected] ?? "Básico";
+        setWelcomePlano(label);
+        toast.success(`Plano ${label} ativado com sucesso!`);
+      }
+
       await refetchStatus();
       navigate({ to: "/dashboard", search: {}, replace: true });
     };
