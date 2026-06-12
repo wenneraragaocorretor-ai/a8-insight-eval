@@ -20,7 +20,7 @@ function AuthenticatedLayout() {
       <div className="flex-1 flex flex-col">
         <header className="h-16 border-b flex items-center px-6 justify-between glass sticky top-0 z-10" translate="no">
           <Link to="/dashboard" className="font-bold text-xl text-brand-blue" translate="no">
-            A8 <span className="text-brand-gold">Investimentos</span>
+            A8 <span className="text-brand-gold">Avalia</span>
           </Link>
           <nav className="flex items-center gap-5" translate="no">
             <Link
