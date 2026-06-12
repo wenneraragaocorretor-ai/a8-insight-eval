@@ -125,7 +125,7 @@ function Footer() {
 
         <div className="pt-8 border-t border-[#C8A951]/15 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-white/50 text-xs">
-            © 2026 A8 Investimentos Imobiliários. Todos os direitos reservados.
+            © 2026 A8 Avalia. Todos os direitos reservados.
           </p>
           <p className="text-white/40 text-xs italic">
             Avaliações mercadológicas — não substituem laudo CNAI/IBAPE.
