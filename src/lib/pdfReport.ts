@@ -600,21 +600,26 @@ function paginaSumario(doc: jsPDF, sec: string[]) {
 
   const xCard = PW / 2 + 4;
   const wCard = PW - xCard - M;
-  const hCard = 14;
-  const gap = 4;
+  // Compacta a lista para garantir que todos os itens caibam acima do rodapé
+  const available = PH - 18 - 30; // de y=30 até PH-18
+  const hCard = Math.max(8, Math.min(14, (available - 2 * (sec.length - 1)) / sec.length));
+  const gap = sec.length > 14 ? 1.6 : 3;
+  const numFs = hCard >= 12 ? 13 : 10;
+  const labelFs = hCard >= 12 ? 10 : 8.5;
   let y = 30;
   sec.forEach((nome, i) => {
     card(doc, xCard, y, wCard, hCard, { variant: "darkblue" });
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
+    doc.setFontSize(numFs);
     doc.setTextColor(...GOLD);
-    doc.text(String(i + 3).padStart(2, "0"), xCard + 6, y + 9);
+    doc.text(String(i + 3).padStart(2, "0"), xCard + 6, y + hCard / 2 + numFs * 0.18);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
+    doc.setFontSize(labelFs);
     doc.setTextColor(...WHITE);
-    doc.text(nome.toUpperCase(), xCard + 24, y + 9);
+    doc.text(nome.toUpperCase(), xCard + 22, y + hCard / 2 + labelFs * 0.18);
     y += hCard + gap;
   });
+
 }
 
 // ---------- PAGE: IMÓVEL ----------
