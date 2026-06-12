@@ -61,9 +61,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             return;
           }
           const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
-          const metadataPlanCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as PlanCode | undefined;
+          const rawMetadataPlanCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as PlanCode | undefined;
+          const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : undefined;
           const pricePlanCode = await resolvePlanCodeFromPriceId(priceId);
-          const planCode = pricePlanCode ?? metadataPlanCode ?? "basico";
+          const planCode = priceId ? (pricePlanCode ?? "basico") : (metadataPlanCode ?? "basico");
           const plano = PLANS[planCode]?.db_plan ?? "basico";
 
           console.log("[stripe-webhook] Price ID selecionado:", priceId ?? null);
@@ -140,9 +141,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   );
                   sessionPriceId = lineItems.data?.[0]?.price?.id as string | undefined;
                 }
-                const planCode = await resolvePlanCodeFromPriceId(sessionPriceId)
-                  ?? (session.metadata?.plan_code as PlanCode | undefined)
-                  ?? "basico";
+                const rawMetadataPlanCode = session.metadata?.plan_code as PlanCode | undefined;
+                const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : undefined;
+                const pricePlanCode = await resolvePlanCodeFromPriceId(sessionPriceId);
+                const planCode = sessionPriceId ? (pricePlanCode ?? "basico") : (metadataPlanCode ?? "basico");
                 console.log("[stripe-webhook] Price ID selecionado:", sessionPriceId ?? null);
                 console.log("[stripe-webhook] Plano mapeado:", planCode, "→", PLANS[planCode]?.db_plan ?? "basico");
                 if (userId) {
