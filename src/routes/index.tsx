@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import {
   Sparkles,
   Zap,
@@ -8,9 +10,16 @@ import {
   ChevronDown,
   Quote,
   Check,
+  Loader2,
 } from "lucide-react";
 import heroImg from "../assets/hero-luxury.jpg";
 import { LandingLayout } from "../components/landing/LandingLayout";
+import { supabase } from "../integrations/supabase/client";
+import { criarCheckoutSession } from "../lib/stripe.functions";
+import { toast } from "sonner";
+
+type PlanCode = "basico" | "profissional" | "expert";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -226,8 +235,37 @@ function ComoFunciona() {
 
 /* ===================== PLANOS ===================== */
 function Planos() {
+  const navigate = useNavigate();
+  const startCheckout = useServerFn(criarCheckoutSession);
+  const [loading, setLoading] = useState<PlanCode | null>(null);
+
+  async function handleAssinar(code: PlanCode) {
+    try {
+      setLoading(code);
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        // Sem conta → vai pro cadastro rápido carregando o plano selecionado
+        try {
+          sessionStorage.setItem("a8_plano_pendente", code);
+        } catch {}
+        navigate({ to: "/auth", search: { plan: code } as any });
+        return;
+      }
+      // Já logado → direto pro Stripe Checkout
+      const origin = window.location.origin;
+      const { url } = await startCheckout({ data: { plano: code, origin } });
+      if (!url) throw new Error("URL de checkout não recebida");
+      window.location.href = url;
+    } catch (e: any) {
+      console.error("[landing/assinar]", e);
+      toast.error(e?.message ?? "Erro ao iniciar checkout. Tente novamente.");
+      setLoading(null);
+    }
+  }
+
   const planos = [
     {
+      code: "basico" as PlanCode,
       nome: "Básico",
       preco: "R$ 157",
       periodo: "/laudo",
@@ -242,6 +280,7 @@ function Planos() {
       destaque: false,
     },
     {
+      code: "profissional" as PlanCode,
       nome: "Profissional",
       preco: "R$ 249",
       periodo: "/mês",
@@ -252,13 +291,13 @@ function Planos() {
         "Até 8 fotos com análise da IA",
         "Homogeneização dos comparáveis",
         "Tratamento estatístico básico",
-        
         "PDF 8-10 páginas com sua marca",
         "Caracterização do bairro pela IA",
       ],
       destaque: false,
     },
     {
+      code: "expert" as PlanCode,
       nome: "Expert",
       preco: "R$ 377",
       periodo: "/mês",
@@ -338,18 +377,28 @@ function Planos() {
                   );
                 })}
               </ul>
-              <Link
-                to="/planos"
+              <button
+                type="button"
+                disabled={loading !== null}
+                onClick={() => handleAssinar(p.code)}
                 className={[
-                  "inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-md font-semibold text-sm transition-all",
+                  "inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-md font-semibold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed",
                   p.destaque
                     ? "bg-[#C8A951] text-[#0A1F44] hover:bg-[#E2C97E] shadow-[0_15px_30px_-10px_rgba(200,169,81,0.5)]"
                     : "bg-[#0A1F44] text-white hover:bg-[#0F2D5C]",
                 ].join(" ")}
               >
-                Assinar {p.nome}
-                <ArrowRight size={14} />
-              </Link>
+                {loading === p.code ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Redirecionando...
+                  </>
+                ) : (
+                  <>
+                    Assinar {p.nome}
+                    <ArrowRight size={14} />
+                  </>
+                )}
+              </button>
             </div>
           ))}
         </div>
@@ -357,6 +406,7 @@ function Planos() {
     </section>
   );
 }
+
 
 /* ===================== DEPOIMENTOS ===================== */
 function Depoimentos() {
