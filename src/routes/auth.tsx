@@ -96,7 +96,7 @@ function AuthPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="text-3xl font-bold text-brand-blue flex items-center justify-center gap-1 mb-2">
-            A8 <span className="text-brand-gold">Investimentos</span>
+            A8 <span className="text-brand-gold">Avalia</span>
           </Link>
           <p className="text-muted-foreground">Gerando riqueza, construindo patrimônio</p>
         </div>

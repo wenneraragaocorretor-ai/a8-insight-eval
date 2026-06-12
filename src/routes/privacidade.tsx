@@ -5,11 +5,11 @@ import { LandingLayout } from "../components/landing/LandingLayout";
 export const Route = createFileRoute("/privacidade")({
   head: () => ({
     meta: [
-      { title: "Política de Privacidade — A8 Investimentos" },
+      { title: "Política de Privacidade — A8 Avalia" },
       {
         name: "description",
         content:
-          "Política de Privacidade da A8 Investimentos Imobiliários. Conformidade com a LGPD.",
+          "Política de Privacidade da A8 Avalia. Conformidade com a LGPD.",
       },
     ],
   }),
@@ -27,7 +27,7 @@ function PrivacidadePage() {
 
           <div className="space-y-6 text-[#666666] leading-relaxed text-center">
             <p>
-              A A8 Investimentos Imobiliários coleta e trata dados pessoais em
+              A A8 Avalia coleta e trata dados pessoais em
               conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº
               13.709/2018).
             </p>

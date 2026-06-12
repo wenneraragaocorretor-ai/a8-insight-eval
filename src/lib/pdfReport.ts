@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 
 // ============================================================
-// A8 Investimentos — PDF Premium (portrait A4)
+// A8 Avalia — PDF Premium (portrait A4)
 // 210mm x 297mm | Fundo branco | Dourado #C8A951 | Azul #0F2D5C
 // Margens: 25mm laterais / 20mm topo-base
 // ============================================================
@@ -143,7 +143,7 @@ function microHeader(doc: jsPDF, corretor: CorretorInfo, laudoNum?: string) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(...WHITE);
-  doc.text("INVESTIMENTOS  •  " + (corretor.nome || "").toUpperCase(), M + 7, 7.8);
+  doc.text("AVALIA  •  " + (corretor.nome || "").toUpperCase(), M + 7, 7.8);
 
   // Número do laudo à direita em dourado
   if (laudoNum) {
@@ -171,7 +171,7 @@ function rodape(doc: jsPDF) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(...NAVY);
-    doc.text("INVESTIMENTOS", M + 6, PH - 7);
+    doc.text("AVALIA — AVALIAÇÕES IMOBILIÁRIAS COM IA", M + 6, PH - 7);
 
     // Disclaimer central em itálico cinza
     doc.setFont("helvetica", "italic");
@@ -465,7 +465,7 @@ function paginaCapa(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...WHITE);
-    doc.text("INVESTIMENTOS IMOBILIÁRIOS", M, 27);
+    doc.text("AVALIA", M, 27);
   }
 
   // Etiqueta superior direita
@@ -2125,7 +2125,7 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
     doc.text("A8", PW / 2, logoY + 14, { align: "center" });
     doc.setFontSize(8);
     doc.setTextColor(...GOLD);
-    doc.text("INVESTIMENTOS IMOBILIÁRIOS", PW / 2, logoY + 20, { align: "center" });
+    doc.text("AVALIA", PW / 2, logoY + 20, { align: "center" });
   }
 
   // Linha de assinatura
