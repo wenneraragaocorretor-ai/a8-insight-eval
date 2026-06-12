@@ -2125,7 +2125,7 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
     doc.text("A8", PW / 2, logoY + 14, { align: "center" });
     doc.setFontSize(8);
     doc.setTextColor(...GOLD);
-    doc.text("INVESTIMENTOS IMOBILIÁRIOS", PW / 2, logoY + 20, { align: "center" });
+    doc.text("AVALIA", PW / 2, logoY + 20, { align: "center" });
   }
 
   // Linha de assinatura
