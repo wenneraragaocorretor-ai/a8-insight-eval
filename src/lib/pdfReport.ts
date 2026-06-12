@@ -2439,24 +2439,27 @@ function paginaMarketing(
     { lbl: "Negociação", val: "Desconto de 5% a 10% na negociação.", cor: BLUE },
     { lbl: "Mínimo / À vista", val: desc, cor: [120, 125, 135] },
   ];
-  const rowH = 14;
+  const rowH = 22;
   passos.forEach((p, i) => {
-    const ry = y + i * (rowH + 3);
+    const ry = y + i * (rowH + 4);
     // selo lateral colorido
     doc.setFillColor(...p.cor);
-    doc.roundedRect(M, ry, 40, rowH, 3, 3, "F");
+    doc.roundedRect(M, ry, 36, rowH, 3, 3, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...WHITE);
-    doc.text(p.lbl, M + 20, ry + 8.5, { align: "center" });
-    // texto descritivo (até 2 linhas)
+    doc.text(p.lbl, M + 18, ry + rowH / 2 + 1.4, { align: "center" });
+    // texto descritivo (até 3 linhas, texto completo)
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...TEXT);
-    const tx = M + 46;
-    const tw = usable - 46;
-    const lines = doc.splitTextToSize(p.val, tw).slice(0, 2);
-    doc.text(lines, tx, ry + (lines.length === 1 ? 9 : 6));
+    const tx = M + 42;
+    const tw = usable - 42;
+    const lines = doc.splitTextToSize(p.val, tw).slice(0, 3);
+    const lh = 4.4;
+    const blockH = lines.length * lh;
+    const startY = ry + (rowH - blockH) / 2 + 3.2;
+    doc.text(lines, tx, startY);
   });
 
   // ---- Página 2: Mockup de anúncio ----
