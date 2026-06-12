@@ -1001,8 +1001,10 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
       doc.setTextColor(...BLUE);
       doc.text(fmtBRL(Number(c.valor_anunciado)), x + 20, y + 15);
 
-      // Badge R$/m²
-      const vm = Number(c.area) > 0 ? Number(c.valor_anunciado) / Number(c.area) : 0;
+      // Badge R$/m² (sobre área base do tipo)
+      const abC = areaBaseDe(tipoImovel ?? c.tipo, c).area;
+      const vm = abC > 0 ? Number(c.valor_anunciado) / abC : 0;
+
       if (vm > 0) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
