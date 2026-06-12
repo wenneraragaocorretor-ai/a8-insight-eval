@@ -329,7 +329,7 @@ function Dashboard() {
               <p className="text-sm text-muted-foreground">
                 {ehBasico
                   ? "Compre um novo laudo Básico (R$ 157) ou assine o Profissional/Expert."
-                  : "Faça upgrade para o Expert e tenha laudos ilimitados."}
+                  : "Faça upgrade para o Expert e tenha até 20 laudos/mês."}
               </p>
             </div>
             <Link to="/planos">
