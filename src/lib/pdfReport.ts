@@ -1878,7 +1878,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
   const maxY = PH - 18;
   let y = topY;
   let col = 0;
-  let primeira = true;
+  
 
 
 
