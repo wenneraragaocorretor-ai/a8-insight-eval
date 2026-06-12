@@ -1621,23 +1621,80 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
-  const temFotos = fotos.length > 0;
-  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotos[0] || null;
+  // BÁSICO: até 3 fotos
+  const fotosLim = fotos.slice(0, 3);
+  const fotosDetLim = fotosDet.slice(0, 3);
+  const temFotos = fotosLim.length > 0;
+  const temDocFotos = fotosDetLim.length > 0;
+  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
   paginaSumario(
     doc,
-    ["O Imóvel", "Ambientes", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Comparáveis", "Valor do Imóvel", "Contato"],
+    [
+      "Ficha Técnica",
+      "Localização",
+      ...(temDocFotos ? ["Fotos com Análise"] : temFotos ? ["Fotos do Imóvel"] : []),
+      "Valor do Imóvel",
+      "Contato",
+    ],
   );
-  paginaImovel(doc, avaliacao, rel, corretor);
-  paginaAmbientes(doc, avaliacao, corretor);
-  if (temFotos) paginaFotos(doc, rel, fotos, corretor);
-  paginaBairro(doc, avaliacao, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  paginaFichaTecnica(doc, avaliacao, corretor);
+  paginaLocalizacao(doc, avaliacao, corretor);
+  if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
+  else if (temFotos) paginaFotos(doc, rel, fotosLim, corretor);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
+  marcaDagua(doc); // BÁSICO: marca d'água em todas as páginas
   return doc;
 }
+
+function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+  const rel = resultado?.relatorio_json || {};
+  // PROFISSIONAL: até 8 fotos
+  const fotosLim = fotos.slice(0, 8);
+  const fotosDetLim = fotosDet.slice(0, 8);
+  const temFotos = fotosLim.length > 0;
+  const temDocFotos = fotosDetLim.length > 0;
+  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
+  paginaSumario(
+    doc,
+    [
+      "O Imóvel",
+      "Ficha Técnica",
+      "Ambientes",
+      "Localização",
+      ...(temFotos ? ["Fotos do Imóvel"] : []),
+      ...(temDocFotos ? ["Documentação Fotográfica"] : []),
+      "Análise do Bairro",
+      "Perfil do Público",
+      "Comparáveis",
+      "Homogeneização",
+      "Tratamento Estatístico",
+      "Valor do Imóvel",
+      "Contato",
+    ],
+  );
+  paginaImovel(doc, avaliacao, rel, corretor);
+  paginaFichaTecnica(doc, avaliacao, corretor);
+  paginaAmbientes(doc, avaliacao, corretor);
+  paginaLocalizacao(doc, avaliacao, corretor);
+  if (temFotos) paginaFotos(doc, rel, fotosLim, corretor);
+  if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
+  paginaBairro(doc, avaliacao, rel, corretor);
+  paginaPerfil(doc, rel, corretor);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
+  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  paginaValor(doc, resultado, corretor);
+  paginaContato(doc, corretor);
+  rodape(doc);
+  // PROFISSIONAL: sem marca d'água
+  return doc;
+}
+
 
 function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
