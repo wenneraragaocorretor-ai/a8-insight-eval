@@ -49,8 +49,11 @@ const fmtBRL = (v: number | null | undefined) =>
     : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 // ABNT NBR 14653-2 — área base para R$/m² conforme tipo de imóvel.
-// Casa/Apartamento/Galpão: privativa → construída → total. Terreno: total.
-function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte: "privativa" | "construida" | "total" } {
+// Apartamento: privativa → construída → total.
+// Casa/Sobrado: construída → privativa → total.
+// Galpão: privativa/útil → construída → total.
+// Terreno: total.
+function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte: "privativa" | "construida" | "total" | "util" } {
   const tn = String(tipo ?? "").toLowerCase();
   const priv = Number(item?.area_privativa);
   const constr = Number(item?.area_construida);
@@ -58,6 +61,17 @@ function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte:
   if (tn.includes("terreno")) {
     return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
   }
+  if (tn.includes("casa") || tn.includes("sobrado")) {
+    if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
+    if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
+    return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
+  }
+  if (tn.includes("galp")) {
+    if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área útil", fonte: "util" };
+    if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
+    return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
+  }
+  // Apartamento e demais
   if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
   if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
   return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
@@ -66,6 +80,8 @@ function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte:
 function labelValorM2(tipo: any): string {
   const tn = String(tipo ?? "").toLowerCase();
   if (tn.includes("terreno")) return "Valor/m² total";
+  if (tn.includes("casa") || tn.includes("sobrado")) return "Valor/m² construído";
+  if (tn.includes("galp")) return "Valor/m² útil";
   return "Valor/m² privativo";
 }
 
@@ -536,7 +552,11 @@ function paginaCapa(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   doc.setTextColor(...WHITE);
-  doc.text(String(avaliacao?.localizacao ?? "").toUpperCase(), M, fotoH - 12);
+  {
+    const locFull = String(avaliacao?.localizacao ?? "").toUpperCase();
+    const locLines = doc.splitTextToSize(locFull, PW - M * 2 - 50);
+    doc.text(locLines[0] ?? "", M, fotoH - 12);
+  }
   doc.setFontSize(7);
   doc.setTextColor(...GOLD_LIGHT);
   doc.text("IMÓVEL AVALIADO", M, fotoH - 17);
@@ -1119,9 +1139,11 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(200, 200, 210);
-  doc.text("Mínimo -15%", tx, ty + 22, { align: "center" });
+  const pctMin = central > 0 ? Math.round(((central - minV) / central) * 100) : 15;
+  const pctMax = central > 0 ? Math.round(((maxV - central) / central) * 100) : 15;
+  doc.text(`Mínimo -${pctMin}%`, tx, ty + 22, { align: "center" });
   doc.text("Central", tx + tw / 2, ty + 22, { align: "center" });
-  doc.text("Máximo +15%", tx + tw, ty + 22, { align: "center" });
+  doc.text(`Máximo +${pctMax}%`, tx + tw, ty + 22, { align: "center" });
 
   // 3 ícones informativos (vetoriais)
   const baseY = PH - 38;
@@ -1856,7 +1878,9 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
   const maxY = PH - 18;
   let y = topY;
   let col = 0;
-  let primeira = true;
+  
+
+
 
   const novaPag = () => {
     novaPagina(doc);
@@ -1867,7 +1891,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
   };
 
   novaPag();
-  primeira = false;
+
 
   fotosDet.forEach((f) => {
     if (col === 0 && y + blocoH > maxY) novaPag();
@@ -1900,7 +1924,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
       y += blocoH;
     }
   });
-  void primeira;
+  
 }
 
 // ---------- EXPERT EXTRA: DISPERSÃO (R$/m² × Área) ----------

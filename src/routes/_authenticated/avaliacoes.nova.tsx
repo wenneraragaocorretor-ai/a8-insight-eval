@@ -415,11 +415,15 @@ function NovaAvaliacao() {
         const n = Number(String(v).replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
         return Number.isFinite(n) ? n : 0;
       };
+      // Mapeamento de áreas: área_total no campo "Área Total", e usa área_construída
+      // como fallback de área privativa (para Casa/Sobrado/Galpão é a base de cálculo).
+      const areaTotal = num(d.area_total);
+      const areaPriv = num(d.area_privativa) || num(d.area_construida);
       updateComp(index, {
         fonte: d.fonte ? String(d.fonte) : extrairDominio(url),
         localizacao: d.localizacao ? String(d.localizacao) : "",
-        area: num(d.area_total ?? d.area_construida),
-        area_privativa: num(d.area_privativa),
+        area: areaTotal || areaPriv, // garante algo no campo obrigatório
+        area_privativa: areaPriv,
         valor: num(d.valor),
         quartos: num(d.quartos),
         suites: num(d.suites),
@@ -1520,7 +1524,7 @@ function NovaAvaliacao() {
               <Button
                 onClick={() => setStep(3)}
                 className="bg-brand-blue"
-                disabled={comparaveis.some((c) => !c.fonte || !c.area || !c.valor || Number(c.valor) < 10000)}
+                disabled={comparaveis.some((c) => !c.fonte || !c.localizacao || !c.area || !c.valor || Number(c.valor) < 10000)}
               >
                 Próximo
               </Button>

@@ -47,28 +47,33 @@ serve(async (req) => {
     }
     const plano = profile.plano as string | null
     const creditos = Number(profile.creditos_avulsos ?? 0)
+    if (!plano || (plano !== 'basico' && plano !== 'profissional' && plano !== 'expert')) {
+      return new Response(JSON.stringify({ error: 'Plano inválido' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
     if (plano === 'basico' && creditos < 1) {
       return new Response(JSON.stringify({ error: 'Sem créditos disponíveis' }), {
         status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-    if (plano === 'expert') {
-      const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
+    if (plano === 'profissional' || plano === 'expert') {
+      // Início do mês em UTC para evitar edge-cases de fuso horário
+      const now = new Date()
+      const inicioMes = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
       const { count } = await admin
         .from('avaliacoes')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
         .gte('created_at', inicioMes.toISOString())
-      if ((count ?? 0) >= 20 && creditos < 1) {
-        return new Response(JSON.stringify({ error: 'Limite mensal Expert atingido' }), {
+      const limite = plano === 'expert' ? 20 : 8
+      if ((count ?? 0) >= limite && creditos < 1) {
+        return new Response(JSON.stringify({
+          error: `Limite mensal ${plano === 'expert' ? 'Expert' : 'Profissional'} atingido (${limite} laudos). Adquira créditos avulsos para continuar.`,
+        }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
-    }
-    if (!plano || (plano !== 'basico' && plano !== 'profissional' && plano !== 'expert')) {
-      return new Response(JSON.stringify({ error: 'Plano inválido' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
     }
 
     const { imovel, comparaveis } = await req.json()
@@ -79,7 +84,8 @@ serve(async (req) => {
     }
 
 
-    console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
+    // log mínimo, sem expor localização completa (LGPD)
+    console.log('Iniciando processamento de avaliação')
 
     // Baixa as fotos do imóvel (caminhos no bucket privado) usando service role
     const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 15) : []
@@ -298,10 +304,20 @@ Comparável #${i + 1} (${c.fonte}):
     }
 
     const data = await response.json()
-    const content = data.content[0].text
+    const content = data?.content?.[0]?.text ?? ''
+    if (!content) {
+      console.error('Resposta inesperada da Anthropic:', JSON.stringify(data).slice(0, 500))
+      throw new Error('A IA retornou uma resposta vazia. Tente novamente em alguns segundos.')
+    }
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/)
     const jsonText = jsonMatch ? jsonMatch[1].trim() : content.trim()
-    const result = JSON.parse(jsonText)
+    let result: any
+    try {
+      result = JSON.parse(jsonText)
+    } catch (parseErr) {
+      console.error('JSON inválido da IA. Trecho:', jsonText.slice(0, 300), parseErr)
+      throw new Error('A IA retornou resposta incompleta. Tente novamente ou reduza o número de fotos.')
+    }
 
     // Garante que a área base do cálculo sempre vai no resultado
     result.area_base_calculo = result.area_base_calculo ?? baseImovel.area
