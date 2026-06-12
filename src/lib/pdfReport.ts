@@ -1891,7 +1891,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
   };
 
   novaPag();
-  primeira = false;
+
 
   fotosDet.forEach((f) => {
     if (col === 0 && y + blocoH > maxY) novaPag();
