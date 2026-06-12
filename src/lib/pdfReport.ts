@@ -160,7 +160,7 @@ function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, n
   const maxW = PW - 2 * M;
   let size = 36;
   doc.setFontSize(size);
-  while (size > 14 && doc.getTextWidth(texto) > maxW) {
+  while (size > 11 && doc.getTextWidth(texto) > maxW) {
     size -= 1;
     doc.setFontSize(size);
   }
