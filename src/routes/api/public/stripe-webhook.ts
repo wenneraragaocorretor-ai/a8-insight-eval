@@ -121,7 +121,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             case "checkout.session.completed": {
               const session = event.data.object;
               if (session.subscription) {
-                const sub = await stripeRequest("GET", `/subscriptions/${session.subscription}`);
+                const sub = await stripeRequest(
+                  "GET",
+                  `/subscriptions/${encodeURIComponent(session.subscription)}?expand[]=items.data.price`,
+                );
                 if (!sub.metadata?.user_id && session.metadata?.user_id) {
                   sub.metadata = { ...sub.metadata, ...session.metadata };
                 }
@@ -129,7 +132,14 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
               } else if (session.mode === "payment" && session.payment_status === "paid") {
                 // Pagamento único — Básico (laudo avulso) ou Expert Extra: +1 crédito
                 const userId = session.metadata?.user_id;
-                const sessionPriceId = session.line_items?.data?.[0]?.price?.id as string | undefined;
+                let sessionPriceId = session.line_items?.data?.[0]?.price?.id as string | undefined;
+                if (!sessionPriceId) {
+                  const lineItems = await stripeRequest(
+                    "GET",
+                    `/checkout/sessions/${encodeURIComponent(session.id)}/line_items?limit=1&expand[]=data.price`,
+                  );
+                  sessionPriceId = lineItems.data?.[0]?.price?.id as string | undefined;
+                }
                 const planCode = await resolvePlanCodeFromPriceId(sessionPriceId)
                   ?? (session.metadata?.plan_code as PlanCode | undefined)
                   ?? "basico";

@@ -129,7 +129,9 @@ function PlanosPage() {
       const origin =
         (window.top && window.top !== window.self ? window.top.location.origin : null) ??
         window.location.origin;
-      const { url } = await startCheckout({ data: { plano, origin } });
+      const { url, priceId, plano: planoMapeado } = await startCheckout({ data: { plano, origin } });
+      console.log("Price ID selecionado:", priceId);
+      console.log("Plano mapeado:", planoMapeado);
       if (!url) throw new Error("URL de checkout não recebida");
 
       const win = window.open(url, "_blank", "noopener,noreferrer");
