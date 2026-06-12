@@ -48,6 +48,28 @@ const fmtBRL = (v: number | null | undefined) =>
     ? "—"
     : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
+// ABNT NBR 14653-2 — área base para R$/m² conforme tipo de imóvel.
+// Casa/Apartamento/Galpão: privativa → construída → total. Terreno: total.
+function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte: "privativa" | "construida" | "total" } {
+  const tn = String(tipo ?? "").toLowerCase();
+  const priv = Number(item?.area_privativa);
+  const constr = Number(item?.area_construida);
+  const total = Number(item?.area_total ?? item?.area);
+  if (tn.includes("terreno")) {
+    return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
+  }
+  if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
+  if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
+  return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
+}
+
+function labelValorM2(tipo: any): string {
+  const tn = String(tipo ?? "").toLowerCase();
+  if (tn.includes("terreno")) return "Valor/m² total";
+  return "Valor/m² privativo";
+}
+
+
 const fmtNum = (v: number | null | undefined, digits = 2) =>
   v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("pt-BR", { maximumFractionDigits: digits });
 
@@ -927,13 +949,15 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 }
 
 // ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
-function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) {
-  // Referência: mediana de R$/m²
+function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any) {
+  // Referência: mediana de R$/m² (sobre área base por tipo)
   const unit = comparaveis
-    .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
-    .map((c) => Number(c.valor_anunciado) / Number(c.area));
+    .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
+    .filter((p) => p.ab > 0 && p.v > 0)
+    .map((p) => p.v / p.ab);
   const sortedRef = [...unit].sort((a, b) => a - b);
   const ref = sortedRef.length ? sortedRef[Math.floor(sortedRef.length / 2)] : 0;
+
 
   const PER_PAGE = 6;
   for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
@@ -977,8 +1001,10 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) 
       doc.setTextColor(...BLUE);
       doc.text(fmtBRL(Number(c.valor_anunciado)), x + 20, y + 15);
 
-      // Badge R$/m²
-      const vm = Number(c.area) > 0 ? Number(c.valor_anunciado) / Number(c.area) : 0;
+      // Badge R$/m² (sobre área base do tipo)
+      const abC = areaBaseDe(tipoImovel ?? c.tipo, c).area;
+      const vm = abC > 0 ? Number(c.valor_anunciado) / abC : 0;
+
       if (vm > 0) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
@@ -1291,8 +1317,9 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
   type Row = { idx: number; fonte: string; fatores: Array<[string, number]>; total: number };
   const rows: Row[] = comparaveis.map((c, i) => {
     const fOferta = 0.9;
-    const areaA = Number(a?.area_total) || 0;
-    const areaC = Number(c.area) || 0;
+    const areaA = areaBaseDe(a?.tipo_imovel, a).area;
+    const areaC = areaBaseDe(a?.tipo_imovel, c).area;
+
     let fArea = 1.0;
     if (areaA > 0 && areaC > 0) fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
     const pA = rank(ordemPadrao, norm(a?.padrao));
@@ -1378,14 +1405,15 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
 }
 
 // ---------- EXPERT EXTRA: TRATAMENTO ESTATÍSTICO ----------
-function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) {
+function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any) {
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Tratamento Estatístico");
 
   const unit = comparaveis
-    .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
-    .map((c) => Number(c.valor_anunciado) / Number(c.area));
+    .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
+    .filter((p) => p.ab > 0 && p.v > 0)
+    .map((p) => p.v / p.ab);
   let media = 0, mediana = 0, desvio = 0, cv = 0;
   if (unit.length) {
     media = unit.reduce((a, b) => a + b, 0) / unit.length;
@@ -1405,12 +1433,14 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   const ch = 52;
   const yRow = 56;
 
+  const lblM2 = labelValorM2(tipoImovel);
   const cards: Array<{ bg: [number, number, number]; fg: [number, number, number]; accent: [number, number, number]; label: string; value: string }> = [
-    { bg: NAVY, fg: WHITE, accent: GOLD, label: "Média R$/m²", value: fmtBRL(media) },
-    { bg: BLUE, fg: WHITE, accent: GOLD, label: "Mediana R$/m²", value: fmtBRL(mediana) },
+    { bg: NAVY, fg: WHITE, accent: GOLD, label: `Média ${lblM2}`, value: fmtBRL(media) },
+    { bg: BLUE, fg: WHITE, accent: GOLD, label: `Mediana ${lblM2}`, value: fmtBRL(mediana) },
     { bg: WHITE, fg: BLUE, accent: GOLD, label: "Desvio Padrão", value: fmtBRL(desvio) },
     { bg: WHITE, fg: cvColor, accent: cvColor, label: "Coef. Variação", value: `${fmtNum(cv, 1)}%` },
   ];
+
   cards.forEach((c, i) => {
     const x = M + i * (cw + gap);
     doc.setFillColor(...c.bg);
@@ -1507,7 +1537,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAmbientes(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
@@ -1529,7 +1559,7 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
@@ -1863,11 +1893,14 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
 function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   novaPagina(doc);
   microHeader(doc, corretor);
-  tituloPagina(doc, "Dispersão dos Comparáveis — Valor/m² × Área");
+  const tipoImovel = avaliacao?.tipo_imovel;
+  const lblM2 = labelValorM2(tipoImovel);
+  tituloPagina(doc, `Dispersão dos Comparáveis — ${lblM2} × Área`);
 
   const pts = comparaveis
-    .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
-    .map((c) => ({ x: Number(c.area), y: Number(c.valor_anunciado) / Number(c.area) }));
+    .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
+    .filter((p) => p.ab > 0 && p.v > 0)
+    .map((p) => ({ x: p.ab, y: p.v / p.ab }));
 
   // Detecta outliers via 1.5 * desvio padrão em y
   let mean = 0, sd = 0;
@@ -1879,11 +1912,12 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
   const outliers = pts.filter((p) => sd > 0 && Math.abs(p.y - mean) > 1.5 * sd);
 
   // Ponto do imóvel avaliado
-  const avalArea = Number(avaliacao?.area_total) || 0;
+  const avalArea = areaBaseDe(tipoImovel, avaliacao).area;
   const avalY =
     Number(resultado?.valor_unitario_medio) ||
     (Number(resultado?.valor_central) > 0 && avalArea > 0 ? Number(resultado.valor_central) / avalArea : 0);
   const avalPoint = avalArea > 0 && avalY > 0 ? { x: avalArea, y: avalY } : null;
+
 
   // Regressão linear nos inliers
   let slope = 0, intercept = mean;
@@ -1992,7 +2026,7 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
   doc.setFontSize(9);
   doc.setTextColor(...BLUE);
   doc.text("Área total (m²)", (x0 + x1) / 2, y1 + 11, { align: "center" });
-  doc.text("Valor por m² (R$/m²)", x0 - 16, (y0 + y1) / 2, { align: "center", angle: 90 });
+  doc.text(`${lblM2} (R$/m²)`, x0 - 16, (y0 + y1) / 2, { align: "center", angle: 90 });
 
   // Legenda
   const lgY = PH - 22;
@@ -2516,10 +2550,10 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDet, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
-  paginaEstatistica(doc, comparaveis, corretor);
+  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, resultado, corretor);
   if (temMkt && marketing) paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);

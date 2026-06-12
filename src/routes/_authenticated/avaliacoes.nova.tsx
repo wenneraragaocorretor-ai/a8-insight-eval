@@ -888,8 +888,15 @@ function NovaAvaliacao() {
                   placeholder="Opcional"
                   onChange={(e) => setImovelField("area_privativa", toNum(e.target.value))}
                 />
+                {["Casa", "Apartamento", "Sobrado", "Galpão"].includes(imovel.tipo) &&
+                  (!imovel.area_privativa || imovel.area_privativa <= 0) && (
+                    <p className="text-xs rounded-md border border-yellow-400 bg-yellow-50 text-yellow-800 px-3 py-2">
+                      Informe a Área Privativa para um cálculo mais preciso — será usada como base do valor/m².
+                    </p>
+                  )}
               </div>
             )}
+
 
             {(campos.quartos || campos.suites || campos.banheiros || campos.vagas) && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:col-span-2">

@@ -117,20 +117,25 @@ serve(async (req) => {
     const areaBaseDe = (im: any, tipoRef?: string) => {
       const tn = String(tipoRef ?? im.tipo ?? '').toLowerCase()
       const total = im.area_total ?? im.area
+      if (tn.includes('terreno')) {
+        return { area: Number(total) || 0, fonte: 'total' as const, label: 'área total do terreno' }
+      }
       if (tn.includes('apart')) {
         const r = pick(im.area_privativa, total)
         return { ...r, label: r.fonte === 'privativa' ? 'área privativa' : 'área total' }
       }
-      if (tn.includes('casa')) {
+      if (tn.includes('casa') || tn.includes('sobrado')) {
         const r = pick(im.area_privativa, total)
         return { ...r, label: r.fonte === 'privativa' ? 'área construída' : 'área total' }
       }
-      if (tn.includes('terreno')) {
-        return { area: Number(total) || 0, fonte: 'total' as const, label: 'área total do terreno' }
+      if (tn.includes('galp')) {
+        const r = pick(im.area_privativa, total)
+        return { ...r, label: r.fonte === 'privativa' ? 'área privativa do galpão' : 'área total' }
       }
       const r = pick(im.area_privativa, total)
       return { ...r, label: r.fonte === 'privativa' ? 'área privativa/útil' : 'área total' }
     }
+
 
     const baseImovel = areaBaseDe(imovel)
     const basesComparaveis = comparaveis.map((c: any) => areaBaseDe(c, imovel.tipo))
