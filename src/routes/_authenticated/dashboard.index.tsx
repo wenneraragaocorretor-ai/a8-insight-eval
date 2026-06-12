@@ -126,7 +126,7 @@ function Dashboard() {
   }, [search.session_id, search.pagamento]);
 
   if (!user) return null;
-  const nome = user.user_metadata?.nome || user.email?.split("@")[0];
+  const nome = perfilData?.profile?.nome || user.user_metadata?.nome || user.email?.split("@")[0];
   const planoLabel = status ? PLAN_LABEL[status.plano] ?? "Básico" : "—";
   const planoCode = status?.plano ?? "basico";
   const ehBasico = planoCode === "basico" || planoCode === "user";
