@@ -279,11 +279,13 @@ function textoMultilinha(
 function iconCircle(doc: jsPDF, cx: number, cy: number, r: number, glyph: string, cor: [number, number, number] = GOLD) {
   doc.setFillColor(...cor);
   doc.circle(cx, cy, r, "F");
+  if (!glyph) return;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(r * 1.5);
   doc.setTextColor(255, 255, 255);
   doc.text(glyph, cx, cy + r * 0.55, { align: "center" });
 }
+
 
 function progressBar(doc: jsPDF, x: number, y: number, w: number, pct: number, cor: [number, number, number] = GOLD) {
   doc.setFillColor(...BORDER);
