@@ -2026,7 +2026,7 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
   doc.setFontSize(9);
   doc.setTextColor(...BLUE);
   doc.text("Área total (m²)", (x0 + x1) / 2, y1 + 11, { align: "center" });
-  doc.text("Valor por m² (R$/m²)", x0 - 16, (y0 + y1) / 2, { align: "center", angle: 90 });
+  doc.text(`${lblM2} (R$/m²)`, x0 - 16, (y0 + y1) / 2, { align: "center", angle: 90 });
 
   // Legenda
   const lgY = PH - 22;
