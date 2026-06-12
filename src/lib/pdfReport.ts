@@ -119,7 +119,13 @@ function card(
 
 function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, number] = BLUE) {
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(36);
+  const maxW = PW - 2 * M;
+  let size = 36;
+  doc.setFontSize(size);
+  while (size > 14 && doc.getTextWidth(texto) > maxW) {
+    size -= 1;
+    doc.setFontSize(size);
+  }
   doc.setTextColor(...cor);
   doc.text(texto, M, y);
   doc.setDrawColor(...GOLD);
