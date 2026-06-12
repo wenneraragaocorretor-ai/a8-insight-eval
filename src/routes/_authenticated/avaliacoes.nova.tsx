@@ -375,6 +375,72 @@ function NovaAvaliacao() {
     novoComparavel(2),
     novoComparavel(3),
   ]);
+  const [importUrlAberto, setImportUrlAberto] = useState<Record<number, boolean>>({});
+  const [importUrlValor, setImportUrlValor] = useState<Record<number, string>>({});
+  const [importandoIdx, setImportandoIdx] = useState<number | null>(null);
+
+  const importarComparavelPorUrl = async (index: number) => {
+    const id = comparaveis[index]?.id;
+    if (id == null) return;
+    const url = (importUrlValor[id] ?? "").trim();
+    if (!url) {
+      toast.error("Cole a URL do anúncio");
+      return;
+    }
+    setImportandoIdx(index);
+    try {
+      const { data, error } = await supabase.functions.invoke("extrair-comparavel", {
+        body: { url },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const d = data?.dados ?? {};
+      const normPadrao = (v: any): string => {
+        const s = String(v ?? "").toLowerCase();
+        if (s.includes("luxo")) return "Luxo";
+        if (s.includes("alto")) return "Alto";
+        if (s.includes("simpl")) return "Simples";
+        return "Normal";
+      };
+      const normConserv = (v: any): string => {
+        const s = String(v ?? "").toLowerCase();
+        if (s.includes("ótim") || s.includes("otim") || s.includes("novo")) return "Novo";
+        if (s.includes("regular")) return "Regular";
+        if (s.includes("ruim") || s.includes("ruím")) return "Ruim";
+        return "Bom";
+      };
+      const num = (v: any): number => {
+        if (v == null) return 0;
+        if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+        const n = Number(String(v).replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+        return Number.isFinite(n) ? n : 0;
+      };
+      updateComp(index, {
+        fonte: d.fonte ? String(d.fonte) : extrairDominio(url),
+        localizacao: d.localizacao ? String(d.localizacao) : "",
+        area: num(d.area_total ?? d.area_construida),
+        area_privativa: num(d.area_privativa),
+        valor: num(d.valor),
+        quartos: num(d.quartos),
+        suites: num(d.suites),
+        banheiros: num(d.banheiros),
+        vagas: num(d.vagas),
+        padrao: normPadrao(d.padrao_construtivo),
+        conservacao: normConserv(d.estado_conservacao),
+        idade: num(d.idade),
+        caracteristicas: Array.isArray(d.caracteristicas)
+          ? d.caracteristicas.filter((c: any) => CARACTERISTICAS_COMPARAVEL.includes(String(c)))
+          : [],
+      });
+      toast.success("Dados importados com sucesso! Revise e confirme.");
+      setImportUrlAberto((s) => ({ ...s, [id]: false }));
+    } catch (e: any) {
+      console.error("[importarComparavelPorUrl]", e);
+      toast.error(e?.message ?? "Não foi possível importar os dados");
+    } finally {
+      setImportandoIdx(null);
+    }
+  };
 
   type FotoItem = {
     path: string;
