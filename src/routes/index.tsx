@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import {
   Sparkles,
   Zap,
@@ -8,9 +10,16 @@ import {
   ChevronDown,
   Quote,
   Check,
+  Loader2,
 } from "lucide-react";
 import heroImg from "../assets/hero-luxury.jpg";
 import { LandingLayout } from "../components/landing/LandingLayout";
+import { supabase } from "../integrations/supabase/client";
+import { criarCheckoutSession } from "../lib/stripe.functions";
+import { toast } from "sonner";
+
+type PlanCode = "basico" | "profissional" | "expert";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
