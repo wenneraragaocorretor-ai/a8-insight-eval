@@ -465,7 +465,7 @@ function paginaCapa(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...WHITE);
-    doc.text("INVESTIMENTOS IMOBILIÁRIOS", M, 27);
+    doc.text("AVALIA", M, 27);
   }
 
   // Etiqueta superior direita
