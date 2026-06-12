@@ -175,7 +175,7 @@ function AvaliacaoDetalhe() {
       }
     }
     const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
-    gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
+    await gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
       modelo,
       plano,
       fotosDataUrls,
