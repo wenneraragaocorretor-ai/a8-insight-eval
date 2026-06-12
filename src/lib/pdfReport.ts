@@ -873,22 +873,29 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
   doc.setTextColor(...TEXT);
   doc.text(familia, cx, 122, { align: "center" });
 
-  // 3 motivações com ícones
+  // 3 motivações com marcadores numerados dourados
   const motivRaw = Array.isArray(pp.motivacoes) && pp.motivacoes.length
     ? pp.motivacoes.slice(0, 3).map(String)
-    : String(pp.motivacao_compra ?? "Upgrade | Investimento | Família")
+    : String(pp.motivacao_compra ?? "Upgrade patrimonial | Investimento | Família")
         .split(/[|,/]+/).map((s: string) => s.trim()).filter(Boolean).slice(0, 3);
   if (motivRaw.length) {
-    const baseY = 138;
+    const baseY = 140;
     const blockW = usable / motivRaw.length;
-    const glyphs = ["♥", "★", "▲"];
     motivRaw.forEach((m: string, i: number) => {
       const mx = M + blockW * i + blockW / 2;
-      iconCircle(doc, mx, baseY, 6, glyphs[i] || "•", GOLD);
+      // círculo dourado com número
+      doc.setFillColor(...GOLD);
+      doc.circle(mx, baseY, 5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...WHITE);
+      doc.text(String(i + 1), mx, baseY + 1.6, { align: "center" });
+      // texto da motivação
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.setTextColor(...BLUE);
-      doc.text(m, mx, baseY + 14, { align: "center" });
+      const lines = doc.splitTextToSize(m, blockW - 8);
+      doc.text(lines, mx, baseY + 12, { align: "center" });
     });
   }
 
