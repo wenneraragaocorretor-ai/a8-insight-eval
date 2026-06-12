@@ -28,17 +28,17 @@ const PLANOS = [
     modo: "avulso" as const,
     destaque: false,
     badge: null as string | null,
+    subtitulo: "Pagamento único — 1 laudo por compra",
     db: "basico",
     features: [
-      "1 laudo por compra (pagamento único)",
-      "Ficha técnica básica",
+      "1 laudo por compra (avulso)",
+      "Ficha técnica completa",
       "Até 3 fotos com análise da IA",
-      "Comparáveis simples (sem homogeneização)",
-      "Valor estimado sem tratamento estatístico",
+      "Pesquisa de comparáveis de mercado",
+      "Mapa de localização",
       "PDF com logo e dados do corretor",
       "Laudo com marca d'água A8",
-      "Mapa de localização",
-      "1 edição permitida por laudo",
+      "1 edição por laudo",
     ],
   },
   {
@@ -49,6 +49,7 @@ const PLANOS = [
     modo: "assinatura" as const,
     destaque: false,
     badge: "Melhor Custo-Benefício" as string | null,
+    subtitulo: "Para corretores em ritmo de produção",
     db: "profissional",
     features: [
       "8 laudos por mês",
@@ -57,11 +58,9 @@ const PLANOS = [
       "Homogeneização dos comparáveis",
       "Tratamento estatístico básico",
       "Mapa de localização",
-      "PDF com logo e dados do corretor",
       "Caracterização do bairro pela IA",
       "Perfil do público-alvo",
-      "Laudo sem marca d'água",
-      "PDF 8-10 páginas",
+      "PDF 8-10 páginas sem marca d'água",
       "1 edição por laudo",
     ],
   },
@@ -72,12 +71,12 @@ const PLANOS = [
     periodo: "/mês",
     modo: "assinatura" as const,
     destaque: true,
-    badge: "MAIS POPULAR" as string | null,
+    badge: "Mais Completo" as string | null,
+    subtitulo: "O laudo definitivo para qualquer imóvel",
     db: "expert",
     features: [
       "Até 20 laudos/mês",
-      "Laudos adicionais por R$ 12,00/laudo",
-      "Tudo do Profissional, mais:",
+      "Tudo do Profissional +",
       "Até 10 fotos com análise individual da IA",
       "Gráfico de dispersão e curva de tendência",
       "Laudo completo NBR 14653-2",
@@ -87,10 +86,10 @@ const PLANOS = [
       "Estratégia de divulgação por canais",
       "QR Code de autenticidade no laudo",
       "Número do laudo (LAU-XXXXXX)",
-      "Laudo sem marca d'água",
-      "PDF 15+ páginas premium",
+      "PDF 15+ páginas sem marca d'água",
+      "Chat com IA especialista integrado ao laudo",
+      "Laudos adicionais por R$ 12,00/laudo",
       "1 edição por laudo",
-      "★ Chat com IA especialista integrado ao laudo",
     ],
   },
 ];
@@ -240,9 +239,7 @@ function PlanosPage() {
                   <span className="text-4xl font-bold">{p.preco}</span>
                   <span className="text-muted-foreground">{p.periodo}</span>
                 </div>
-                {p.modo === "avulso" && (
-                  <p className="text-xs text-muted-foreground mt-1">Pagamento único, não recorrente</p>
-                )}
+                <p className="text-xs text-muted-foreground mt-1">{p.subtitulo}</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-2">
@@ -272,7 +269,17 @@ function PlanosPage() {
                 >
                   {loading === p.code ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...</>
-                  ) : p.modo === "avulso" ? "Comprar laudo" : ehAtual ? "Plano atual" : "Assinar"}
+                  ) : p.modo === "avulso" ? (
+                    "Comprar Laudo"
+                  ) : ehAtual ? (
+                    "Plano atual"
+                  ) : p.code === "profissional" ? (
+                    "Assinar Profissional"
+                  ) : p.code === "expert" ? (
+                    "Assinar Expert"
+                  ) : (
+                    "Assinar"
+                  )}
                 </Button>
               </CardContent>
             </Card>
