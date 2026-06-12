@@ -321,17 +321,25 @@ function AvaliacaoDetalhe() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {comparaveis.map((c: any) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.fonte}</TableCell>
-                  <TableCell>{c.localizacao || "—"}</TableCell>
-                  <TableCell className="text-right">{c.area}</TableCell>
-                  <TableCell className="text-right">{fmtBRL(Number(c.valor_anunciado))}</TableCell>
-                  <TableCell className="text-right">
-                    {c.area > 0 ? fmtBRL(Number(c.valor_anunciado) / Number(c.area)) : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {comparaveis.map((c: any) => {
+                const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
+                const priv = Number(c.area_privativa);
+                const total = Number(c.area);
+                const areaBase = tn.includes("terreno")
+                  ? total
+                  : (Number.isFinite(priv) && priv > 0 ? priv : total);
+                return (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.fonte}</TableCell>
+                    <TableCell>{c.localizacao || "—"}</TableCell>
+                    <TableCell className="text-right">{c.area}</TableCell>
+                    <TableCell className="text-right">{fmtBRL(Number(c.valor_anunciado))}</TableCell>
+                    <TableCell className="text-right">
+                      {areaBase > 0 ? fmtBRL(Number(c.valor_anunciado) / areaBase) : "—"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
