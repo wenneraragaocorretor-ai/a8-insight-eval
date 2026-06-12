@@ -11,11 +11,16 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
     }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { PLANS, ensurePrice, stripeRequest } = await import("./stripe.server");
+    const { PLANS, ensurePrice, listConfiguredStripePrices, stripeRequest } = await import("./stripe.server");
     const { supabase, userId } = context;
 
     const plan = PLANS[data.plano];
     const priceId = await ensurePrice(plan);
+
+    const configuredPrices = await listConfiguredStripePrices();
+    console.log("[checkout] Price IDs configurados no Stripe:", configuredPrices);
+    console.log("Price ID selecionado:", priceId);
+    console.log("Plano mapeado:", data.plano, "→", plan.db_plan);
 
     // Garante profile + stripe_customer_id (upsert cria a linha se faltar)
     const { data: profile } = await supabase
@@ -67,7 +72,7 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
 
     const session = await stripeRequest("POST", "/checkout/sessions", sessionBody);
 
-    return { url: session.url as string };
+    return { url: session.url as string, priceId, plano: data.plano };
   });
 
 export const getStatusAssinatura = createServerFn({ method: "GET" })
@@ -113,7 +118,7 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ session_id: z.string() }).parse(data))
   .handler(async ({ data, context }) => {
     // Fallback caso o webhook ainda não tenha sido entregue (ex.: ambiente dev sem webhook).
-    const { stripeRequest, PLANS } = await import("./stripe.server");
+    const { stripeRequest, PLANS, resolvePlanCodeFromPriceId } = await import("./stripe.server");
     const { supabase, userId } = context;
 
     const session = await stripeRequest(
@@ -128,14 +133,18 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
     let planCode = session.metadata?.plan_code as keyof typeof PLANS | undefined;
     const lineItemPriceId = session.line_items?.data?.[0]?.price?.id as string | undefined;
     if (!planCode && lineItemPriceId) {
-      const price = await stripeRequest("GET", `/prices/${encodeURIComponent(lineItemPriceId)}`);
-      const lookupKey = price.lookup_key as string | undefined;
-      const byLookup = Object.values(PLANS).find((plan) => plan.lookup_key === lookupKey);
-      if (byLookup) planCode = byLookup.code as keyof typeof PLANS;
+      planCode = (await resolvePlanCodeFromPriceId(lineItemPriceId)) ?? undefined;
     }
 
+    console.log("[confirmarCheckout] Price ID selecionado:", lineItemPriceId ?? null);
+    console.log("[confirmarCheckout] Plano mapeado:", planCode ?? "basico");
+
     if (!planCode || !PLANS[planCode]) {
-      throw new Error("Não foi possível identificar o plano comprado no checkout");
+      console.warn("[confirmarCheckout] Price ID não reconhecido — aplicando fallback seguro para Básico", {
+        sessionId: session.id,
+        priceId: lineItemPriceId ?? null,
+      });
+      planCode = "basico";
     }
 
     const plan = PLANS[planCode];
