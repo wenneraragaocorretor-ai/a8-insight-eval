@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
-import { getMapaEstatico } from "../../lib/mapa.functions";
+
 import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
 import { supabase } from "../../integrations/supabase/client";
