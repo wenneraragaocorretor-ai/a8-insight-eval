@@ -68,7 +68,7 @@ function Hero() {
           <p className="text-lg sm:text-xl text-white/80 font-light max-w-2xl leading-relaxed mb-12">
             Laudos profissionais gerados por inteligência artificial em minutos.
             Precisão técnica conforme <span className="text-[#E2C97E]">NBR 14653-2</span>,
-            sofisticação para o mercado de luxo.
+            para todo o mercado imobiliário.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
