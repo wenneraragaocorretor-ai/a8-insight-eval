@@ -47,28 +47,33 @@ serve(async (req) => {
     }
     const plano = profile.plano as string | null
     const creditos = Number(profile.creditos_avulsos ?? 0)
+    if (!plano || (plano !== 'basico' && plano !== 'profissional' && plano !== 'expert')) {
+      return new Response(JSON.stringify({ error: 'Plano inválido' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
     if (plano === 'basico' && creditos < 1) {
       return new Response(JSON.stringify({ error: 'Sem créditos disponíveis' }), {
         status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-    if (plano === 'expert') {
-      const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
+    if (plano === 'profissional' || plano === 'expert') {
+      // Início do mês em UTC para evitar edge-cases de fuso horário
+      const now = new Date()
+      const inicioMes = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
       const { count } = await admin
         .from('avaliacoes')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
         .gte('created_at', inicioMes.toISOString())
-      if ((count ?? 0) >= 20 && creditos < 1) {
-        return new Response(JSON.stringify({ error: 'Limite mensal Expert atingido' }), {
+      const limite = plano === 'expert' ? 20 : 8
+      if ((count ?? 0) >= limite && creditos < 1) {
+        return new Response(JSON.stringify({
+          error: `Limite mensal ${plano === 'expert' ? 'Expert' : 'Profissional'} atingido (${limite} laudos). Adquira créditos avulsos para continuar.`,
+        }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
-    }
-    if (!plano || (plano !== 'basico' && plano !== 'profissional' && plano !== 'expert')) {
-      return new Response(JSON.stringify({ error: 'Plano inválido' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
     }
 
     const { imovel, comparaveis } = await req.json()
