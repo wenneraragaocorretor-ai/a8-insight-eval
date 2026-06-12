@@ -2549,7 +2549,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
-  paginaEstatistica(doc, comparaveis, corretor);
+  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, resultado, corretor);
   if (temMkt && marketing) paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);
