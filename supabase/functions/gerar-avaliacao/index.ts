@@ -169,22 +169,25 @@ REGRA DE ÁREA BASE (ABNT NBR 14653-2) — OBRIGATÓRIA para R$/m²:
 A mesma regra se aplica a cada comparável (use a área privativa quando disponível).
 O "valor_unitario_medio" DEVE ser calculado sobre a área base — NÃO use área total quando houver privativa.
 
-ANÁLISE DE APROVEITAMENTO DO LOTE — REGRA OBRIGATÓRIA:
-NUNCA conclua "baixo aproveitamento" do terreno baseando-se apenas na relação
-matemática entre área construída e área total do lote. Avalie o aproveitamento
-de forma CONTEXTUAL e INTELIGENTE, considerando o conjunto:
-- Quantidade de unidades no lote (múltiplas casas/apartamentos = aproveitamento alto);
-- Uso misto (residencial + comercial) indica aproveitamento funcional;
-- Número de vagas de garagem (muitas vagas = uso eficiente do solo);
-- Ambientes listados pelo corretor (sociais, serviço, outros);
-- Padrão construtivo informado (alto padrão e luxo frequentemente priorizam
-  áreas livres, jardins, lazer e recuos — isso NÃO é baixo aproveitamento).
-Se o imóvel tiver múltiplas unidades, uso misto, muitas vagas, ambientes
-diversificados ou alto padrão construtivo, reconheça como APROVEITAMENTO
-FUNCIONAL E POSITIVO do lote, independentemente da taxa de ocupação bruta.
-Só mencione "baixo aproveitamento" quando houver evidência clara de
-subutilização (ex.: terreno grande com construção mínima, sem vagas,
-sem ambientes adicionais, padrão simples e sem outras unidades).
+ANÁLISE DE APROVEITAMENTO DO LOTE — REGRA OBRIGATÓRIA E RESTRITIVA:
+PROIBIDO concluir "baixo aproveitamento" ou "aproveitamento moderado" do
+terreno baseando-se na simples relação matemática entre área construída e
+área total do lote. NÃO inclua esse tipo de observação em "pontos_atencao"
+para imóveis residenciais comuns (casas, sobrados, apartamentos térreos).
+Uma casa com 120m² construídos em um terreno de 250m² é COMPLETAMENTE
+ADEQUADA — recuos, quintal, jardim e área livre são esperados e desejáveis
+em uso residencial, NUNCA caracterizam ponto de atenção.
+
+O aproveitamento do lote SÓ pode ser mencionado como ponto de atenção
+quando houver evidência contextual clara e específica, como:
+- Zoneamento que permite gabarito muito maior do que o utilizado em região
+  nobre com forte pressão construtiva (potencial econômico desperdiçado);
+- Terreno em área de altíssimo valor comercial mantido com construção
+  mínima e sem outras unidades;
+- Subutilização explícita relatada pelo corretor.
+Na ausência dessas evidências, NÃO mencione aproveitamento do lote em
+"pontos_atencao". Para casas e sobrados em lotes residenciais padrão,
+considere o aproveitamento como adequado e SILENCIE o assunto.
 
 
 Para este imóvel, a área base já está determinada: "${baseImovel.label}" = ${baseImovel.area}m².
