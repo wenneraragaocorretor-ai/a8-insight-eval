@@ -162,9 +162,14 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                     creditos_avulsos: novosCreditos,
                     stripe_customer_id: session.customer ?? null,
                   };
-                  // Só vira plano "basico" se for compra de laudo Básico.
-                  // Para "expert_extra", preserva o plano atual (Expert).
-                  if (planCode === "basico") upsertData.plano = "basico";
+                  // Só vira plano "basico" se for compra avulsa do Básico E o usuário
+                  // não tiver uma assinatura ativa (evita downgrade de Profissional/Expert).
+                  if (planCode === "basico") {
+                    const temAssinaturaAtiva =
+                      existing?.subscription_status === "active" ||
+                      existing?.subscription_status === "trialing";
+                    if (!temAssinaturaAtiva) upsertData.plano = "basico";
+                  }
                   const { error } = await supabaseAdmin.from("profiles").upsert(upsertData, { onConflict: "id" });
                   if (error) throw error;
                   console.log("[stripe-webhook] +1 crédito", { userId, planCode, novosCreditos });
