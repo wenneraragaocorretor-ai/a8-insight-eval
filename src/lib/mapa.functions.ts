@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const schema = z.object({ endereco: z.string().trim().min(3).max(500) });
+const schema = z.object({
+  endereco: z.string().trim().min(3).max(500),
+  cidade: z.string().trim().max(120).optional(),
+  estado: z.string().trim().max(60).optional(),
+});
 
 const UA = "A8-Avaliacoes/1.0 (PDF generator; contact: contato@a8investimentos.com)";
 
@@ -21,10 +25,24 @@ export const getMapaEstatico = createServerFn({ method: "POST" })
   .inputValidator((data) => schema.parse(data))
   .handler(async ({ data }) => {
     try {
-      // 1) Geocoding via Nominatim (OpenStreetMap) — sem chave
+      // Monta query priorizando contexto Brasil — evita falsos positivos
+      // (ex.: nomes de ruas comuns em outros países como Panamá).
+      let q = data.endereco;
+      const lower = q.toLowerCase();
+      if (data.cidade && !lower.includes(data.cidade.toLowerCase())) {
+        q += `, ${data.cidade}`;
+      }
+      if (data.estado && !lower.includes(data.estado.toLowerCase())) {
+        q += `, ${data.estado}`;
+      }
+      if (!/brasil|brazil/i.test(q)) {
+        q += ", Brasil";
+      }
+
+      // 1) Geocoding via Nominatim (OpenStreetMap) — sem chave, restrito ao Brasil
       const geoUrl =
-        "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
-        encodeURIComponent(data.endereco);
+        "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=" +
+        encodeURIComponent(q);
       const geoRes = await fetch(geoUrl, {
         headers: { "User-Agent": UA, "Accept-Language": "pt-BR,pt;q=0.9" },
       });
