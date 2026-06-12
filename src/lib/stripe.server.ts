@@ -100,7 +100,33 @@ export async function ensurePrice(plan: (typeof PLANS)[PlanCode]): Promise<strin
     "GET",
     `/prices?lookup_keys[]=${encodeURIComponent(plan.lookup_key)}&active=true&limit=1&expand[]=data.product`,
   );
-  if (list.data?.length > 0) return list.data[0].id;
+  const existing = list.data?.[0];
+
+  // Valida que o price ativo corresponde EXATAMENTE ao plano (amount + mode + currency).
+  // Se algum price antigo ficou associado ao lookup_key com valor errado, recria.
+  if (existing) {
+    const amountOk = existing.unit_amount === plan.price_cents;
+    const currencyOk = existing.currency === "brl";
+    const modeOk = plan.mode === "subscription"
+      ? existing.recurring?.interval === "month"
+      : existing.recurring == null;
+    if (amountOk && currencyOk && modeOk) return existing.id;
+
+    // Mismatch: desativa price antigo e cria um novo transferindo o lookup_key.
+    await stripeRequest("POST", `/prices/${existing.id}`, { active: false });
+
+    const productId = typeof existing.product === "string" ? existing.product : existing.product?.id;
+    const newPriceBody: Record<string, any> = {
+      product: productId,
+      unit_amount: plan.price_cents,
+      currency: "brl",
+      lookup_key: plan.lookup_key,
+      transfer_lookup_key: "true",
+    };
+    if (plan.mode === "subscription") newPriceBody.recurring = { interval: "month" };
+    const newPrice = await stripeRequest("POST", "/prices", newPriceBody);
+    return newPrice.id;
+  }
 
   // Cria produto + price
   const product = await stripeRequest("POST", "/products", {
