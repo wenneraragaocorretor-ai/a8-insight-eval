@@ -1893,11 +1893,14 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
 function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   novaPagina(doc);
   microHeader(doc, corretor);
-  tituloPagina(doc, "Dispersão dos Comparáveis — Valor/m² × Área");
+  const tipoImovel = avaliacao?.tipo_imovel;
+  const lblM2 = labelValorM2(tipoImovel);
+  tituloPagina(doc, `Dispersão dos Comparáveis — ${lblM2} × Área`);
 
   const pts = comparaveis
-    .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
-    .map((c) => ({ x: Number(c.area), y: Number(c.valor_anunciado) / Number(c.area) }));
+    .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
+    .filter((p) => p.ab > 0 && p.v > 0)
+    .map((p) => ({ x: p.ab, y: p.v / p.ab }));
 
   // Detecta outliers via 1.5 * desvio padrão em y
   let mean = 0, sd = 0;
@@ -1909,11 +1912,12 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
   const outliers = pts.filter((p) => sd > 0 && Math.abs(p.y - mean) > 1.5 * sd);
 
   // Ponto do imóvel avaliado
-  const avalArea = Number(avaliacao?.area_total) || 0;
+  const avalArea = areaBaseDe(tipoImovel, avaliacao).area;
   const avalY =
     Number(resultado?.valor_unitario_medio) ||
     (Number(resultado?.valor_central) > 0 && avalArea > 0 ? Number(resultado.valor_central) / avalArea : 0);
   const avalPoint = avalArea > 0 && avalY > 0 ? { x: avalArea, y: avalY } : null;
+
 
   // Regressão linear nos inliers
   let slope = 0, intercept = mean;
