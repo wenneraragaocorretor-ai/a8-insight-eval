@@ -90,6 +90,46 @@ export const PLANS = {
 
 export type PlanCode = keyof typeof PLANS;
 
+// Price IDs reais verificados no Stripe. O lookup_key continua sendo usado como
+// fallback para evitar quebra se um Price for recriado mantendo a chave do plano.
+export const PLAN_CODE_BY_PRICE_ID: Partial<Record<string, PlanCode>> = {
+  price_1ThAwUHzSV1FTjCx7DRWppdV: "basico",
+  price_1ThJqPHzSV1FTjCxcYZUuZv2: "profissional",
+  price_1ThUIUHzSV1FTjCx4uIZvRri: "expert",
+  price_1ThUzXHzSV1FTjCxFPabAje0: "expert_extra",
+};
+
+export async function resolvePlanCodeFromPriceId(priceId?: string | null): Promise<PlanCode | null> {
+  if (!priceId) return null;
+  const known = PLAN_CODE_BY_PRICE_ID[priceId];
+  if (known) return known;
+
+  const price = await stripeRequest("GET", `/prices/${encodeURIComponent(priceId)}`);
+  const lookupKey = price.lookup_key as string | undefined;
+  const byLookup = Object.values(PLANS).find((plan) => plan.lookup_key === lookupKey);
+  return (byLookup?.code as PlanCode | undefined) ?? null;
+}
+
+export async function listConfiguredStripePrices() {
+  const entries = await Promise.all(
+    Object.entries(PLANS).map(async ([code, plan]) => {
+      const list = await stripeRequest(
+        "GET",
+        `/prices?lookup_keys[]=${encodeURIComponent(plan.lookup_key)}&active=true&limit=1&expand[]=data.product`,
+      );
+      const price = list.data?.[0];
+      return [code, {
+        lookup_key: plan.lookup_key,
+        price_id: price?.id ?? null,
+        valor_centavos: price?.unit_amount ?? null,
+        tipo: price?.recurring ? "subscription" : "payment",
+        plano_banco: plan.db_plan,
+      }] as const;
+    }),
+  );
+  return Object.fromEntries(entries);
+}
+
 /**
  * Garante que o Price existe no Stripe (busca por lookup_key, cria se necessário).
  * Retorna o price_id.
