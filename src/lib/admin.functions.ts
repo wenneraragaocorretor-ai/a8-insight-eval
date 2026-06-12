@@ -81,7 +81,7 @@ export const redefinirPlanoUsuario = createServerFn({ method: "POST" })
 
     const { data: updated, error } = await supabaseAdmin
       .from("profiles")
-      .update(update)
+      .update(update as any)
       .eq("id", data.user_id)
       .select("id, plano, subscription_status, creditos_avulsos")
       .single();
