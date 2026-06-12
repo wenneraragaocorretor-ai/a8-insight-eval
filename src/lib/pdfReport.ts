@@ -2100,7 +2100,7 @@ function desenharPlaceholderMapa(doc: jsPDF, x: number, y: number, w: number, h:
 }
 
 
-function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
+function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string | null) {
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Assinatura e Responsabilidade Técnica");
@@ -2120,10 +2120,10 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
   const linhas = doc.splitTextToSize(decl, PW - 2 * M - 12);
   doc.text(linhas, M + 6, declY + 16);
 
-  // Logo
-  const logoY = 92;
-  const logoH = 22;
-  const logoW = 44;
+  // Logo (mais compacto para reduzir espaço em branco)
+  const logoY = 96;
+  const logoH = 20;
+  const logoW = 40;
   const logoX = PW / 2 - logoW / 2;
   if (corretor.logo_data_url) {
     try {
@@ -2139,25 +2139,30 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
     doc.setTextColor(...BLUE);
-    doc.text("A8", PW / 2, logoY + 14, { align: "center" });
+    doc.text("A8", PW / 2, logoY + 12, { align: "center" });
     doc.setFontSize(8);
     doc.setTextColor(...GOLD);
-    doc.text("AVALIA", PW / 2, logoY + 20, { align: "center" });
+    doc.text("AVALIA", PW / 2, logoY + 18, { align: "center" });
   }
 
-  // Linha de assinatura
-  const lineY = logoY + logoH + 12;
-  const lineW = 110;
+  // Linha de assinatura física (dourada, mais espessa)
+  const lineY = logoY + logoH + 14;
+  const lineW = 120;
   const lineX = PW / 2 - lineW / 2;
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.4);
+  doc.setLineWidth(0.8);
   doc.line(lineX, lineY, lineX + lineW, lineY);
+  // Pequeno traço "assine aqui"
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7);
+  doc.setTextColor(...GRAY_DIM);
+  doc.text("Assinatura", PW / 2, lineY + 3.5, { align: "center" });
 
   // Nome e registros
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(...BLUE);
-  doc.text(corretor.nome.toUpperCase(), PW / 2, lineY + 6, { align: "center" });
+  doc.text(corretor.nome.toUpperCase(), PW / 2, lineY + 10, { align: "center" });
 
   const regs: string[] = [];
   if (corretor.creci) regs.push(`CRECI ${String(corretor.creci).replace(/^CRECI[\s:-]*/i, "")}`);
@@ -2167,7 +2172,7 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...GRAY);
-    doc.text(regs.join("  •  "), PW / 2, lineY + 11, { align: "center" });
+    doc.text(regs.join("  •  "), PW / 2, lineY + 15, { align: "center" });
   }
 
   // Contato
@@ -2177,7 +2182,7 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
   if (contato.length) {
     doc.setFontSize(9);
     doc.setTextColor(...GRAY);
-    doc.text(contato.join("  •  "), PW / 2, lineY + 16, { align: "center" });
+    doc.text(contato.join("  •  "), PW / 2, lineY + 20, { align: "center" });
   }
 
   // Data por extenso
@@ -2192,7 +2197,21 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
   doc.setFont("helvetica", "italic");
   doc.setFontSize(10);
   doc.setTextColor(...TEXT);
-  doc.text(local, PW / 2, lineY + 24, { align: "center" });
+  doc.text(local, PW / 2, lineY + 28, { align: "center" });
+
+  // QR Code no canto inferior direito (verificação / contato)
+  if (qrDataUrl) {
+    const qrSize = 28;
+    const qrX = PW - M - qrSize;
+    const qrY = PH - 20 - qrSize;
+    try {
+      doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize, undefined, "FAST");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...GRAY);
+      doc.text("Verificação", qrX + qrSize / 2, qrY + qrSize + 3, { align: "center" });
+    } catch { /* ignore */ }
+  }
 }
 
 
