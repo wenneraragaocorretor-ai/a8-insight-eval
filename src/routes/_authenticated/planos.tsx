@@ -239,9 +239,7 @@ function PlanosPage() {
                   <span className="text-4xl font-bold">{p.preco}</span>
                   <span className="text-muted-foreground">{p.periodo}</span>
                 </div>
-                {p.modo === "avulso" && (
-                  <p className="text-xs text-muted-foreground mt-1">Pagamento único, não recorrente</p>
-                )}
+                <p className="text-xs text-muted-foreground mt-1">{p.subtitulo}</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-2">
