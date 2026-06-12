@@ -1964,7 +1964,7 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
   microHeader(doc, corretor);
   const tipoImovel = avaliacao?.tipo_imovel;
   const lblM2 = labelValorM2(tipoImovel);
-  tituloPagina(doc, `Dispersão dos Comparáveis — ${lblM2} × Área`);
+  tituloPagina(doc, "Dispersão dos Comparáveis — Valor/m² × Área");
 
   const pts = comparaveis
     .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
