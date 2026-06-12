@@ -2215,7 +2215,14 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string
 }
 
 
-function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: CorretorInfo) {
+function paginaMarketing(
+  doc: jsPDF,
+  marketing: MarketingPdf,
+  corretor: CorretorInfo,
+  avaliacao?: any,
+  resultado?: any,
+  fotoPrincipal?: string | null,
+) {
   // ---- Página 1: Estratégia visual ----
   novaPagina(doc);
   microHeader(doc, corretor);
@@ -2316,35 +2323,37 @@ function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: Corretor
   });
   y += 28;
 
-  // BLOCO 4 — Precificação (setas)
+  // BLOCO 4 — Precificação (lista vertical com texto completo)
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...GOLD);
   doc.text("PRECIFICAÇÃO", M, y);
-  y += 8;
-  const passos = [
-    { lbl: "Lançamento", val: String(marketing.divulgacao?.dicas_precificacao ?? "Tabela cheia").slice(0, 28) },
-    { lbl: "Negociação", val: "−5% a −10%" },
-    { lbl: "Mínimo", val: String(marketing.divulgacao?.desconto_maximo ?? "Limite").slice(0, 28) },
+  y += 6;
+  const lanc = String(marketing.divulgacao?.dicas_precificacao ?? "Anunciar pelo valor central de avaliação.");
+  const desc = String(marketing.divulgacao?.desconto_maximo ?? "Até 8% para fechamento rápido à vista.");
+  const passos: Array<{ lbl: string; val: string; cor: [number, number, number] }> = [
+    { lbl: "Lançamento", val: lanc, cor: GOLD },
+    { lbl: "Negociação", val: "Desconto de 5% a 10% na negociação.", cor: BLUE },
+    { lbl: "Mínimo / À vista", val: desc, cor: [120, 125, 135] },
   ];
-  const stepX = usable / passos.length;
+  const rowH = 14;
   passos.forEach((p, i) => {
-    const px = M + stepX * i + stepX / 2;
-    const cor: [number, number, number] = i === 0 ? GOLD : i === 1 ? BLUE : [120, 125, 135];
-    doc.setFillColor(...cor);
-    doc.roundedRect(px - stepX / 2 + 6, y, stepX - 12, 16, 3, 3, "F");
+    const ry = y + i * (rowH + 3);
+    // selo lateral colorido
+    doc.setFillColor(...p.cor);
+    doc.roundedRect(M, ry, 40, rowH, 3, 3, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...WHITE);
-    doc.text(p.lbl, px, y + 6, { align: "center" });
+    doc.text(p.lbl, M + 20, ry + 8.5, { align: "center" });
+    // texto descritivo (até 2 linhas)
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text(p.val, px, y + 12, { align: "center" });
-    if (i < passos.length - 1) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.setTextColor(...GOLD);
-      doc.text(">", M + stepX * (i + 1) - 1, y + 11, { align: "center" });
-    }
+    doc.setTextColor(...TEXT);
+    const tx = M + 46;
+    const tw = usable - 46;
+    const lines = doc.splitTextToSize(p.val, tw).slice(0, 2);
+    doc.text(lines, tx, ry + (lines.length === 1 ? 9 : 6));
   });
 
   // ---- Página 2: Mockup de anúncio ----
@@ -2354,7 +2363,7 @@ function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: Corretor
 
   const an = marketing.anuncio ?? {};
   const mockW = usable * 0.55;
-  const mockH = 110;
+  const mockH = 120;
   const mockX = M;
   const mockY = 52;
   // Frame
@@ -2369,28 +2378,57 @@ function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: Corretor
   doc.setFontSize(8);
   doc.setTextColor(...WHITE);
   doc.text("PORTAL IMOBILIÁRIO", mockX + 4, mockY + 5);
-  // Placeholder foto
-  doc.setFillColor(...CARD_BLUE);
-  doc.rect(mockX + 4, mockY + 11, mockW - 8, 50, "F");
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(...GRAY_DIM);
-  doc.text("[ FOTO DO IMÓVEL ]", mockX + mockW / 2, mockY + 38, { align: "center" });
+
+  // Foto principal ou placeholder
+  const fX = mockX + 4;
+  const fY = mockY + 11;
+  const fW = mockW - 8;
+  const fH = 56;
+  if (fotoPrincipal) {
+    try {
+      const fmt = fotoPrincipal.includes("image/png") ? "PNG" : "JPEG";
+      doc.addImage(fotoPrincipal, fmt, fX, fY, fW, fH, undefined, "FAST");
+    } catch {
+      doc.setFillColor(...CARD_BLUE);
+      doc.rect(fX, fY, fW, fH, "F");
+    }
+  } else {
+    doc.setFillColor(...CARD_BLUE);
+    doc.rect(fX, fY, fW, fH, "F");
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY_DIM);
+    doc.text("Foto do imóvel", mockX + mockW / 2, fY + fH / 2, { align: "center" });
+  }
+
   // Título
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(...BLUE);
-  textoMultilinha(doc, String(an.titulo ?? "—"), mockX + 6, mockY + 68, mockW - 12, {
-    size: 12, bold: true, color: BLUE, lineHeight: 5,
+  textoMultilinha(doc, String(an.titulo ?? "—"), mockX + 6, mockY + 76, mockW - 12, {
+    size: 12, bold: true, color: BLUE, lineHeight: 5, maxLines: 2,
   });
+
+  // Especificações reais (quartos / vagas / área)
+  const qtd = Number(avaliacao?.quartos) || 0;
+  const vgs = Number(avaliacao?.vagas) || 0;
+  const ar = Number(avaliacao?.area_total) || 0;
+  const specsParts: string[] = [];
+  if (qtd) specsParts.push(`${qtd} quarto${qtd > 1 ? "s" : ""}`);
+  if (vgs) specsParts.push(`${vgs} vaga${vgs > 1 ? "s" : ""}`);
+  if (ar) specsParts.push(`${fmtNum(ar, 0)} m²`);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
-  doc.text("· quartos  · vagas  · m²", mockX + 6, mockY + 86);
+  doc.text(specsParts.length ? specsParts.join("  •  ") : "—", mockX + 6, mockY + 95);
+
+  // Valor real (valor_central da avaliação)
+  const valor = Number(resultado?.valor_central) || 0;
+  const valorTxt = valor > 0 ? fmtBRL(valor) : "Sob consulta";
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(...GOLD);
-  doc.text("Sob consulta", mockX + mockW - 6, mockY + mockH - 6, { align: "right" });
+  doc.text(valorTxt, mockX + mockW - 6, mockY + mockH - 6, { align: "right" });
 
   // WhatsApp à direita
   const wX = M + mockW + 8;
