@@ -929,29 +929,46 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
   doc.setTextColor(...TEXT);
   doc.text(familia, cx, 122, { align: "center" });
 
-  // 3 motivações com marcadores numerados dourados
-  const motivRaw = Array.isArray(pp.motivacoes) && pp.motivacoes.length
+  // 3 motivações com bullets dourados (sem ícones unicode/emoji)
+  const stripNonAscii = (s: string) =>
+    s.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "") // surrogate pairs (emojis)
+      .replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "")     // fora de Latin-1
+      .replace(/\s+/g, " ")
+      .trim();
+  const motivRaw = (Array.isArray(pp.motivacoes) && pp.motivacoes.length
     ? pp.motivacoes.slice(0, 3).map(String)
     : String(pp.motivacao_compra ?? "Upgrade patrimonial | Investimento | Família")
-        .split(/[|,/]+/).map((s: string) => s.trim()).filter(Boolean).slice(0, 3);
+        .split(/[|,/]+/).map((s: string) => s.trim()).filter(Boolean).slice(0, 3))
+    .map(stripNonAscii)
+    .filter(Boolean);
   if (motivRaw.length) {
-    const baseY = 140;
+    const baseY = 142;
     const blockW = usable / motivRaw.length;
     motivRaw.forEach((m: string, i: number) => {
       const mx = M + blockW * i + blockW / 2;
-      // círculo dourado com número
-      doc.setFillColor(...GOLD);
-      doc.circle(mx, baseY, 5, "F");
+      // Bullet dourado + texto da motivação (sem círculo numerado)
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(...WHITE);
-      doc.text(String(i + 1), mx, baseY + 1.6, { align: "center" });
-      // texto da motivação
+      doc.setFontSize(14);
+      doc.setTextColor(...GOLD);
+      const bullet = "\u2022"; // • U+2022 (WinAnsi 0x95, suportado pelo helvetica)
+      const label = stripNonAscii(m);
+      const labelLines = doc.splitTextToSize(label, blockW - 14);
+      const bulletW = doc.getTextWidth(bullet + " ");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      const firstLineW = doc.getTextWidth(labelLines[0] ?? "");
+      const totalW = bulletW + firstLineW;
+      const startX = mx - totalW / 2;
+      // bullet dourado
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(...GOLD);
+      doc.text(bullet, startX, baseY);
+      // texto azul
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.setTextColor(...BLUE);
-      const lines = doc.splitTextToSize(m, blockW - 8);
-      doc.text(lines, mx, baseY + 12, { align: "center" });
+      doc.text(labelLines, startX + bulletW, baseY - 0.4);
     });
   }
 
