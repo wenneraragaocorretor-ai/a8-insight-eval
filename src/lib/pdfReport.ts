@@ -622,19 +622,22 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const cw = (usable - gap * (items.length - 1)) / items.length;
   const ch = 32;
   const yRow = 50;
+  const labelFs = items.length >= 7 ? 6 : items.length === 6 ? 7 : 8;
+  const valueFs = items.length >= 7 ? 14 : items.length === 6 ? 16 : 18;
   items.forEach(([label, value], i) => {
     const x = M + i * (cw + gap);
     card(doc, x, yRow, cw, ch, { variant: "blue", border: "soft" });
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(labelFs);
     doc.setTextColor(...BLUE);
     doc.text(label, x + cw / 2, yRow + 10, { align: "center" });
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
+    doc.setFontSize(valueFs);
     doc.setTextColor(...BLUE);
     const val = value.length > 14 ? value.slice(0, 13) + "…" : value;
     doc.text(val, x + cw / 2, yRow + 22, { align: "center" });
   });
+
 
   // location bar
   const yLoc = yRow + ch + 6;
