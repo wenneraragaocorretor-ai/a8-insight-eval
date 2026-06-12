@@ -235,6 +235,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
 
       const { error: errR } = await supabase.from("resultados").insert({
         avaliacao_id: avaliacao.id,
+        user_id: userId,
         valor_minimo: aiResult.valor_minimo,
         valor_central: aiResult.valor_central,
         valor_maximo: aiResult.valor_maximo,
@@ -464,6 +465,7 @@ export const regerarAvaliacao = createServerFn({ method: "POST" })
     } else {
       await supabase.from("resultados").insert({
         avaliacao_id: data.id,
+        user_id: userId,
         valor_minimo: aiResult.valor_minimo,
         valor_central: aiResult.valor_central,
         valor_maximo: aiResult.valor_maximo,
