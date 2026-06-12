@@ -56,7 +56,7 @@ const PLANOS = [
       "Até 8 fotos com análise da IA",
       "Homogeneização dos comparáveis",
       "Tratamento estatístico básico",
-      "Mapa de localização",
+      
       "Caracterização do bairro pela IA",
       "Perfil do público-alvo",
       "PDF 8-10 páginas sem marca d'água",
