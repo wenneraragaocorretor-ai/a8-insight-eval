@@ -2609,7 +2609,7 @@ export async function gerarPdfAvaliacao(
     corretor?: CorretorInfo | string;
     fotosDataUrls?: string[];
     fotosDetalhadas?: FotoDetalhada[];
-    mapaDataUrl?: string | null;
+    marketing?: MarketingPdf | null;
     marketing?: MarketingPdf | null;
   },
 ) {
