@@ -2139,7 +2139,7 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
 }
 
 // ---------- EXPERT EXTRA: LOCALIZAÇÃO ----------
-function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, mapaDataUrl?: string | null) {
+function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Localização");
@@ -2149,69 +2149,20 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo, m
     String(avaliacao?.localizacao || "").trim() ||
     "Endereço não informado";
 
-  const x = M;
-  const y = 50;
-  const w = PW - M * 2;
-  const h = PH - y - 50;
-
-  if (mapaDataUrl) {
-    try {
-      const fmt = mapaDataUrl.startsWith("data:image/jpeg") || mapaDataUrl.startsWith("data:image/jpg") ? "JPEG" : "PNG";
-      doc.addImage(mapaDataUrl, fmt as any, x, y, w, h, undefined, "FAST");
-      doc.setDrawColor(...BORDER);
-      doc.setLineWidth(0.4);
-      doc.rect(x, y, w, h, "S");
-    } catch (e) {
-      console.error("Falha ao desenhar mapa OSM:", e);
-      desenharPlaceholderMapa(doc, x, y, w, h);
-    }
-  } else {
-    desenharPlaceholderMapa(doc, x, y, w, h);
-  }
-
-  // Endereço abaixo
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(...BLUE);
-  doc.text("Endereço:", M, y + h + 12);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
+  doc.setFontSize(16);
   doc.setTextColor(...TEXT);
-  const wrapped = doc.splitTextToSize(endereco, PW - M * 2 - 26);
-  doc.text(wrapped, M + 22, y + h + 12);
-
-  // Atribuição obrigatória do OpenStreetMap
-  if (mapaDataUrl) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(7);
-    doc.setTextColor(...GRAY_DIM);
-    doc.text("© OpenStreetMap contributors", PW - M, y + h - 2, { align: "right" });
-  }
+  const maxW = PW - M * 2;
+  const wrapped = doc.splitTextToSize(endereco, maxW);
+  const lineH = 8;
+  const totalH = wrapped.length * lineH;
+  const startY = (PH - totalH) / 2;
+  wrapped.forEach((line: string, i: number) => {
+    doc.text(line, PW / 2, startY + i * lineH, { align: "center" });
+  });
 }
 
-function desenharPlaceholderMapa(doc: jsPDF, x: number, y: number, w: number, h: number) {
-  doc.setFillColor(...CARD_BLUE);
-  doc.rect(x, y, w, h, "F");
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.4);
-  doc.rect(x, y, w, h, "S");
-  doc.setDrawColor(210, 220, 232);
-  doc.setLineWidth(0.3);
-  for (let i = 1; i < 8; i++) doc.line(x + (w * i) / 8, y + 4, x + (w * i) / 8, y + h - 4);
-  for (let i = 1; i < 5; i++) doc.line(x + 4, y + (h * i) / 5, x + w - 4, y + (h * i) / 5);
-  const cx = x + w / 2;
-  const cy = y + h / 2 - 6;
-  doc.setFillColor(...GOLD);
-  doc.circle(cx, cy - 6, 5, "F");
-  doc.setFillColor(...BLUE);
-  doc.circle(cx, cy - 6, 1.8, "F");
-  doc.setFillColor(...GOLD);
-  doc.triangle(cx - 4, cy - 3, cx + 4, cy - 3, cx, cy + 4, "F");
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(10);
-  doc.setTextColor(...GRAY);
-  doc.text("Mapa indisponível — exibindo apenas o endereço", cx, cy + 14, { align: "center" });
-}
+
 
 
 function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string | null) {
