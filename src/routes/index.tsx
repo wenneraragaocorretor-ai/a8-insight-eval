@@ -264,9 +264,10 @@ function Planos() {
       periodo: "/mês",
       desc: "O laudo definitivo para alto padrão",
       itens: [
-        "Laudos ilimitados",
+        "Até 20 laudos/mês",
         "Tudo do Profissional +",
-        "Até 15 fotos com análise individual da IA",
+        "Laudos adicionais por R$ 12,00/laudo",
+        "Até 10 fotos com análise individual da IA",
         "Gráfico de dispersão e curva de tendência",
         "Laudo completo NBR 14653-2",
         "Campo de arbítrio ±15% com justificativa",
