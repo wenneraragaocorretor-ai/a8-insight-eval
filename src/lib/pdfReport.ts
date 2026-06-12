@@ -1156,11 +1156,9 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(200, 200, 210);
-  const pctMin = central > 0 ? Math.round(((central - minV) / central) * 100) : 15;
-  const pctMax = central > 0 ? Math.round(((maxV - central) / central) * 100) : 15;
-  doc.text(`Mínimo -${pctMin}%`, tx, ty + 22, { align: "center" });
+  doc.text("Mínimo -15%", tx, ty + 22, { align: "center" });
   doc.text("Central", tx + tw / 2, ty + 22, { align: "center" });
-  doc.text(`Máximo +${pctMax}%`, tx + tw, ty + 22, { align: "center" });
+  doc.text("Máximo +15%", tx + tw, ty + 22, { align: "center" });
 
   // 3 ícones informativos (vetoriais)
   const baseY = PH - 38;
