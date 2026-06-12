@@ -199,6 +199,23 @@ function microHeader(doc: jsPDF, corretor: CorretorInfo, laudoNum?: string) {
   }
 }
 
+function marcaDagua(doc: jsPDF) {
+  const total = doc.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    const gs: any = (doc as any).GState ? new (doc as any).GState({ opacity: 0.08 }) : null;
+    if (gs && (doc as any).setGState) (doc as any).setGState(gs);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(80);
+    doc.setTextColor(...GOLD);
+    doc.text("A8 AVALIA", PW / 2, PH / 2, { align: "center", angle: 30 } as any);
+    if (gs && (doc as any).setGState) {
+      const reset: any = new (doc as any).GState({ opacity: 1 });
+      (doc as any).setGState(reset);
+    }
+  }
+}
+
 function rodape(doc: jsPDF) {
   const total = doc.getNumberOfPages();
   for (let i = 2; i <= total; i++) {
@@ -241,6 +258,7 @@ function rodape(doc: jsPDF) {
     doc.text(`${String(i).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, PW - M, PH - 7, { align: "right" });
   }
 }
+
 
 function textoMultilinha(
   doc: jsPDF,
