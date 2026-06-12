@@ -213,8 +213,9 @@ e devem ser preenchidos com base nas características reais — NÃO retorne str
   "tendencias_mercado": "Texto curto (2-3 frases) sobre tendências imobiliárias locais atuais.",
   "perfil_profissao": "Profissão predominante na região (ex: profissionais liberais, executivos, servidores públicos).",
   "perfil_renda": "Faixa de renda média estimada (ex: R$ 8.000 a R$ 15.000).",
-  "perfil_preferencias": "O que esse público busca em um imóvel (1-2 frases).",
-  "perfil_interesses": "Hábitos e interesses culturais/de lazer típicos (1-2 frases).",
+  "perfil_preferencias": "O que esse público busca em um imóvel — específico para a tipologia, faixa de renda e localização deste imóvel (1-2 frases).",
+  "perfil_interesses": "Interesses PRÁTICOS e RELEVANTES para o comprador-alvo deste imóvel específico, baseados em tipologia, localização, padrão e renda. Exemplos válidos: proximidade de escolas, segurança do bairro, custo de condomínio, potencial de renda com aluguel, mobilidade urbana, valorização patrimonial, área de lazer no condomínio, espaço para pets/família, home office. NÃO use hobbies genéricos (teatro, cinema, gastronomia) desconectados do imóvel. 2-3 itens objetivos em uma frase corrida.",
+
   "analise_bairro": {
     "bairro": "Nome do bairro",
     "cidade": "Cidade/UF",
