@@ -350,7 +350,30 @@ function AvaliacaoDetalhe() {
       )}
 
       {/* ============ ASSISTENTE DE MARKETING (somente Expert) ============ */}
-      {String(plano ?? "").toLowerCase() === "expert" && (
+      {String(plano ?? "").toLowerCase() !== "expert" ? (
+        <Card className="premium-card border-dashed border-brand-gold/50 bg-muted/30">
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-muted-foreground">
+              <Lock size={18} className="text-brand-gold" />
+              Assistente de Marketing
+            </CardTitle>
+            <span className="text-xs font-semibold uppercase tracking-wide bg-brand-gold/15 text-brand-gold px-2 py-1 rounded">
+              Exclusivo Expert
+            </span>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              Disponível no plano Expert — gere perfil do público, estratégia de divulgação e textos prontos para portais e redes sociais.
+            </p>
+            <Button
+              onClick={() => navigate({ to: "/planos" })}
+              className="bg-brand-gold text-primary-foreground gap-2 shrink-0"
+            >
+              <Sparkles size={16} /> Fazer upgrade
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
       <Card className="premium-card border-brand-gold">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2">

@@ -22,7 +22,7 @@ const SUGESTOES = [
 export function ExpertChat({ plano, avaliacaoId }: Props) {
   const [open, setOpen] = useState(false);
   const [token, setToken] = useState<string | null>(null);
-  const ehExpert = plano === "expert";
+  const ehExpert = String(plano ?? "").toLowerCase() === "expert";
 
   useEffect(() => {
     if (!ehExpert) return;
