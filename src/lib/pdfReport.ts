@@ -203,10 +203,15 @@ function rodape(doc: jsPDF) {
   const total = doc.getNumberOfPages();
   for (let i = 2; i <= total; i++) {
     doc.setPage(i);
+    // Máscara branca cobrindo a faixa do rodapé para evitar sobreposição
+    // de conteúdo que eventualmente avance além da área útil da página.
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, PH - 14, PW, 14, "F");
     // Linha dourada fina
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.4);
     doc.line(M, PH - 12, PW - M, PH - 12);
+
 
     // Logo pequeno à esquerda
     doc.setFont("helvetica", "bold");
