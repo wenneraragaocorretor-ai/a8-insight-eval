@@ -73,10 +73,22 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           const isActive = sub.status === "active" || sub.status === "trialing";
           const { data: existing } = await supabaseAdmin
             .from("profiles")
-            .select("nome, plano")
+            .select("nome, plano, stripe_subscription_id")
             .eq("id", userId)
             .maybeSingle();
           const nome = existing?.nome || session?.customer_details?.name || session?.customer_details?.email?.split("@")[0] || "Usuário";
+
+          const veioDoCheckoutAtual = !!session?.id;
+          if (!veioDoCheckoutAtual && isActive && existing && existing.stripe_subscription_id !== sub.id) {
+            console.warn("[stripe-webhook] Evento de assinatura antiga ignorado para não sobrescrever plano comprado mais recente", {
+              userId,
+              subscriptionId: sub.id,
+              assinaturaAtualNoPerfil: existing.stripe_subscription_id ?? null,
+              priceId,
+              planCode,
+            });
+            return;
+          }
 
           // Fallback seguro: se o Price ID não for reconhecido, nunca mantém Expert/Profissional por padrão.
           // Se ativo e não detectado, usa Básico; se cancelado/inativo, volta para Básico.
