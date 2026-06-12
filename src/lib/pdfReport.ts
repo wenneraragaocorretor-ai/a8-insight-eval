@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 
 // ============================================================
@@ -118,7 +119,13 @@ function card(
 
 function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, number] = BLUE) {
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(36);
+  const maxW = PW - 2 * M;
+  let size = 36;
+  doc.setFontSize(size);
+  while (size > 14 && doc.getTextWidth(texto) > maxW) {
+    size -= 1;
+    doc.setFontSize(size);
+  }
   doc.setTextColor(...cor);
   doc.text(texto, M, y);
   doc.setDrawColor(...GOLD);
@@ -866,22 +873,29 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
   doc.setTextColor(...TEXT);
   doc.text(familia, cx, 122, { align: "center" });
 
-  // 3 motivações com ícones
+  // 3 motivações com marcadores numerados dourados
   const motivRaw = Array.isArray(pp.motivacoes) && pp.motivacoes.length
     ? pp.motivacoes.slice(0, 3).map(String)
-    : String(pp.motivacao_compra ?? "Upgrade | Investimento | Família")
+    : String(pp.motivacao_compra ?? "Upgrade patrimonial | Investimento | Família")
         .split(/[|,/]+/).map((s: string) => s.trim()).filter(Boolean).slice(0, 3);
   if (motivRaw.length) {
-    const baseY = 138;
+    const baseY = 140;
     const blockW = usable / motivRaw.length;
-    const glyphs = ["♥", "★", "▲"];
     motivRaw.forEach((m: string, i: number) => {
       const mx = M + blockW * i + blockW / 2;
-      iconCircle(doc, mx, baseY, 6, glyphs[i] || "•", GOLD);
+      // círculo dourado com número
+      doc.setFillColor(...GOLD);
+      doc.circle(mx, baseY, 5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...WHITE);
+      doc.text(String(i + 1), mx, baseY + 1.6, { align: "center" });
+      // texto da motivação
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.setTextColor(...BLUE);
-      doc.text(m, mx, baseY + 14, { align: "center" });
+      const lines = doc.splitTextToSize(m, blockW - 8);
+      doc.text(lines, mx, baseY + 12, { align: "center" });
     });
   }
 
@@ -1143,12 +1157,15 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     } catch { /* ignore */ }
   }
 
-  // Imobiliária (se houver)
+  // Imobiliária (se houver) — normaliza marca antiga "A8 Investimentos" para "A8 AVALIA"
   if (corretor.nome_imobiliaria) {
+    const imo = /a8\s*investimentos/i.test(corretor.nome_imobiliaria)
+      ? "A8 AVALIA"
+      : corretor.nome_imobiliaria.toUpperCase();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(...GOLD);
-    doc.text(corretor.nome_imobiliaria.toUpperCase(), PW / 2, yCursor, { align: "center" });
+    doc.text(imo, PW / 2, yCursor, { align: "center" });
     yCursor += 10;
   }
 
@@ -2083,7 +2100,7 @@ function desenharPlaceholderMapa(doc: jsPDF, x: number, y: number, w: number, h:
 }
 
 
-function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
+function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string | null) {
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Assinatura e Responsabilidade Técnica");
@@ -2103,10 +2120,10 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
   const linhas = doc.splitTextToSize(decl, PW - 2 * M - 12);
   doc.text(linhas, M + 6, declY + 16);
 
-  // Logo
-  const logoY = 92;
-  const logoH = 22;
-  const logoW = 44;
+  // Logo (mais compacto para reduzir espaço em branco)
+  const logoY = 96;
+  const logoH = 20;
+  const logoW = 40;
   const logoX = PW / 2 - logoW / 2;
   if (corretor.logo_data_url) {
     try {
@@ -2122,25 +2139,30 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
     doc.setTextColor(...BLUE);
-    doc.text("A8", PW / 2, logoY + 14, { align: "center" });
+    doc.text("A8", PW / 2, logoY + 12, { align: "center" });
     doc.setFontSize(8);
     doc.setTextColor(...GOLD);
-    doc.text("AVALIA", PW / 2, logoY + 20, { align: "center" });
+    doc.text("AVALIA", PW / 2, logoY + 18, { align: "center" });
   }
 
-  // Linha de assinatura
-  const lineY = logoY + logoH + 12;
-  const lineW = 110;
+  // Linha de assinatura física (dourada, mais espessa)
+  const lineY = logoY + logoH + 14;
+  const lineW = 120;
   const lineX = PW / 2 - lineW / 2;
   doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.4);
+  doc.setLineWidth(0.8);
   doc.line(lineX, lineY, lineX + lineW, lineY);
+  // Pequeno traço "assine aqui"
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7);
+  doc.setTextColor(...GRAY_DIM);
+  doc.text("Assinatura", PW / 2, lineY + 3.5, { align: "center" });
 
   // Nome e registros
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(...BLUE);
-  doc.text(corretor.nome.toUpperCase(), PW / 2, lineY + 6, { align: "center" });
+  doc.text(corretor.nome.toUpperCase(), PW / 2, lineY + 10, { align: "center" });
 
   const regs: string[] = [];
   if (corretor.creci) regs.push(`CRECI ${String(corretor.creci).replace(/^CRECI[\s:-]*/i, "")}`);
@@ -2150,7 +2172,7 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...GRAY);
-    doc.text(regs.join("  •  "), PW / 2, lineY + 11, { align: "center" });
+    doc.text(regs.join("  •  "), PW / 2, lineY + 15, { align: "center" });
   }
 
   // Contato
@@ -2160,7 +2182,7 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
   if (contato.length) {
     doc.setFontSize(9);
     doc.setTextColor(...GRAY);
-    doc.text(contato.join("  •  "), PW / 2, lineY + 16, { align: "center" });
+    doc.text(contato.join("  •  "), PW / 2, lineY + 20, { align: "center" });
   }
 
   // Data por extenso
@@ -2175,11 +2197,32 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo) {
   doc.setFont("helvetica", "italic");
   doc.setFontSize(10);
   doc.setTextColor(...TEXT);
-  doc.text(local, PW / 2, lineY + 24, { align: "center" });
+  doc.text(local, PW / 2, lineY + 28, { align: "center" });
+
+  // QR Code no canto inferior direito (verificação / contato)
+  if (qrDataUrl) {
+    const qrSize = 28;
+    const qrX = PW - M - qrSize;
+    const qrY = PH - 20 - qrSize;
+    try {
+      doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize, undefined, "FAST");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...GRAY);
+      doc.text("Verificação", qrX + qrSize / 2, qrY + qrSize + 3, { align: "center" });
+    } catch { /* ignore */ }
+  }
 }
 
 
-function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: CorretorInfo) {
+function paginaMarketing(
+  doc: jsPDF,
+  marketing: MarketingPdf,
+  corretor: CorretorInfo,
+  avaliacao?: any,
+  resultado?: any,
+  fotoPrincipal?: string | null,
+) {
   // ---- Página 1: Estratégia visual ----
   novaPagina(doc);
   microHeader(doc, corretor);
@@ -2280,35 +2323,37 @@ function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: Corretor
   });
   y += 28;
 
-  // BLOCO 4 — Precificação (setas)
+  // BLOCO 4 — Precificação (lista vertical com texto completo)
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...GOLD);
   doc.text("PRECIFICAÇÃO", M, y);
-  y += 8;
-  const passos = [
-    { lbl: "Lançamento", val: String(marketing.divulgacao?.dicas_precificacao ?? "Tabela cheia").slice(0, 28) },
-    { lbl: "Negociação", val: "−5% a −10%" },
-    { lbl: "Mínimo", val: String(marketing.divulgacao?.desconto_maximo ?? "Limite").slice(0, 28) },
+  y += 6;
+  const lanc = String(marketing.divulgacao?.dicas_precificacao ?? "Anunciar pelo valor central de avaliação.");
+  const desc = String(marketing.divulgacao?.desconto_maximo ?? "Até 8% para fechamento rápido à vista.");
+  const passos: Array<{ lbl: string; val: string; cor: [number, number, number] }> = [
+    { lbl: "Lançamento", val: lanc, cor: GOLD },
+    { lbl: "Negociação", val: "Desconto de 5% a 10% na negociação.", cor: BLUE },
+    { lbl: "Mínimo / À vista", val: desc, cor: [120, 125, 135] },
   ];
-  const stepX = usable / passos.length;
+  const rowH = 14;
   passos.forEach((p, i) => {
-    const px = M + stepX * i + stepX / 2;
-    const cor: [number, number, number] = i === 0 ? GOLD : i === 1 ? BLUE : [120, 125, 135];
-    doc.setFillColor(...cor);
-    doc.roundedRect(px - stepX / 2 + 6, y, stepX - 12, 16, 3, 3, "F");
+    const ry = y + i * (rowH + 3);
+    // selo lateral colorido
+    doc.setFillColor(...p.cor);
+    doc.roundedRect(M, ry, 40, rowH, 3, 3, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...WHITE);
-    doc.text(p.lbl, px, y + 6, { align: "center" });
+    doc.text(p.lbl, M + 20, ry + 8.5, { align: "center" });
+    // texto descritivo (até 2 linhas)
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text(p.val, px, y + 12, { align: "center" });
-    if (i < passos.length - 1) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.setTextColor(...GOLD);
-      doc.text(">", M + stepX * (i + 1) - 1, y + 11, { align: "center" });
-    }
+    doc.setTextColor(...TEXT);
+    const tx = M + 46;
+    const tw = usable - 46;
+    const lines = doc.splitTextToSize(p.val, tw).slice(0, 2);
+    doc.text(lines, tx, ry + (lines.length === 1 ? 9 : 6));
   });
 
   // ---- Página 2: Mockup de anúncio ----
@@ -2318,7 +2363,7 @@ function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: Corretor
 
   const an = marketing.anuncio ?? {};
   const mockW = usable * 0.55;
-  const mockH = 110;
+  const mockH = 120;
   const mockX = M;
   const mockY = 52;
   // Frame
@@ -2333,28 +2378,57 @@ function paginaMarketing(doc: jsPDF, marketing: MarketingPdf, corretor: Corretor
   doc.setFontSize(8);
   doc.setTextColor(...WHITE);
   doc.text("PORTAL IMOBILIÁRIO", mockX + 4, mockY + 5);
-  // Placeholder foto
-  doc.setFillColor(...CARD_BLUE);
-  doc.rect(mockX + 4, mockY + 11, mockW - 8, 50, "F");
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(...GRAY_DIM);
-  doc.text("[ FOTO DO IMÓVEL ]", mockX + mockW / 2, mockY + 38, { align: "center" });
+
+  // Foto principal ou placeholder
+  const fX = mockX + 4;
+  const fY = mockY + 11;
+  const fW = mockW - 8;
+  const fH = 56;
+  if (fotoPrincipal) {
+    try {
+      const fmt = fotoPrincipal.includes("image/png") ? "PNG" : "JPEG";
+      doc.addImage(fotoPrincipal, fmt, fX, fY, fW, fH, undefined, "FAST");
+    } catch {
+      doc.setFillColor(...CARD_BLUE);
+      doc.rect(fX, fY, fW, fH, "F");
+    }
+  } else {
+    doc.setFillColor(...CARD_BLUE);
+    doc.rect(fX, fY, fW, fH, "F");
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY_DIM);
+    doc.text("Foto do imóvel", mockX + mockW / 2, fY + fH / 2, { align: "center" });
+  }
+
   // Título
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(...BLUE);
-  textoMultilinha(doc, String(an.titulo ?? "—"), mockX + 6, mockY + 68, mockW - 12, {
-    size: 12, bold: true, color: BLUE, lineHeight: 5,
+  textoMultilinha(doc, String(an.titulo ?? "—"), mockX + 6, mockY + 76, mockW - 12, {
+    size: 12, bold: true, color: BLUE, lineHeight: 5, maxLines: 2,
   });
+
+  // Especificações reais (quartos / vagas / área)
+  const qtd = Number(avaliacao?.quartos) || 0;
+  const vgs = Number(avaliacao?.vagas) || 0;
+  const ar = Number(avaliacao?.area_total) || 0;
+  const specsParts: string[] = [];
+  if (qtd) specsParts.push(`${qtd} quarto${qtd > 1 ? "s" : ""}`);
+  if (vgs) specsParts.push(`${vgs} vaga${vgs > 1 ? "s" : ""}`);
+  if (ar) specsParts.push(`${fmtNum(ar, 0)} m²`);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
-  doc.text("· quartos  · vagas  · m²", mockX + 6, mockY + 86);
+  doc.text(specsParts.length ? specsParts.join("  •  ") : "—", mockX + 6, mockY + 95);
+
+  // Valor real (valor_central da avaliação)
+  const valor = Number(resultado?.valor_central) || 0;
+  const valorTxt = valor > 0 ? fmtBRL(valor) : "Sob consulta";
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(...GOLD);
-  doc.text("Sob consulta", mockX + mockW - 6, mockY + mockH - 6, { align: "right" });
+  doc.text(valorTxt, mockX + mockW - 6, mockY + mockH - 6, { align: "right" });
 
   // WhatsApp à direita
   const wX = M + mockW + 8;
@@ -2407,7 +2481,7 @@ export type MarketingPdf = {
   };
 };
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null, marketing?: MarketingPdf | null) {
+function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], mapaDataUrl?: string | null, marketing?: MarketingPdf | null, qrDataUrl?: string | null) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const temFotos = fotos.length > 0;
@@ -2448,9 +2522,9 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaEstatistica(doc, comparaveis, corretor);
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, resultado, corretor);
-  if (temMkt && marketing) paginaMarketing(doc, marketing, corretor);
+  if (temMkt && marketing) paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);
   paginaContato(doc, corretor);
-  paginaAssinatura(doc, corretor);
+  paginaAssinatura(doc, corretor, qrDataUrl);
   rodape(doc);
 
   return doc;
@@ -2458,7 +2532,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
 
 export type FotoDetalhada = { dataUrl: string; legenda: string; principal: boolean; comentario_ia: string };
 
-export function gerarPdfAvaliacao(
+export async function gerarPdfAvaliacao(
   avaliacao: any,
   resultado: any,
   comparaveis: any[],
@@ -2483,9 +2557,24 @@ export function gerarPdfAvaliacao(
     throw new Error("Faça upgrade para acessar este relatório");
   }
 
+  // QR Code (apenas Expert / Modelo 3) — verificação por telefone/email do corretor
+  let qrDataUrl: string | null = null;
+  if (modelo === 3) {
+    try {
+      const linhas: string[] = ["A8 AVALIA — Laudo de Avaliação"];
+      if (avaliacao?.id) linhas.push(`Ref: ${String(avaliacao.id).slice(0, 8).toUpperCase()}`);
+      if (corretor.nome) linhas.push(corretor.nome);
+      if (corretor.telefone) linhas.push(`Tel: ${corretor.telefone}`);
+      if (corretor.email) linhas.push(corretor.email);
+      qrDataUrl = await QRCode.toDataURL(linhas.join("\n"), { margin: 1, width: 220 });
+    } catch (e) {
+      console.error("Falha ao gerar QR Code:", e);
+    }
+  }
+
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null, qrDataUrl)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
