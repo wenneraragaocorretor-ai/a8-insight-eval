@@ -203,10 +203,15 @@ function rodape(doc: jsPDF) {
   const total = doc.getNumberOfPages();
   for (let i = 2; i <= total; i++) {
     doc.setPage(i);
+    // Máscara branca cobrindo a faixa do rodapé para evitar sobreposição
+    // de conteúdo que eventualmente avance além da área útil da página.
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, PH - 14, PW, 14, "F");
     // Linha dourada fina
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.4);
     doc.line(M, PH - 12, PW - M, PH - 12);
+
 
     // Logo pequeno à esquerda
     doc.setFont("helvetica", "bold");
@@ -274,11 +279,13 @@ function textoMultilinha(
 function iconCircle(doc: jsPDF, cx: number, cy: number, r: number, glyph: string, cor: [number, number, number] = GOLD) {
   doc.setFillColor(...cor);
   doc.circle(cx, cy, r, "F");
+  if (!glyph) return;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(r * 1.5);
   doc.setTextColor(255, 255, 255);
   doc.text(glyph, cx, cy + r * 0.55, { align: "center" });
 }
+
 
 function progressBar(doc: jsPDF, x: number, y: number, w: number, pct: number, cor: [number, number, number] = GOLD) {
   doc.setFillColor(...BORDER);
@@ -595,21 +602,26 @@ function paginaSumario(doc: jsPDF, sec: string[]) {
 
   const xCard = PW / 2 + 4;
   const wCard = PW - xCard - M;
-  const hCard = 14;
-  const gap = 4;
+  // Compacta a lista para garantir que todos os itens caibam acima do rodapé
+  const available = PH - 18 - 30; // de y=30 até PH-18
+  const hCard = Math.max(8, Math.min(14, (available - 2 * (sec.length - 1)) / sec.length));
+  const gap = sec.length > 14 ? 1.6 : 3;
+  const numFs = hCard >= 12 ? 13 : 10;
+  const labelFs = hCard >= 12 ? 10 : 8.5;
   let y = 30;
   sec.forEach((nome, i) => {
     card(doc, xCard, y, wCard, hCard, { variant: "darkblue" });
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
+    doc.setFontSize(numFs);
     doc.setTextColor(...GOLD);
-    doc.text(String(i + 3).padStart(2, "0"), xCard + 6, y + 9);
+    doc.text(String(i + 3).padStart(2, "0"), xCard + 6, y + hCard / 2 + numFs * 0.18);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
+    doc.setFontSize(labelFs);
     doc.setTextColor(...WHITE);
-    doc.text(nome.toUpperCase(), xCard + 24, y + 9);
+    doc.text(nome.toUpperCase(), xCard + 22, y + hCard / 2 + labelFs * 0.18);
     y += hCard + gap;
   });
+
 }
 
 // ---------- PAGE: IMÓVEL ----------
@@ -1641,11 +1653,12 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
 
   // ===== CARDS PRINCIPAIS =====
   const principais: Array<{ icon: string; value: string; label: string }> = [];
-  if (a.quartos != null && Number(a.quartos) > 0) principais.push({ icon: "Q", value: String(a.quartos), label: "Quartos" });
-  if (a.suites != null && Number(a.suites) > 0) principais.push({ icon: "S", value: String(a.suites), label: "Suítes" });
+  if (a.quartos != null && Number(a.quartos) > 0) principais.push({ icon: "", value: String(a.quartos), label: "Quartos" });
+  if (a.suites != null && Number(a.suites) > 0) principais.push({ icon: "", value: String(a.suites), label: "Suítes" });
   const vagas = (Number(a.vagas_cobertas) || 0) + (Number(a.vagas_descobertas) || 0) || Number(a.vagas) || 0;
-  if (vagas > 0) principais.push({ icon: "V", value: String(vagas), label: "Vagas" });
-  if (a.area_total) principais.push({ icon: "A", value: String(a.area_total), label: "m² Área" });
+  if (vagas > 0) principais.push({ icon: "", value: String(vagas), label: "Vagas" });
+  if (a.area_total) principais.push({ icon: "", value: String(a.area_total), label: "m² Área" });
+
 
   if (principais.length) {
     const gap = 6;
