@@ -83,10 +83,9 @@ function Dashboard() {
             plano,
             assinaturaAtiva: plano !== "basico" && plano !== "user",
           }));
-          console.log("[confirmarCheckout] Plano atualizado com sucesso no dashboard", {
-            sessionId: sid,
-            plano,
-          });
+          if (import.meta.env.DEV) {
+            console.debug("[confirmarCheckout] plano atualizado:", plano);
+          }
         } catch (e) {
           console.error("[confirmarCheckout]", e);
         }
