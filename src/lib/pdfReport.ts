@@ -1379,12 +1379,12 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
   const usable = PW - M * 2;
   const yStart = 50;
   const available = PH - yStart - 20;
-  const rowH = Math.min(28, available / Math.max(1, rows.length));
+  const rowH = Math.min(46, available / Math.max(1, rows.length));
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
-  doc.text("Cada barra representa um fator aplicado. Azul = deságio (<1) · Dourado = prêmio (>1)", M, yStart - 4);
+  doc.text("Cada barra representa um fator aplicado. Azul = deságio (<1) · Dourado = prêmio (>1) · Linha central = 1,00", M, yStart - 4);
 
   rows.forEach((r, ri) => {
     const y = yStart + ri * rowH;
@@ -1398,23 +1398,29 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
     doc.setTextColor(...GOLD);
     doc.text(`Fator Total: ${fmtNum(r.total, 3)}`, PW - M, y + 4, { align: "right" });
 
-    // Barras
-    const barH = 2.4;
-    const gap = 1.2;
-    const barAreaY = y + 7;
-    const labelW = 30;
-    const valueW = 14;
+    // Barras visuais horizontais
+    const barH = 4.2;
+    const gap = 2.0;
+    const barAreaY = y + 8;
+    const labelW = 26;
+    const valueW = 16;
     const barAreaW = usable - labelW - valueW - 6;
     const refX = M + labelW + barAreaW / 2;
     r.fatores.forEach((f, fi) => {
       const [label, val] = f;
       const by = barAreaY + fi * (barH + gap);
+      // Label do fator
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
+      doc.setFontSize(8);
       doc.setTextColor(...TEXT);
-      doc.text(label, M, by + 2);
-      doc.setFillColor(...BORDER);
+      doc.text(label, M, by + barH / 2 + 1.4);
+      // Trilho de fundo
+      doc.setFillColor(238, 241, 246);
       doc.rect(M + labelW, by, barAreaW, barH, "F");
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.2);
+      doc.rect(M + labelW, by, barAreaW, barH, "S");
+      // Barra do fator (escala: ±20% = barra cheia)
       const cor: [number, number, number] = val < 1 ? BLUE : val > 1 ? GOLD : [120, 125, 135];
       const delta = val - 1;
       const half = barAreaW / 2;
@@ -1423,13 +1429,21 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
       if (delta < 0) doc.rect(refX - len, by, len, barH, "F");
       else if (delta > 0) doc.rect(refX, by, len, barH, "F");
       else doc.rect(refX - 0.4, by, 0.8, barH, "F");
-      doc.setDrawColor(...GRAY_DIM);
-      doc.setLineWidth(0.2);
-      doc.line(refX, by - 0.4, refX, by + barH + 0.4);
+      // Linha vertical de referência em 1,00
+      doc.setDrawColor(80, 90, 110);
+      doc.setLineWidth(0.5);
+      doc.line(refX, by - 0.8, refX, by + barH + 0.8);
+      // Valor numérico na ponta da barra
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
+      doc.setFontSize(8);
       doc.setTextColor(...cor);
-      doc.text(fmtNum(val, 2), M + labelW + barAreaW + 4, by + 2);
+      const valX = delta < 0
+        ? Math.max(M + labelW + 2, refX - len - 1)
+        : delta > 0
+          ? Math.min(M + labelW + barAreaW - 1, refX + len + 1)
+          : refX + 2;
+      const align = delta < 0 ? "right" : "left";
+      doc.text(fmtNum(val, 2), valX, by + barH / 2 + 1.4, { align: align as any });
     });
 
     if (ri < rows.length - 1) {
