@@ -269,7 +269,17 @@ function PlanosPage() {
                 >
                   {loading === p.code ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...</>
-                  ) : p.modo === "avulso" ? "Comprar laudo" : ehAtual ? "Plano atual" : "Assinar"}
+                  ) : p.modo === "avulso" ? (
+                    "Comprar Laudo"
+                  ) : ehAtual ? (
+                    "Plano atual"
+                  ) : p.code === "profissional" ? (
+                    "Assinar Profissional"
+                  ) : p.code === "expert" ? (
+                    "Assinar Expert"
+                  ) : (
+                    "Assinar"
+                  )}
                 </Button>
               </CardContent>
             </Card>
