@@ -99,6 +99,13 @@ export const PLAN_CODE_BY_PRICE_ID: Partial<Record<string, PlanCode>> = {
   price_1ThUzXHzSV1FTjCxFPabAje0: "expert_extra",
 };
 
+const LEGACY_PLAN_CODE_BY_LOOKUP: Partial<Record<string, PlanCode>> = {
+  a8_basico_monthly: "basico",
+  a8_profissional_monthly: "profissional",
+  a8_profissional_monthly_v2: "profissional",
+  a8_expert_monthly: "expert",
+};
+
 export async function resolvePlanCodeFromPriceId(priceId?: string | null): Promise<PlanCode | null> {
   if (!priceId) return null;
   const known = PLAN_CODE_BY_PRICE_ID[priceId];
@@ -107,7 +114,7 @@ export async function resolvePlanCodeFromPriceId(priceId?: string | null): Promi
   const price = await stripeRequest("GET", `/prices/${encodeURIComponent(priceId)}`);
   const lookupKey = price.lookup_key as string | undefined;
   const byLookup = Object.values(PLANS).find((plan) => plan.lookup_key === lookupKey);
-  return (byLookup?.code as PlanCode | undefined) ?? null;
+  return (byLookup?.code as PlanCode | undefined) ?? (lookupKey ? LEGACY_PLAN_CODE_BY_LOOKUP[lookupKey] : undefined) ?? null;
 }
 
 export async function listConfiguredStripePrices() {
