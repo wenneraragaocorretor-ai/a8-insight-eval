@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { PlanCode } from "@/lib/stripe.server";
 
 // Webhook do Stripe. Atualiza o perfil do usuário quando a assinatura é criada,
 // atualizada ou cancelada. Verifica assinatura via STRIPE_WEBHOOK_SECRET.
@@ -33,17 +34,6 @@ async function verifyStripeSignature(payload: string, header: string | null, sec
   return diff === 0;
 }
 
-const PLAN_BY_PRICE_LOOKUP: Record<string, "basico" | "profissional" | "expert"> = {
-  a8_basico_unit_v2: "basico",
-  a8_profissional_monthly_v3: "profissional",
-  a8_profissional_monthly_v2: "profissional",
-  a8_expert_monthly_v2: "expert",
-  // legados (compat)
-  a8_basico_monthly: "basico",
-  a8_profissional_monthly: "profissional",
-  a8_expert_monthly: "expert",
-};
-
 export const Route = createFileRoute("/api/public/stripe-webhook")({
   server: {
     handlers: {
@@ -62,7 +52,7 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
 
         const event = JSON.parse(payload);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { stripeRequest, PLANS } = await import("@/lib/stripe.server");
+        const { stripeRequest, PLANS, resolvePlanCodeFromPriceId } = await import("@/lib/stripe.server");
 
         async function applySubscription(sub: any, session?: any) {
           const userId = sub.metadata?.user_id ?? session?.metadata?.user_id;
@@ -70,20 +60,15 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             console.warn("Subscription sem metadata.user_id", sub.id);
             return;
           }
-          let plano: "basico" | "profissional" | "expert" | null = null;
-          const planCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as string | undefined;
-          if (planCode === "basico") plano = "basico";
-          else if (planCode === "profissional") plano = "profissional";
-          else if (planCode === "expert") plano = "expert";
+          const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
+          const rawMetadataPlanCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as PlanCode | undefined;
+          const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : undefined;
+          const pricePlanCode = await resolvePlanCodeFromPriceId(priceId);
+          const planCode = priceId ? (pricePlanCode ?? "basico") : (metadataPlanCode ?? "basico");
+          const plano = PLANS[planCode]?.db_plan ?? "basico";
 
-          if (!plano) {
-            const priceId = sub.items?.data?.[0]?.price?.id;
-            if (priceId) {
-              const price = await stripeRequest("GET", `/prices/${priceId}`);
-              const lookup = price.lookup_key as string | undefined;
-              if (lookup && PLAN_BY_PRICE_LOOKUP[lookup]) plano = PLAN_BY_PRICE_LOOKUP[lookup];
-            }
-          }
+          console.log("[stripe-webhook] Price ID selecionado:", priceId ?? null);
+          console.log("[stripe-webhook] Plano mapeado:", planCode, "→", plano);
 
           const isActive = sub.status === "active" || sub.status === "trialing";
           const { data: existing } = await supabaseAdmin
@@ -93,18 +78,16 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             .maybeSingle();
           const nome = existing?.nome || session?.customer_details?.name || session?.customer_details?.email?.split("@")[0] || "Usuário";
 
-          // Determina plano final: se ativo e detectado, usa o detectado.
-          // Se ativo mas não detectado, preserva o plano atual (NÃO faz downgrade silencioso para "basico").
-          // Se cancelado/inativo, volta para "basico".
+          // Fallback seguro: se o Price ID não for reconhecido, nunca mantém Expert/Profissional por padrão.
+          // Se ativo e não detectado, usa Básico; se cancelado/inativo, volta para Básico.
           let planoFinal: "basico" | "profissional" | "expert";
           if (isActive) {
-            planoFinal = plano ?? (existing?.plano as any) ?? "basico";
-            if (!plano) {
-              console.warn("[stripe-webhook] Plano não detectado via metadata/lookup_key — preservando plano atual", {
+            planoFinal = plano;
+            if (!pricePlanCode && !metadataPlanCode) {
+              console.warn("[stripe-webhook] Price ID não reconhecido — aplicando fallback seguro para Básico", {
                 userId,
                 subscriptionId: sub.id,
-                planoAtual: existing?.plano,
-                priceId: sub.items?.data?.[0]?.price?.id,
+                priceId,
               });
             }
           } else {
@@ -121,7 +104,7 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             subscription_current_period_end: sub.current_period_end
               ? new Date(sub.current_period_end * 1000).toISOString()
               : null,
-            plan_price_id: sub.items?.data?.[0]?.price?.id ?? null,
+            plan_price_id: priceId ?? null,
           }, { onConflict: "id" }).select("plano, subscription_status, plan_price_id").single();
 
           if (error) throw error;
@@ -139,7 +122,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             case "checkout.session.completed": {
               const session = event.data.object;
               if (session.subscription) {
-                const sub = await stripeRequest("GET", `/subscriptions/${session.subscription}`);
+                const sub = await stripeRequest(
+                  "GET",
+                  `/subscriptions/${encodeURIComponent(session.subscription)}?expand[]=items.data.price`,
+                );
                 if (!sub.metadata?.user_id && session.metadata?.user_id) {
                   sub.metadata = { ...sub.metadata, ...session.metadata };
                 }
@@ -147,7 +133,20 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
               } else if (session.mode === "payment" && session.payment_status === "paid") {
                 // Pagamento único — Básico (laudo avulso) ou Expert Extra: +1 crédito
                 const userId = session.metadata?.user_id;
-                const planCode = session.metadata?.plan_code;
+                let sessionPriceId = session.line_items?.data?.[0]?.price?.id as string | undefined;
+                if (!sessionPriceId) {
+                  const lineItems = await stripeRequest(
+                    "GET",
+                    `/checkout/sessions/${encodeURIComponent(session.id)}/line_items?limit=1&expand[]=data.price`,
+                  );
+                  sessionPriceId = lineItems.data?.[0]?.price?.id as string | undefined;
+                }
+                const rawMetadataPlanCode = session.metadata?.plan_code as PlanCode | undefined;
+                const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : undefined;
+                const pricePlanCode = await resolvePlanCodeFromPriceId(sessionPriceId);
+                const planCode = sessionPriceId ? (pricePlanCode ?? "basico") : (metadataPlanCode ?? "basico");
+                console.log("[stripe-webhook] Price ID selecionado:", sessionPriceId ?? null);
+                console.log("[stripe-webhook] Plano mapeado:", planCode, "→", PLANS[planCode]?.db_plan ?? "basico");
                 if (userId) {
                   const { data: existing } = await supabaseAdmin
                     .from("profiles")
