@@ -1653,11 +1653,12 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
 
   // ===== CARDS PRINCIPAIS =====
   const principais: Array<{ icon: string; value: string; label: string }> = [];
-  if (a.quartos != null && Number(a.quartos) > 0) principais.push({ icon: "Q", value: String(a.quartos), label: "Quartos" });
-  if (a.suites != null && Number(a.suites) > 0) principais.push({ icon: "S", value: String(a.suites), label: "Suítes" });
+  if (a.quartos != null && Number(a.quartos) > 0) principais.push({ icon: "", value: String(a.quartos), label: "Quartos" });
+  if (a.suites != null && Number(a.suites) > 0) principais.push({ icon: "", value: String(a.suites), label: "Suítes" });
   const vagas = (Number(a.vagas_cobertas) || 0) + (Number(a.vagas_descobertas) || 0) || Number(a.vagas) || 0;
-  if (vagas > 0) principais.push({ icon: "V", value: String(vagas), label: "Vagas" });
-  if (a.area_total) principais.push({ icon: "A", value: String(a.area_total), label: "m² Área" });
+  if (vagas > 0) principais.push({ icon: "", value: String(vagas), label: "Vagas" });
+  if (a.area_total) principais.push({ icon: "", value: String(a.area_total), label: "m² Área" });
+
 
   if (principais.length) {
     const gap = 6;
