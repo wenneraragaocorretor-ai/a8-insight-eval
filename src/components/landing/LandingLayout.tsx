@@ -20,7 +20,7 @@ function SiteNav() {
             A8
           </span>
           <span className="font-display text-sm tracking-[0.3em] text-white/90 uppercase">
-            Investimentos
+            Avalia
           </span>
         </Link>
         <div className="hidden md:flex items-center gap-10 text-sm tracking-wide text-white/80">
