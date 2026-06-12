@@ -105,7 +105,10 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const apiKey = process.env.LOVABLE_API_KEY;
-        if (!apiKey) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        if (!apiKey) {
+          console.error("[api/chat] LOVABLE_API_KEY not configured");
+          return new Response("Service temporarily unavailable", { status: 503 });
+        }
 
         const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
         const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;

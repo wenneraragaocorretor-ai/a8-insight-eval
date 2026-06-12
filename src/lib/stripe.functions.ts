@@ -156,6 +156,40 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
     // ---- BÁSICO ou EXPERT_EXTRA: pagamento único, soma 1 crédito de laudo avulso ----
     if (plan.mode === "payment") {
       if (session.payment_status !== "paid") return { ok: false };
+
+      // Idempotência: se já existe cobrança registrada para este session_id,
+      // não credita de novo (previne replay attack via reuso de session_id).
+      const { data: existingCharge } = await supabase
+        .from("cobrancas_avulsas")
+        .select("id")
+        .eq("stripe_session_id", session.id)
+        .maybeSingle();
+      if (existingCharge) {
+        return { ok: true, plano: planCode, creditosAvulsos: existing?.creditos_avulsos ?? 0, alreadyProcessed: true };
+      }
+
+      // Registra cobrança PRIMEIRO (unique constraint em stripe_session_id é a barreira atômica).
+      const valorCents = typeof session.amount_total === "number"
+        ? session.amount_total
+        : plan.price_cents;
+      const { error: cobrancaError } = await supabase.from("cobrancas_avulsas").insert({
+        user_id: userId,
+        tipo: planCode === "expert_extra" ? "expert_extra" : "basico_laudo",
+        valor_cents: valorCents,
+        moeda: session.currency ?? "brl",
+        stripe_session_id: session.id,
+        stripe_payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+        status: "paid",
+        descricao: planCode === "expert_extra" ? "Laudo adicional Expert" : "Laudo avulso Básico",
+      });
+      if (cobrancaError) {
+        // Violação de unique = corrida com webhook ou chamada duplicada — não credita.
+        if ((cobrancaError as any).code === "23505") {
+          return { ok: true, plano: planCode, creditosAvulsos: existing?.creditos_avulsos ?? 0, alreadyProcessed: true };
+        }
+        throw new Error(`Falha ao registrar cobrança: ${cobrancaError.message}`);
+      }
+
       const novosCreditos = (existing?.creditos_avulsos ?? 0) + 1;
       const upsertData: any = {
         id: userId,
@@ -168,21 +202,6 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       if (planCode === "basico") upsertData.plano = "basico";
       const { error } = await supabase.from("profiles").upsert(upsertData, { onConflict: "id" });
       if (error) throw new Error(`Falha ao creditar laudo: ${error.message}`);
-
-      // Registra cobrança avulsa (idempotente via unique stripe_session_id)
-      const valorCents = typeof session.amount_total === "number"
-        ? session.amount_total
-        : plan.price_cents;
-      await supabase.from("cobrancas_avulsas").upsert({
-        user_id: userId,
-        tipo: planCode === "expert_extra" ? "expert_extra" : "basico_laudo",
-        valor_cents: valorCents,
-        moeda: session.currency ?? "brl",
-        stripe_session_id: session.id,
-        stripe_payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
-        status: "paid",
-        descricao: planCode === "expert_extra" ? "Laudo adicional Expert" : "Laudo avulso Básico",
-      }, { onConflict: "stripe_session_id" });
 
       return { ok: true, plano: planCode, creditosAvulsos: novosCreditos };
     }
