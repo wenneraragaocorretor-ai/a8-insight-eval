@@ -552,7 +552,11 @@ function paginaCapa(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   doc.setTextColor(...WHITE);
-  doc.text(String(avaliacao?.localizacao ?? "").toUpperCase(), M, fotoH - 12);
+  {
+    const locFull = String(avaliacao?.localizacao ?? "").toUpperCase();
+    const locLines = doc.splitTextToSize(locFull, PW - M * 2 - 50);
+    doc.text(locLines[0] ?? "", M, fotoH - 12);
+  }
   doc.setFontSize(7);
   doc.setTextColor(...GOLD_LIGHT);
   doc.text("IMÓVEL AVALIADO", M, fotoH - 17);
