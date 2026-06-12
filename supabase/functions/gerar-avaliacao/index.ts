@@ -304,10 +304,20 @@ Comparável #${i + 1} (${c.fonte}):
     }
 
     const data = await response.json()
-    const content = data.content[0].text
+    const content = data?.content?.[0]?.text ?? ''
+    if (!content) {
+      console.error('Resposta inesperada da Anthropic:', JSON.stringify(data).slice(0, 500))
+      throw new Error('A IA retornou uma resposta vazia. Tente novamente em alguns segundos.')
+    }
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/)
     const jsonText = jsonMatch ? jsonMatch[1].trim() : content.trim()
-    const result = JSON.parse(jsonText)
+    let result: any
+    try {
+      result = JSON.parse(jsonText)
+    } catch (parseErr) {
+      console.error('JSON inválido da IA. Trecho:', jsonText.slice(0, 300), parseErr)
+      throw new Error('A IA retornou resposta incompleta. Tente novamente ou reduza o número de fotos.')
+    }
 
     // Garante que a área base do cálculo sempre vai no resultado
     result.area_base_calculo = result.area_base_calculo ?? baseImovel.area
