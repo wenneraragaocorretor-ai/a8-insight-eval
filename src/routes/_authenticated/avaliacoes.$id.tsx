@@ -167,7 +167,7 @@ function AvaliacaoDetalhe() {
       plano,
       fotosDataUrls,
       fotosDetalhadas,
-      mapaDataUrl,
+      
       marketing: marketingForPdf,
       corretor: {
         nome: profile?.nome ?? "Corretor",
