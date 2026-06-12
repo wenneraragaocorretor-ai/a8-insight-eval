@@ -375,6 +375,72 @@ function NovaAvaliacao() {
     novoComparavel(2),
     novoComparavel(3),
   ]);
+  const [importUrlAberto, setImportUrlAberto] = useState<Record<number, boolean>>({});
+  const [importUrlValor, setImportUrlValor] = useState<Record<number, string>>({});
+  const [importandoIdx, setImportandoIdx] = useState<number | null>(null);
+
+  const importarComparavelPorUrl = async (index: number) => {
+    const id = comparaveis[index]?.id;
+    if (id == null) return;
+    const url = (importUrlValor[id] ?? "").trim();
+    if (!url) {
+      toast.error("Cole a URL do anúncio");
+      return;
+    }
+    setImportandoIdx(index);
+    try {
+      const { data, error } = await supabase.functions.invoke("extrair-comparavel", {
+        body: { url },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const d = data?.dados ?? {};
+      const normPadrao = (v: any): string => {
+        const s = String(v ?? "").toLowerCase();
+        if (s.includes("luxo")) return "Luxo";
+        if (s.includes("alto")) return "Alto";
+        if (s.includes("simpl")) return "Simples";
+        return "Normal";
+      };
+      const normConserv = (v: any): string => {
+        const s = String(v ?? "").toLowerCase();
+        if (s.includes("ótim") || s.includes("otim") || s.includes("novo")) return "Novo";
+        if (s.includes("regular")) return "Regular";
+        if (s.includes("ruim") || s.includes("ruím")) return "Ruim";
+        return "Bom";
+      };
+      const num = (v: any): number => {
+        if (v == null) return 0;
+        if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+        const n = Number(String(v).replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+        return Number.isFinite(n) ? n : 0;
+      };
+      updateComp(index, {
+        fonte: d.fonte ? String(d.fonte) : extrairDominio(url),
+        localizacao: d.localizacao ? String(d.localizacao) : "",
+        area: num(d.area_total ?? d.area_construida),
+        area_privativa: num(d.area_privativa),
+        valor: num(d.valor),
+        quartos: num(d.quartos),
+        suites: num(d.suites),
+        banheiros: num(d.banheiros),
+        vagas: num(d.vagas),
+        padrao: normPadrao(d.padrao_construtivo),
+        conservacao: normConserv(d.estado_conservacao),
+        idade: num(d.idade),
+        caracteristicas: Array.isArray(d.caracteristicas)
+          ? d.caracteristicas.filter((c: any) => CARACTERISTICAS_COMPARAVEL.includes(String(c)))
+          : [],
+      });
+      toast.success("Dados importados com sucesso! Revise e confirme.");
+      setImportUrlAberto((s) => ({ ...s, [id]: false }));
+    } catch (e: any) {
+      console.error("[importarComparavelPorUrl]", e);
+      toast.error(e?.message ?? "Não foi possível importar os dados");
+    } finally {
+      setImportandoIdx(null);
+    }
+  };
 
   type FotoItem = {
     path: string;
@@ -1261,16 +1327,49 @@ function NovaAvaliacao() {
             <Card key={c.id} className="premium-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base">Comparável #{index + 1}</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeComparavel(c.id)}
-                  className="text-destructive"
-                  disabled={comparaveis.length <= 3}
-                >
-                  <Trash2 size={18} />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() =>
+                      setImportUrlAberto((s) => ({ ...s, [c.id]: !s[c.id] }))
+                    }
+                    className="gap-1"
+                  >
+                    📎 Importar por URL
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeComparavel(c.id)}
+                    className="text-destructive"
+                    disabled={comparaveis.length <= 3}
+                  >
+                    <Trash2 size={18} />
+                  </Button>
+                </div>
               </CardHeader>
+              {importUrlAberto[c.id] && (
+                <div className="px-6 pb-2 flex flex-col sm:flex-row gap-2">
+                  <Input
+                    type="url"
+                    placeholder="Cole aqui o link do anúncio (Zap, OLX, Viva Real...)"
+                    value={importUrlValor[c.id] ?? ""}
+                    onChange={(e) =>
+                      setImportUrlValor((s) => ({ ...s, [c.id]: e.target.value }))
+                    }
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => importarComparavelPorUrl(index)}
+                    disabled={importandoIdx === index}
+                    className="bg-brand-blue"
+                  >
+                    {importandoIdx === index ? "Importando..." : "Importar"}
+                  </Button>
+                </div>
+              )}
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Fonte (Ex: Zap, OLX)</Label>
