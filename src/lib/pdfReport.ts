@@ -48,6 +48,28 @@ const fmtBRL = (v: number | null | undefined) =>
     ? "—"
     : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
+// ABNT NBR 14653-2 — área base para R$/m² conforme tipo de imóvel.
+// Casa/Apartamento/Galpão: privativa → construída → total. Terreno: total.
+function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte: "privativa" | "construida" | "total" } {
+  const tn = String(tipo ?? "").toLowerCase();
+  const priv = Number(item?.area_privativa);
+  const constr = Number(item?.area_construida);
+  const total = Number(item?.area_total ?? item?.area);
+  if (tn.includes("terreno")) {
+    return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
+  }
+  if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
+  if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
+  return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
+}
+
+function labelValorM2(tipo: any): string {
+  const tn = String(tipo ?? "").toLowerCase();
+  if (tn.includes("terreno")) return "Valor/m² total";
+  return "Valor/m² privativo";
+}
+
+
 const fmtNum = (v: number | null | undefined, digits = 2) =>
   v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("pt-BR", { maximumFractionDigits: digits });
 
