@@ -143,7 +143,7 @@ function microHeader(doc: jsPDF, corretor: CorretorInfo, laudoNum?: string) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(...WHITE);
-  doc.text("INVESTIMENTOS  •  " + (corretor.nome || "").toUpperCase(), M + 7, 7.8);
+  doc.text("AVALIA  •  " + (corretor.nome || "").toUpperCase(), M + 7, 7.8);
 
   // Número do laudo à direita em dourado
   if (laudoNum) {
