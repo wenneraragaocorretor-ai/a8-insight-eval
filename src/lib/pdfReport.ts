@@ -2637,8 +2637,9 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAmbientes(doc, avaliacao, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
   paginaLocalizacao(doc, avaliacao, corretor);
-  if (temFotos) paginaFotos(doc, rel, fotos, corretor);
-  if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDet, corretor);
+  if (temFotos) paginaFotos(doc, rel, fotosLim, corretor);
+  if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
+
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
