@@ -84,7 +84,8 @@ serve(async (req) => {
     }
 
 
-    console.log('Iniciando processamento de avaliação para:', imovel.localizacao)
+    // log mínimo, sem expor localização completa (LGPD)
+    console.log('Iniciando processamento de avaliação')
 
     // Baixa as fotos do imóvel (caminhos no bucket privado) usando service role
     const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 15) : []
