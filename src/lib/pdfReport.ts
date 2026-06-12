@@ -1533,7 +1533,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAmbientes(doc, avaliacao, corretor);
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
@@ -1555,7 +1555,7 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   if (temFotos) paginaFotos(doc, rel, fotos, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
@@ -2542,7 +2542,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDet, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
   paginaEstatistica(doc, comparaveis, corretor);
