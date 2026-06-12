@@ -1880,6 +1880,8 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
   let col = 0;
   let primeira = true;
 
+
+
   const novaPag = () => {
     novaPagina(doc);
     microHeader(doc, corretor);
