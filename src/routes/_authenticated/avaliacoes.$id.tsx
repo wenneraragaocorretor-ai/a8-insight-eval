@@ -350,7 +350,7 @@ function AvaliacaoDetalhe() {
       )}
 
       {/* ============ ASSISTENTE DE MARKETING (somente Expert) ============ */}
-      {plano === "expert" && (
+      {String(plano ?? "").toLowerCase() === "expert" && (
       <Card className="premium-card border-brand-gold">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
