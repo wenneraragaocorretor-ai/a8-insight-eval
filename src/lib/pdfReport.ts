@@ -2610,7 +2610,6 @@ export async function gerarPdfAvaliacao(
     fotosDataUrls?: string[];
     fotosDetalhadas?: FotoDetalhada[];
     marketing?: MarketingPdf | null;
-    marketing?: MarketingPdf | null;
   },
 ) {
   const { modelo, plano } = opts;
