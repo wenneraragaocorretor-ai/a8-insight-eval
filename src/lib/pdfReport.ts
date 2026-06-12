@@ -598,14 +598,24 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   microHeader(doc, corretor);
   tituloPagina(doc, "O Imóvel");
 
-  // metric cards row
+  // metric cards row — sempre exibir áreas separadas quando informadas
+  const areaItems: Array<[string, string]> = [];
+  const hasTotal = a.area_total !== null && a.area_total !== undefined && Number(a.area_total) > 0;
+  const hasConstr = a.area_construida !== null && a.area_construida !== undefined && Number(a.area_construida) > 0;
+  const hasPriv = a.area_privativa !== null && a.area_privativa !== undefined && Number(a.area_privativa) > 0;
+  if (hasTotal) areaItems.push(["ÁREA TOTAL (m²)", String(a.area_total)]);
+  if (hasConstr) areaItems.push(["ÁREA CONSTRUÍDA (m²)", String(a.area_construida)]);
+  if (hasPriv) areaItems.push(["ÁREA PRIVATIVA (m²)", String(a.area_privativa)]);
+  if (areaItems.length === 0) areaItems.push(["ÁREA (m²)", "—"]);
+
   const items: Array<[string, string]> = [
     ["TIPOLOGIA", String(a.tipo_imovel ?? "—")],
     ["QUARTOS", String(a.quartos ?? "—")],
     ["SUÍTES", String(a.suites ?? "—")],
     ["VAGAS", String(a.vagas ?? "—")],
-    ["ÁREA (m²)", String(a.area_total ?? "—")],
+    ...areaItems,
   ];
+
   const usable = PW - M * 2;
   const gap = 4;
   const cw = (usable - gap * (items.length - 1)) / items.length;
