@@ -1317,8 +1317,9 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
   type Row = { idx: number; fonte: string; fatores: Array<[string, number]>; total: number };
   const rows: Row[] = comparaveis.map((c, i) => {
     const fOferta = 0.9;
-    const areaA = Number(a?.area_total) || 0;
-    const areaC = Number(c.area) || 0;
+    const areaA = areaBaseDe(a?.tipo_imovel, a).area;
+    const areaC = areaBaseDe(a?.tipo_imovel, c).area;
+
     let fArea = 1.0;
     if (areaA > 0 && areaC > 0) fArea = Math.max(0.8, Math.min(1.2, Math.pow(areaC / areaA, 0.25)));
     const pA = rank(ordemPadrao, norm(a?.padrao));
