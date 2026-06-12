@@ -2640,7 +2640,7 @@ export async function gerarPdfAvaliacao(
 
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null, qrDataUrl)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.marketing ?? null, qrDataUrl)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
