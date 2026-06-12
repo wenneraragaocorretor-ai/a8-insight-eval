@@ -5,11 +5,11 @@ import { LandingLayout } from "../components/landing/LandingLayout";
 export const Route = createFileRoute("/termos")({
   head: () => ({
     meta: [
-      { title: "Termos de Uso — A8 Investimentos" },
+      { title: "Termos de Uso — A8 Avalia" },
       {
         name: "description",
         content:
-          "Termos de Uso da A8 Investimentos Imobiliários. Condições de acesso e utilização da plataforma.",
+          "Termos de Uso da A8 Avalia. Condições de acesso e utilização da plataforma.",
       },
     ],
   }),
@@ -26,7 +26,7 @@ function TermosPage() {
           </h1>
 
           <p className="text-[#666666] leading-relaxed mb-10 text-center">
-            Ao utilizar a plataforma A8 Investimentos Imobiliários, o usuário
+            Ao utilizar a plataforma A8 Avalia, o usuário
             concorda com os seguintes termos:
           </p>
 
@@ -63,7 +63,7 @@ function TermosPage() {
               </h2>
               <p>
                 O usuário é responsável pela veracidade dos dados inseridos na
-                plataforma. A A8 Investimentos Imobiliários não se
+                plataforma. A A8 Avalia não se
                 responsabiliza por avaliações baseadas em informações
                 incorretas fornecidas pelo usuário.
               </p>
@@ -87,7 +87,7 @@ function TermosPage() {
               </h2>
               <p>
                 A plataforma, sua identidade visual e tecnologia são de
-                propriedade exclusiva da A8 Investimentos Imobiliários,
+                propriedade exclusiva da A8 Avalia,
                 protegidos pela legislação brasileira.
               </p>
             </section>
