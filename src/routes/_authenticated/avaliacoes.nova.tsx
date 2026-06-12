@@ -1327,16 +1327,49 @@ function NovaAvaliacao() {
             <Card key={c.id} className="premium-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base">Comparável #{index + 1}</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeComparavel(c.id)}
-                  className="text-destructive"
-                  disabled={comparaveis.length <= 3}
-                >
-                  <Trash2 size={18} />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() =>
+                      setImportUrlAberto((s) => ({ ...s, [c.id]: !s[c.id] }))
+                    }
+                    className="gap-1"
+                  >
+                    📎 Importar por URL
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeComparavel(c.id)}
+                    className="text-destructive"
+                    disabled={comparaveis.length <= 3}
+                  >
+                    <Trash2 size={18} />
+                  </Button>
+                </div>
               </CardHeader>
+              {importUrlAberto[c.id] && (
+                <div className="px-6 pb-2 flex flex-col sm:flex-row gap-2">
+                  <Input
+                    type="url"
+                    placeholder="Cole aqui o link do anúncio (Zap, OLX, Viva Real...)"
+                    value={importUrlValor[c.id] ?? ""}
+                    onChange={(e) =>
+                      setImportUrlValor((s) => ({ ...s, [c.id]: e.target.value }))
+                    }
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => importarComparavelPorUrl(index)}
+                    disabled={importandoIdx === index}
+                    className="bg-brand-blue"
+                  >
+                    {importandoIdx === index ? "Importando..." : "Importar"}
+                  </Button>
+                </div>
+              )}
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Fonte (Ex: Zap, OLX)</Label>
