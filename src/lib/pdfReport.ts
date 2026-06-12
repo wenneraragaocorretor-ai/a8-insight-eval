@@ -1696,27 +1696,6 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
 }
 
 
-function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-  const rel = resultado?.relatorio_json || {};
-  const temFotos = fotos.length > 0;
-  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotos[0] || null;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
-  paginaSumario(
-    doc,
-    ["O Imóvel", "Ambientes", ...(temFotos ? ["Fotos do Imóvel"] : []), "Análise do Bairro", "Perfil do Público", "Comparáveis", "Valor do Imóvel", "Contato"],
-  );
-  paginaImovel(doc, avaliacao, rel, corretor);
-  paginaAmbientes(doc, avaliacao, corretor);
-  if (temFotos) paginaFotos(doc, rel, fotos, corretor);
-  paginaBairro(doc, avaliacao, rel, corretor);
-  paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
-  paginaValor(doc, resultado, corretor);
-  paginaContato(doc, corretor);
-  rodape(doc);
-  return doc;
-}
 
 function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
   novaPagina(doc);
