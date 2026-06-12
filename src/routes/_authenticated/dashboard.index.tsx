@@ -145,6 +145,13 @@ function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold text-brand-blue">Olá, {nome}</h1>
           <p className="text-muted-foreground">Bem-vindo ao seu painel de avaliações.</p>
+          <div className="mt-2 inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-md border border-brand-gold/40 bg-brand-gold/5 text-brand-blue">
+            <span className="font-semibold">Plano atual (Supabase):</span>
+            <span className="font-mono">{status?.plano ?? "carregando..."}</span>
+            {status?.statusAssinatura && (
+              <span className="text-muted-foreground">· status: <span className="font-mono">{status.statusAssinatura}</span></span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           <Link to="/perfil">
