@@ -379,6 +379,7 @@ export type Database = {
           id: string
           pdf_url: string | null
           relatorio_json: Json | null
+          user_id: string
           valor_central: number | null
           valor_maximo: number | null
           valor_minimo: number | null
@@ -390,6 +391,7 @@ export type Database = {
           id?: string
           pdf_url?: string | null
           relatorio_json?: Json | null
+          user_id: string
           valor_central?: number | null
           valor_maximo?: number | null
           valor_minimo?: number | null
@@ -401,6 +403,7 @@ export type Database = {
           id?: string
           pdf_url?: string | null
           relatorio_json?: Json | null
+          user_id?: string
           valor_central?: number | null
           valor_maximo?: number | null
           valor_minimo?: number | null
