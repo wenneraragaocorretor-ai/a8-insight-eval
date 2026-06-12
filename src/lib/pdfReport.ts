@@ -1924,7 +1924,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
       y += blocoH;
     }
   });
-  void primeira;
+  
 }
 
 // ---------- EXPERT EXTRA: DISPERSÃO (R$/m² × Área) ----------
