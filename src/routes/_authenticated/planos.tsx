@@ -35,7 +35,6 @@ const PLANOS = [
       "Ficha técnica completa",
       "Até 3 fotos com análise da IA",
       "Pesquisa de comparáveis de mercado",
-      "Mapa de localização",
       "PDF com logo e dados do corretor",
       "Laudo com marca d'água A8",
       "1 edição por laudo",
