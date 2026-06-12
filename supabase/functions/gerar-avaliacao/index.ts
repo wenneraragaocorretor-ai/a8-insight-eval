@@ -163,6 +163,24 @@ REGRA DE ÁREA BASE (ABNT NBR 14653-2) — OBRIGATÓRIA para R$/m²:
 A mesma regra se aplica a cada comparável (use a área privativa quando disponível).
 O "valor_unitario_medio" DEVE ser calculado sobre a área base — NÃO use área total quando houver privativa.
 
+ANÁLISE DE APROVEITAMENTO DO LOTE — REGRA OBRIGATÓRIA:
+NUNCA conclua "baixo aproveitamento" do terreno baseando-se apenas na relação
+matemática entre área construída e área total do lote. Avalie o aproveitamento
+de forma CONTEXTUAL e INTELIGENTE, considerando o conjunto:
+- Quantidade de unidades no lote (múltiplas casas/apartamentos = aproveitamento alto);
+- Uso misto (residencial + comercial) indica aproveitamento funcional;
+- Número de vagas de garagem (muitas vagas = uso eficiente do solo);
+- Ambientes listados pelo corretor (sociais, serviço, outros);
+- Padrão construtivo informado (alto padrão e luxo frequentemente priorizam
+  áreas livres, jardins, lazer e recuos — isso NÃO é baixo aproveitamento).
+Se o imóvel tiver múltiplas unidades, uso misto, muitas vagas, ambientes
+diversificados ou alto padrão construtivo, reconheça como APROVEITAMENTO
+FUNCIONAL E POSITIVO do lote, independentemente da taxa de ocupação bruta.
+Só mencione "baixo aproveitamento" quando houver evidência clara de
+subutilização (ex.: terreno grande com construção mínima, sem vagas,
+sem ambientes adicionais, padrão simples e sem outras unidades).
+
+
 Para este imóvel, a área base já está determinada: "${baseImovel.label}" = ${baseImovel.area}m².
 Para cada comparável, use o campo "area_base" indicado no input.
 
