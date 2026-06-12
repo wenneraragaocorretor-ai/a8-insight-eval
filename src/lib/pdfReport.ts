@@ -2522,9 +2522,9 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaEstatistica(doc, comparaveis, corretor);
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, resultado, corretor);
-  if (temMkt && marketing) paginaMarketing(doc, marketing, corretor);
+  if (temMkt && marketing) paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);
   paginaContato(doc, corretor);
-  paginaAssinatura(doc, corretor);
+  paginaAssinatura(doc, corretor, qrDataUrl);
   rodape(doc);
 
   return doc;
