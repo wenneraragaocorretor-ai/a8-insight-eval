@@ -68,7 +68,7 @@ function AvaliacaoDetalhe() {
   ];
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
 
-  const fetchMapa = useServerFn(getMapaEstatico);
+  
   const fetchMarketing = useServerFn(gerarMarketingAvaliacao);
   const [marketing, setMarketing] = useState<MarketingResultado | null>(null);
   const [loadingMkt, setLoadingMkt] = useState(false);
