@@ -129,11 +129,13 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       throw new Error("Sessão de checkout não pertence ao usuário atual");
     }
 
-    // Identifica plano via metadata ou via price lookup_key
-    let planCode = session.metadata?.plan_code as keyof typeof PLANS | undefined;
+    // Identifica plano priorizando o Price ID real do Stripe.
+    let planCode: keyof typeof PLANS | undefined;
     const lineItemPriceId = session.line_items?.data?.[0]?.price?.id as string | undefined;
-    if (!planCode && lineItemPriceId) {
-      planCode = (await resolvePlanCodeFromPriceId(lineItemPriceId)) ?? undefined;
+    if (lineItemPriceId) {
+      planCode = (await resolvePlanCodeFromPriceId(lineItemPriceId)) ?? "basico";
+    } else {
+      planCode = session.metadata?.plan_code as keyof typeof PLANS | undefined;
     }
 
     console.log("[confirmarCheckout] Price ID selecionado:", lineItemPriceId ?? null);
