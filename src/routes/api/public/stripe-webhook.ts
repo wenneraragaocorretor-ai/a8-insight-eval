@@ -162,13 +162,15 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                     creditos_avulsos: novosCreditos,
                     stripe_customer_id: session.customer ?? null,
                   };
-                  // Só vira plano "basico" se for compra avulsa do Básico E o usuário
-                  // não tiver uma assinatura ativa (evita downgrade de Profissional/Expert).
+                  // Pagamento confirmado: sempre sobrescreve o plano com o produto comprado.
                   if (planCode === "basico") {
-                    const temAssinaturaAtiva =
-                      existing?.subscription_status === "active" ||
-                      existing?.subscription_status === "trialing";
-                    if (!temAssinaturaAtiva) upsertData.plano = "basico";
+                    upsertData.plano = "basico";
+                    upsertData.subscription_status = null;
+                    upsertData.stripe_subscription_id = null;
+                    upsertData.plan_price_id = null;
+                    upsertData.subscription_current_period_end = null;
+                  } else if (planCode === "expert_extra") {
+                    upsertData.plano = "expert";
                   }
                   const { error } = await supabaseAdmin.from("profiles").upsert(upsertData, { onConflict: "id" });
                   if (error) throw error;
