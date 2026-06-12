@@ -35,6 +35,7 @@ async function verifyStripeSignature(payload: string, header: string | null, sec
 
 const PLAN_BY_PRICE_LOOKUP: Record<string, "basico" | "profissional" | "expert"> = {
   a8_basico_unit_v2: "basico",
+  a8_profissional_monthly_v3: "profissional",
   a8_profissional_monthly_v2: "profissional",
   a8_expert_monthly_v2: "expert",
   // legados (compat)
