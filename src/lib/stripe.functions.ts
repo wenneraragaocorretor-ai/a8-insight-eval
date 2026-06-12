@@ -197,9 +197,19 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
         creditos_avulsos: novosCreditos,
         stripe_customer_id: (session.customer as string) ?? undefined,
       };
-      // Só altera o plano para 'basico' se for compra avulsa de Plano Básico.
-      // Para 'expert_extra', mantém o plano atual do usuário (Expert).
-      if (planCode === "basico") upsertData.plano = "basico";
+      // Só altera o plano para 'basico' se for compra avulsa de Plano Básico
+      // E o usuário NÃO tiver uma assinatura ativa de Profissional/Expert
+      // (não fazer downgrade silencioso de assinantes pagos).
+      if (planCode === "basico") {
+        const { data: current } = await supabase
+          .from("profiles")
+          .select("plano, subscription_status")
+          .eq("id", userId)
+          .maybeSingle();
+        const temAssinaturaAtiva =
+          current?.subscription_status === "active" || current?.subscription_status === "trialing";
+        if (!temAssinaturaAtiva) upsertData.plano = "basico";
+      }
       const { error } = await supabase.from("profiles").upsert(upsertData, { onConflict: "id" });
       if (error) throw new Error(`Falha ao creditar laudo: ${error.message}`);
 
