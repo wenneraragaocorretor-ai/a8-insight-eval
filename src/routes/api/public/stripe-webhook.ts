@@ -151,7 +151,7 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                 if (userId) {
                   const { data: existing } = await supabaseAdmin
                     .from("profiles")
-                    .select("nome, creditos_avulsos, plano")
+                    .select("nome, creditos_avulsos, plano, subscription_status")
                     .eq("id", userId)
                     .maybeSingle();
                   const nome = existing?.nome || session.customer_details?.name || session.customer_details?.email?.split("@")[0] || "Usuário";
