@@ -35,7 +35,6 @@ const PLANOS = [
       "Ficha técnica completa",
       "Até 3 fotos com análise da IA",
       "Pesquisa de comparáveis de mercado",
-      "Mapa de localização",
       "PDF com logo e dados do corretor",
       "Laudo com marca d'água A8",
       "1 edição por laudo",
@@ -57,7 +56,7 @@ const PLANOS = [
       "Até 8 fotos com análise da IA",
       "Homogeneização dos comparáveis",
       "Tratamento estatístico básico",
-      "Mapa de localização",
+      
       "Caracterização do bairro pela IA",
       "Perfil do público-alvo",
       "PDF 8-10 páginas sem marca d'água",

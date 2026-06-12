@@ -252,7 +252,7 @@ function Planos() {
         "Até 8 fotos com análise da IA",
         "Homogeneização dos comparáveis",
         "Tratamento estatístico básico",
-        "Mapa de localização",
+        
         "PDF 8-10 páginas com sua marca",
         "Caracterização do bairro pela IA",
       ],
