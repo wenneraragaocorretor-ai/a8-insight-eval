@@ -35,6 +35,7 @@ async function verifyStripeSignature(payload: string, header: string | null, sec
 
 const PLAN_BY_PRICE_LOOKUP: Record<string, "basico" | "profissional" | "expert"> = {
   a8_basico_unit_v2: "basico",
+  a8_profissional_monthly_v3: "profissional",
   a8_profissional_monthly_v2: "profissional",
   a8_expert_monthly_v2: "expert",
   // legados (compat)
@@ -87,15 +88,33 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           const isActive = sub.status === "active" || sub.status === "trialing";
           const { data: existing } = await supabaseAdmin
             .from("profiles")
-            .select("nome")
+            .select("nome, plano")
             .eq("id", userId)
             .maybeSingle();
           const nome = existing?.nome || session?.customer_details?.name || session?.customer_details?.email?.split("@")[0] || "Usuário";
 
+          // Determina plano final: se ativo e detectado, usa o detectado.
+          // Se ativo mas não detectado, preserva o plano atual (NÃO faz downgrade silencioso para "basico").
+          // Se cancelado/inativo, volta para "basico".
+          let planoFinal: "basico" | "profissional" | "expert";
+          if (isActive) {
+            planoFinal = plano ?? (existing?.plano as any) ?? "basico";
+            if (!plano) {
+              console.warn("[stripe-webhook] Plano não detectado via metadata/lookup_key — preservando plano atual", {
+                userId,
+                subscriptionId: sub.id,
+                planoAtual: existing?.plano,
+                priceId: sub.items?.data?.[0]?.price?.id,
+              });
+            }
+          } else {
+            planoFinal = "basico";
+          }
+
           const { data: updatedProfile, error } = await supabaseAdmin.from("profiles").upsert({
             id: userId,
             nome,
-            plano: (isActive ? plano ?? "basico" : "basico") as any,
+            plano: planoFinal as any,
             stripe_subscription_id: sub.id,
             stripe_customer_id: sub.customer,
             subscription_status: sub.status,
