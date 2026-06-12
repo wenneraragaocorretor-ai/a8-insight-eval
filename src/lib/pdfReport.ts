@@ -1157,12 +1157,15 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     } catch { /* ignore */ }
   }
 
-  // Imobiliária (se houver)
+  // Imobiliária (se houver) — normaliza marca antiga "A8 Investimentos" para "A8 AVALIA"
   if (corretor.nome_imobiliaria) {
+    const imo = /a8\s*investimentos/i.test(corretor.nome_imobiliaria)
+      ? "A8 AVALIA"
+      : corretor.nome_imobiliaria.toUpperCase();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(...GOLD);
-    doc.text(corretor.nome_imobiliaria.toUpperCase(), PW / 2, yCursor, { align: "center" });
+    doc.text(imo, PW / 2, yCursor, { align: "center" });
     yCursor += 10;
   }
 
