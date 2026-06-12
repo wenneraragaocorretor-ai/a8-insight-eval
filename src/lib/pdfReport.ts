@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 
 // ============================================================
-// A8 Investimentos — PDF Premium (portrait A4)
+// A8 Avalia — PDF Premium (portrait A4)
 // 210mm x 297mm | Fundo branco | Dourado #C8A951 | Azul #0F2D5C
 // Margens: 25mm laterais / 20mm topo-base
 // ============================================================
