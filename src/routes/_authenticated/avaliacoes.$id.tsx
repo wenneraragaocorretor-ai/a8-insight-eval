@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
-import { getMapaEstatico } from "../../lib/mapa.functions";
+
 import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
 import { supabase } from "../../integrations/supabase/client";
@@ -68,7 +68,7 @@ function AvaliacaoDetalhe() {
   ];
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
 
-  const fetchMapa = useServerFn(getMapaEstatico);
+  
   const fetchMarketing = useServerFn(gerarMarketingAvaliacao);
   const [marketing, setMarketing] = useState<MarketingResultado | null>(null);
   const [loadingMkt, setLoadingMkt] = useState(false);
@@ -149,27 +149,8 @@ function AvaliacaoDetalhe() {
         console.error("Falha ao carregar logo:", e);
       }
     }
-    // Mapa estático via OpenStreetMap (apenas no laudo Expert / Modelo 3)
-    let mapaDataUrl: string | null = null;
-    if (modelo === 3) {
-      const endereco =
-        String((avaliacao as any)?.endereco_completo || "").trim() ||
-        String((avaliacao as any)?.localizacao || "").trim();
-      if (endereco) {
-        try {
-          const res = await fetchMapa({
-            data: {
-              endereco,
-              cidade: (profile as any)?.cidade || undefined,
-              estado: (profile as any)?.estado || undefined,
-            },
-          });
-          if (res && (res as any).ok) mapaDataUrl = (res as any).dataUrl;
-        } catch (e) {
-          console.error("Falha ao gerar mapa OSM:", e);
-        }
-      }
-    }
+    // Mapa removido — laudo Expert agora exibe apenas o endereço em texto.
+
     // Marketing (Plano Expert / Modelo 3) — gera silenciosamente se ainda não houver
     let marketingForPdf: MarketingResultado | null = marketing;
     if (modelo === 3 && !marketingForPdf) {
@@ -186,7 +167,7 @@ function AvaliacaoDetalhe() {
       plano,
       fotosDataUrls,
       fotosDetalhadas,
-      mapaDataUrl,
+      
       marketing: marketingForPdf,
       corretor: {
         nome: profile?.nome ?? "Corretor",
