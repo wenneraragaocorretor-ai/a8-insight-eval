@@ -2605,10 +2605,14 @@ export type MarketingPdf = {
 function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], marketing?: MarketingPdf | null, qrDataUrl?: string | null) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
-  const temFotos = fotos.length > 0;
-  const temDocFotos = fotosDet.length > 0;
+  // EXPERT: até 10 fotos
+  const fotosLim = fotos.slice(0, 10);
+  const fotosDetLim = fotosDet.slice(0, 10);
+  const temFotos = fotosLim.length > 0;
+  const temDocFotos = fotosDetLim.length > 0;
   const temMkt = !!marketing;
-  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotos[0] || null;
+  const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
+
   paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação", capaFoto);
   paginaSumario(doc, [
     "O Imóvel",
