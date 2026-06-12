@@ -1156,11 +1156,9 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(200, 200, 210);
-  const pctMin = central > 0 ? Math.round(((central - minV) / central) * 100) : 15;
-  const pctMax = central > 0 ? Math.round(((maxV - central) / central) * 100) : 15;
-  doc.text(`Mínimo -${pctMin}%`, tx, ty + 22, { align: "center" });
+  doc.text("Mínimo -15%", tx, ty + 22, { align: "center" });
   doc.text("Central", tx + tw / 2, ty + 22, { align: "center" });
-  doc.text(`Máximo +${pctMax}%`, tx + tw, ty + 22, { align: "center" });
+  doc.text("Máximo +15%", tx + tw, ty + 22, { align: "center" });
 
   // 3 ícones informativos (vetoriais)
   const baseY = PH - 38;
@@ -2223,10 +2221,10 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string
   const linhas = doc.splitTextToSize(decl, PW - 2 * M - 12);
   doc.text(linhas, M + 6, declY + 16);
 
-  // Logo (mais compacto para reduzir espaço em branco)
-  const logoY = 96;
-  const logoH = 20;
-  const logoW = 40;
+  // Logo (compacto, próximo da declaração)
+  const logoY = declY + 36 + 8;
+  const logoH = 18;
+  const logoW = 36;
   const logoX = PW / 2 - logoW / 2;
   if (corretor.logo_data_url) {
     try {
@@ -2236,7 +2234,7 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(...BLUE);
-      doc.text("A8", PW / 2, logoY + 14, { align: "center" });
+      doc.text("A8", PW / 2, logoY + 13, { align: "center" });
     }
   } else {
     doc.setFont("helvetica", "bold");
@@ -2248,14 +2246,13 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string
     doc.text("AVALIA", PW / 2, logoY + 18, { align: "center" });
   }
 
-  // Linha de assinatura física (dourada, mais espessa)
-  const lineY = logoY + logoH + 14;
+  // Linha de assinatura física (dourada, mais espessa) — próxima do logo
+  const lineY = logoY + logoH + 10;
   const lineW = 120;
   const lineX = PW / 2 - lineW / 2;
   doc.setDrawColor(...GOLD);
   doc.setLineWidth(0.8);
   doc.line(lineX, lineY, lineX + lineW, lineY);
-  // Pequeno traço "assine aqui"
   doc.setFont("helvetica", "italic");
   doc.setFontSize(7);
   doc.setTextColor(...GRAY_DIM);
@@ -2302,17 +2299,17 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string
   doc.setTextColor(...TEXT);
   doc.text(local, PW / 2, lineY + 28, { align: "center" });
 
-  // QR Code no canto inferior direito (verificação / contato)
+  // QR Code centralizado abaixo dos dados do corretor
   if (qrDataUrl) {
-    const qrSize = 28;
-    const qrX = PW - M - qrSize;
-    const qrY = PH - 20 - qrSize;
+    const qrSize = 32; // ~120px @ 96dpi, bem acima do mínimo de 80px
+    const qrX = PW / 2 - qrSize / 2;
+    const qrY = lineY + 36;
     try {
       doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize, undefined, "FAST");
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.setTextColor(...GRAY);
-      doc.text("Verificação", qrX + qrSize / 2, qrY + qrSize + 3, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...BLUE);
+      doc.text("Verificação de Autenticidade", PW / 2, qrY + qrSize + 4.5, { align: "center" });
     } catch { /* ignore */ }
   }
 }

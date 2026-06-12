@@ -157,7 +157,13 @@ function AvaliacaoDetalhe() {
         String((avaliacao as any)?.localizacao || "").trim();
       if (endereco) {
         try {
-          const res = await fetchMapa({ data: { endereco } });
+          const res = await fetchMapa({
+            data: {
+              endereco,
+              cidade: (profile as any)?.cidade || undefined,
+              estado: (profile as any)?.estado || undefined,
+            },
+          });
           if (res && (res as any).ok) mapaDataUrl = (res as any).dataUrl;
         } catch (e) {
           console.error("Falha ao gerar mapa OSM:", e);
