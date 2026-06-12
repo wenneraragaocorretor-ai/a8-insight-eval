@@ -58,7 +58,7 @@ function Hero() {
           <div className="flex items-center gap-3 mb-6">
             <span className="gold-divider" />
             <span className="text-xs tracking-[0.4em] uppercase text-[#E2C97E] font-medium">
-              A8 Investimentos Imobiliários
+              A8 Avalia
             </span>
           </div>
           <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-medium text-white leading-[1.05] mb-8">
