@@ -70,7 +70,7 @@ function Footer() {
                 A8
               </span>
               <span className="font-display text-sm tracking-[0.3em] text-white/90 uppercase">
-                Investimentos
+                Avalia
               </span>
             </div>
             <p className="text-white/60 text-sm font-light max-w-md leading-relaxed">
