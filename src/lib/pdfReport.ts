@@ -2532,7 +2532,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
 
 export type FotoDetalhada = { dataUrl: string; legenda: string; principal: boolean; comentario_ia: string };
 
-export function gerarPdfAvaliacao(
+export async function gerarPdfAvaliacao(
   avaliacao: any,
   resultado: any,
   comparaveis: any[],
@@ -2557,9 +2557,24 @@ export function gerarPdfAvaliacao(
     throw new Error("Faça upgrade para acessar este relatório");
   }
 
+  // QR Code (apenas Expert / Modelo 3) — verificação por telefone/email do corretor
+  let qrDataUrl: string | null = null;
+  if (modelo === 3) {
+    try {
+      const linhas: string[] = ["A8 AVALIA — Laudo de Avaliação"];
+      if (avaliacao?.id) linhas.push(`Ref: ${String(avaliacao.id).slice(0, 8).toUpperCase()}`);
+      if (corretor.nome) linhas.push(corretor.nome);
+      if (corretor.telefone) linhas.push(`Tel: ${corretor.telefone}`);
+      if (corretor.email) linhas.push(corretor.email);
+      qrDataUrl = await QRCode.toDataURL(linhas.join("\n"), { margin: 1, width: 220 });
+    } catch (e) {
+      console.error("Falha ao gerar QR Code:", e);
+    }
+  }
+
   const doc =
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.mapaDataUrl ?? null, opts.marketing ?? null, qrDataUrl)
       : modelo === 2
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
