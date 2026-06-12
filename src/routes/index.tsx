@@ -15,7 +15,7 @@ import { LandingLayout } from "../components/landing/LandingLayout";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "A8 Investimentos — Avaliações Imobiliárias de Alto Padrão" },
+      { title: "A8 Avalia — Avaliações Imobiliárias de Alto Padrão" },
       {
         name: "description",
         content:
