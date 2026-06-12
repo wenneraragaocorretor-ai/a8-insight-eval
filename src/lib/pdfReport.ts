@@ -1405,14 +1405,15 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
 }
 
 // ---------- EXPERT EXTRA: TRATAMENTO ESTATÍSTICO ----------
-function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo) {
+function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any) {
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Tratamento Estatístico");
 
   const unit = comparaveis
-    .filter((c) => Number(c.area) > 0 && Number(c.valor_anunciado) > 0)
-    .map((c) => Number(c.valor_anunciado) / Number(c.area));
+    .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
+    .filter((p) => p.ab > 0 && p.v > 0)
+    .map((p) => p.v / p.ab);
   let media = 0, mediana = 0, desvio = 0, cv = 0;
   if (unit.length) {
     media = unit.reduce((a, b) => a + b, 0) / unit.length;
@@ -1432,12 +1433,14 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   const ch = 52;
   const yRow = 56;
 
+  const lblM2 = labelValorM2(tipoImovel);
   const cards: Array<{ bg: [number, number, number]; fg: [number, number, number]; accent: [number, number, number]; label: string; value: string }> = [
-    { bg: NAVY, fg: WHITE, accent: GOLD, label: "Média R$/m²", value: fmtBRL(media) },
-    { bg: BLUE, fg: WHITE, accent: GOLD, label: "Mediana R$/m²", value: fmtBRL(mediana) },
+    { bg: NAVY, fg: WHITE, accent: GOLD, label: `Média ${lblM2}`, value: fmtBRL(media) },
+    { bg: BLUE, fg: WHITE, accent: GOLD, label: `Mediana ${lblM2}`, value: fmtBRL(mediana) },
     { bg: WHITE, fg: BLUE, accent: GOLD, label: "Desvio Padrão", value: fmtBRL(desvio) },
     { bg: WHITE, fg: cvColor, accent: cvColor, label: "Coef. Variação", value: `${fmtNum(cv, 1)}%` },
   ];
+
   cards.forEach((c, i) => {
     const x = M + i * (cw + gap);
     doc.setFillColor(...c.bg);
