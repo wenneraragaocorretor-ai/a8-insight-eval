@@ -62,10 +62,11 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           }
           const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
           const rawMetadataPlanCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as PlanCode | undefined;
-          const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : undefined;
+          const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : null;
           const pricePlanCode = await resolvePlanCodeFromPriceId(priceId);
-          const planCode = priceId ? (pricePlanCode ?? "basico") : (metadataPlanCode ?? "basico");
-          const plano = PLANS[planCode]?.db_plan ?? "basico";
+          // SEM fallback para "basico": se não resolver, não atribui plano.
+          const planCode: PlanCode | null = pricePlanCode ?? metadataPlanCode ?? null;
+          const plano = planCode ? PLANS[planCode].db_plan : null;
 
           console.log("[stripe-webhook] Price ID selecionado:", priceId ?? null);
           console.log("[stripe-webhook] Plano mapeado:", planCode, "→", plano);
@@ -90,20 +91,22 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             return;
           }
 
-          // Fallback seguro: se o Price ID não for reconhecido, nunca mantém Expert/Profissional por padrão.
-          // Se ativo e não detectado, usa Básico; se cancelado/inativo, volta para Básico.
-          let planoFinal: "basico" | "profissional" | "expert";
+          // Se ativo mas não conseguiu identificar o plano → NÃO escreve plano (log para debug).
+          // Se inativo/cancelado → zera plano (acesso bloqueado).
+          let planoFinal: "basico" | "profissional" | "expert" | null;
           if (isActive) {
-            planoFinal = plano;
-            if (!pricePlanCode && !metadataPlanCode) {
-              console.warn("[stripe-webhook] Price ID não reconhecido — aplicando fallback seguro para Básico", {
+            if (!plano) {
+              console.error("[stripe-webhook] Price ID não reconhecido — NÃO atribuindo plano", {
                 userId,
                 subscriptionId: sub.id,
                 priceId,
+                metadataPlanCode: rawMetadataPlanCode ?? null,
               });
+              return;
             }
+            planoFinal = plano;
           } else {
-            planoFinal = "basico";
+            planoFinal = null;
           }
 
           const { data: updatedProfile, error } = await supabaseAdmin.from("profiles").upsert({
@@ -124,7 +127,7 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             userId,
             subscriptionId: sub.id,
             plano: updatedProfile?.plano,
-            planoDetectado: Object.values(PLANS).find((plan) => plan.db_plan === updatedProfile?.plano)?.code,
+            planoDetectado: planCode,
             priceId: updatedProfile?.plan_price_id,
           });
         }
@@ -154,11 +157,21 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   sessionPriceId = lineItems.data?.[0]?.price?.id as string | undefined;
                 }
                 const rawMetadataPlanCode = session.metadata?.plan_code as PlanCode | undefined;
-                const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : undefined;
+                const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : null;
                 const pricePlanCode = await resolvePlanCodeFromPriceId(sessionPriceId);
-                const planCode = sessionPriceId ? (pricePlanCode ?? "basico") : (metadataPlanCode ?? "basico");
+                // SEM fallback para "basico": se não resolver, NÃO credita nem altera plano.
+                const planCode: PlanCode | null = pricePlanCode ?? metadataPlanCode ?? null;
                 console.log("[stripe-webhook] Price ID selecionado:", sessionPriceId ?? null);
-                console.log("[stripe-webhook] Plano mapeado:", planCode, "→", PLANS[planCode]?.db_plan ?? "basico");
+                console.log("[stripe-webhook] Plano mapeado:", planCode);
+                if (!planCode) {
+                  console.error("[stripe-webhook] Price ID não reconhecido em pagamento avulso — NÃO atribuindo plano", {
+                    userId,
+                    sessionId: session.id,
+                    priceId: sessionPriceId ?? null,
+                    metadataPlanCode: rawMetadataPlanCode ?? null,
+                  });
+                  break;
+                }
                 if (userId) {
                   const { data: existing } = await supabaseAdmin
                     .from("profiles")
