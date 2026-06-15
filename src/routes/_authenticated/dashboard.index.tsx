@@ -146,9 +146,15 @@ function Dashboard() {
   const limite = status?.limiteMes;
   const creditos = (status as any)?.creditosAvulsos ?? 0;
   const ativa = status?.assinaturaAtiva;
-  const limiteAtingido = ehBasico
-    ? creditos <= 0
-    : !ehExpert && limite != null && usadas >= limite;
+  // Só mostra "limite atingido" para usuários COM plano ativo.
+  // Sem plano (planoCode === null) nunca exibe esse aviso — eles veem a tela de planos.
+  const temPlanoAtivo = !!planoCode && !!ativa;
+  const ehProfissional = planoCode === "profissional" || planoCode === "pro";
+  const limiteAtingido = temPlanoAtivo && (
+    ehBasico
+      ? creditos <= 0
+      : ehProfissional && limite != null && usadas >= limite
+  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
