@@ -58,9 +58,14 @@ function AuthPage() {
   async function continuarFluxo() {
     if (triggered.current) return;
     // Após CADASTRO: obrigatoriamente para /planos (escolhe plano antes de acessar).
-    if (justSignedUp.current) {
+    let justSignedUpFlag = false;
+    try { justSignedUpFlag = sessionStorage.getItem("a8_just_signed_up") === "true"; } catch {}
+    if (justSignedUp.current || justSignedUpFlag) {
       triggered.current = true;
-      try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+      try {
+        sessionStorage.removeItem("a8_plano_pendente");
+        sessionStorage.removeItem("a8_just_signed_up");
+      } catch {}
       navigate({ to: "/planos" });
       return;
     }
@@ -121,6 +126,7 @@ function AuthPage() {
     setIsLoading(true);
     try {
       justSignedUp.current = true;
+      try { sessionStorage.setItem("a8_just_signed_up", "true"); } catch {}
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -129,14 +135,19 @@ function AuthPage() {
         },
       });
       if (error) throw error;
-      if (data.user && data.session) {
+      if (data.user) {
         toast.success("Cadastro realizado! Escolha seu plano para continuar.");
-        // onAuthStateChange → continuarFluxo() → /planos
-      } else {
-        toast.success("Cadastro realizado! Verifique seu e-mail para confirmar.");
+        // Redireciona imediatamente, independente de data.session estar disponível.
+        triggered.current = true;
+        try {
+          sessionStorage.removeItem("a8_plano_pendente");
+          sessionStorage.removeItem("a8_just_signed_up");
+        } catch {}
+        navigate({ to: "/planos" });
       }
     } catch (error: any) {
       justSignedUp.current = false;
+      try { sessionStorage.removeItem("a8_just_signed_up"); } catch {}
       toast.error(error.message || "Erro ao criar conta");
     } finally {
       setIsLoading(false);
