@@ -414,7 +414,7 @@ function Dashboard() {
           </div>
         )}
       </div>
-      <ExpertChat plano={planoCode} />
+      <ExpertChat plano={planoCode ?? undefined} />
     </div>
   );
 }
