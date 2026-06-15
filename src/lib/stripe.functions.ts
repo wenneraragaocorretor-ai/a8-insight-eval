@@ -95,11 +95,12 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       .eq("user_id", userId)
       .gte("created_at", inicioMes.toISOString());
 
-    const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
+    const plano = (profile?.plano ?? null) as "basico" | "profissional" | "expert" | "user" | "pro" | null;
     let limite: number | null;
     if (plano === "expert") limite = 20;
     else if (plano === "profissional" || plano === "pro") limite = 5;
-    else limite = 1; // básico: laudo avulso
+    else if (plano === "basico") limite = 1;
+    else limite = 0; // sem plano: sem acesso
     const ativa = profile?.subscription_status === "active" || profile?.subscription_status === "trialing";
 
     return {
@@ -129,24 +130,27 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       throw new Error("Sessão de checkout não pertence ao usuário atual");
     }
 
-    // Identifica plano priorizando o Price ID real do Stripe.
-    let planCode: keyof typeof PLANS | undefined;
+    // Identifica plano priorizando o Price ID real do Stripe. SEM fallback para "basico".
+    let planCode: keyof typeof PLANS | null = null;
     const lineItemPriceId = session.line_items?.data?.[0]?.price?.id as string | undefined;
     if (lineItemPriceId) {
-      planCode = (await resolvePlanCodeFromPriceId(lineItemPriceId)) ?? "basico";
-    } else {
-      planCode = session.metadata?.plan_code as keyof typeof PLANS | undefined;
+      planCode = (await resolvePlanCodeFromPriceId(lineItemPriceId)) as keyof typeof PLANS | null;
+    }
+    if (!planCode) {
+      const metaPlan = session.metadata?.plan_code as keyof typeof PLANS | undefined;
+      if (metaPlan && PLANS[metaPlan]) planCode = metaPlan;
     }
 
     console.log("[confirmarCheckout] Price ID selecionado:", lineItemPriceId ?? null);
-    console.log("[confirmarCheckout] Plano mapeado:", planCode ?? "basico");
+    console.log("[confirmarCheckout] Plano mapeado:", planCode);
 
     if (!planCode || !PLANS[planCode]) {
-      console.warn("[confirmarCheckout] Price ID não reconhecido — aplicando fallback seguro para Básico", {
+      console.error("[confirmarCheckout] Price ID não reconhecido — NÃO atribuindo plano", {
         sessionId: session.id,
         priceId: lineItemPriceId ?? null,
+        metadataPlanCode: session.metadata?.plan_code ?? null,
       });
-      planCode = "basico";
+      throw new Error("Não foi possível identificar o plano pago. Entre em contato com o suporte.");
     }
 
     const plan = PLANS[planCode];
