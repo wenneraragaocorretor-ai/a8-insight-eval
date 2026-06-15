@@ -138,8 +138,8 @@ function Dashboard() {
 
   if (!user) return null;
   const nome = perfilData?.profile?.nome || user.user_metadata?.nome || user.email?.split("@")[0];
-  const planoLabel = status ? PLAN_LABEL[status.plano] ?? "Básico" : "—";
-  const planoCode = status?.plano ?? "basico";
+  const planoLabel = status?.plano ? (PLAN_LABEL[status.plano] ?? "—") : "—";
+  const planoCode = status?.plano ?? null;
   const ehBasico = planoCode === "basico" || planoCode === "user";
   const ehExpert = planoCode === "expert";
   const usadas = status?.avaliacoesMes ?? 0;
