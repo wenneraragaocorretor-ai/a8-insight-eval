@@ -307,7 +307,7 @@ function NovaAvaliacao() {
 
   const [plano, setPlano] = useState<string>("basico");
   const isExpert = plano === "expert";
-  const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number } | null>(null);
+  const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number; assinaturaAtiva: boolean } | null>(null);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
   const [comprandoExtra, setComprandoExtra] = useState(false);
   const fetchStatusFn = useServerFn(getStatusAssinatura);
@@ -320,12 +320,14 @@ function NovaAvaliacao() {
         avaliacoesMes: s.avaliacoesMes ?? 0,
         limiteMes: s.limiteMes ?? null,
         creditosAvulsos: (s as any).creditosAvulsos ?? 0,
+        assinaturaAtiva: !!s.assinaturaAtiva,
       });
       if (s.plano) setPlano(s.plano);
     } catch (e) {
       console.error("[status]", e);
     }
   };
+
 
   useEffect(() => {
     (async () => {
@@ -337,6 +339,16 @@ function NovaAvaliacao() {
       await recarregarStatus();
     })();
   }, []);
+
+  // Guard: sem assinatura ativa E sem créditos avulsos → /planos.
+  useEffect(() => {
+    if (!statusUso) return;
+    if (!statusUso.assinaturaAtiva && statusUso.creditosAvulsos <= 0) {
+      navigate({ to: "/planos", replace: true });
+    }
+  }, [statusUso, navigate]);
+
+
 
   const expertAtingiuLimite =
     plano === "expert" &&

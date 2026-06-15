@@ -51,36 +51,45 @@ function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
   const triggered = useRef(false);
+  const justSignedUp = useRef(false);
 
   const pendingPlan = readPendingPlan(search.plan);
 
   async function continuarFluxo() {
-    // Após autenticação: se há plano pendente → Stripe; senão → dashboard.
-    const plano = readPendingPlan(search.plan);
-    if (!plano) {
-      navigate({ to: "/dashboard" });
+    if (triggered.current) return;
+    // Após CADASTRO: obrigatoriamente para /planos (escolhe plano antes de acessar).
+    if (justSignedUp.current) {
+      triggered.current = true;
+      try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+      navigate({ to: "/planos" });
       return;
     }
-    if (triggered.current) return;
-    triggered.current = true;
-    setRedirectingToCheckout(true);
-    try {
-      const origin = window.location.origin;
-      const { url } = await startCheckout({ data: { plano, origin } });
-      try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
-      if (!url) throw new Error("URL de checkout não recebida");
-      window.location.href = url;
-    } catch (e: any) {
-      console.error("[auth/checkout]", e);
-      toast.error(e?.message ?? "Erro ao iniciar pagamento. Redirecionando ao painel.");
-      setRedirectingToCheckout(false);
-      triggered.current = false;
-      navigate({ to: "/dashboard" });
+    // Após LOGIN: se há plano pendente da landing → direto ao Stripe.
+    const plano = readPendingPlan(search.plan);
+    if (plano) {
+      triggered.current = true;
+      setRedirectingToCheckout(true);
+      try {
+        const origin = window.location.origin;
+        const { url } = await startCheckout({ data: { plano, origin } });
+        try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+        if (!url) throw new Error("URL de checkout não recebida");
+        window.location.href = url;
+      } catch (e: any) {
+        console.error("[auth/checkout]", e);
+        toast.error(e?.message ?? "Erro ao iniciar pagamento.");
+        setRedirectingToCheckout(false);
+        triggered.current = false;
+        navigate({ to: "/planos" });
+      }
+      return;
     }
+    // Login normal sem plano pendente → dashboard (guard interno redireciona p/ /planos se necessário).
+    triggered.current = true;
+    navigate({ to: "/dashboard" });
   }
 
   useEffect(() => {
-    // Se a sessão já está ativa quando a página carrega (ex.: já logado e veio com ?plan)
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) continuarFluxo();
     });
@@ -111,21 +120,23 @@ function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
+      justSignedUp.current = true;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin + "/dashboard",
+          emailRedirectTo: window.location.origin + "/planos",
         },
       });
       if (error) throw error;
       if (data.user && data.session) {
-        toast.success("Cadastro realizado!");
-        // onAuthStateChange dispara continuarFluxo
+        toast.success("Cadastro realizado! Escolha seu plano para continuar.");
+        // onAuthStateChange → continuarFluxo() → /planos
       } else {
         toast.success("Cadastro realizado! Verifique seu e-mail para confirmar.");
       }
     } catch (error: any) {
+      justSignedUp.current = false;
       toast.error(error.message || "Erro ao criar conta");
     } finally {
       setIsLoading(false);
@@ -142,6 +153,7 @@ function AuthPage() {
       toast.error(error.message || "Erro ao entrar com Google");
     }
   };
+
 
   if (redirectingToCheckout) {
     return (

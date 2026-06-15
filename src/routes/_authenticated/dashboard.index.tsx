@@ -126,6 +126,16 @@ function Dashboard() {
     void run();
   }, [search.session_id, search.pagamento]);
 
+  // Guard de acesso: sem assinatura ativa E sem créditos avulsos → /planos.
+  useEffect(() => {
+    if (!status) return;
+    if (search.session_id || search.pagamento) return; // aguardando confirmação de checkout
+    const creditos = (status as any)?.creditosAvulsos ?? 0;
+    if (!status.assinaturaAtiva && creditos <= 0) {
+      navigate({ to: "/planos", replace: true });
+    }
+  }, [status, search.session_id, search.pagamento, navigate]);
+
   if (!user) return null;
   const nome = perfilData?.profile?.nome || user.user_metadata?.nome || user.email?.split("@")[0];
   const planoLabel = status ? PLAN_LABEL[status.plano] ?? "Básico" : "—";
