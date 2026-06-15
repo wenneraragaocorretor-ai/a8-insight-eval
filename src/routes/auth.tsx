@@ -137,13 +137,22 @@ function AuthPage() {
       if (error) throw error;
       if (data.user) {
         toast.success("Cadastro realizado! Escolha seu plano para continuar.");
-        // Redireciona imediatamente, independente de data.session estar disponível.
         triggered.current = true;
-        try {
-          sessionStorage.removeItem("a8_plano_pendente");
-          sessionStorage.removeItem("a8_just_signed_up");
-        } catch {}
-        navigate({ to: "/planos" });
+        try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+
+        // Se já há sessão (auto-confirm ON), navega direto. Caso contrário,
+        // aguarda brevemente a sessão ser persistida antes de redirecionar,
+        // para o guard de /_authenticated não bouncear para /auth.
+        if (!data.session) {
+          for (let i = 0; i < 10; i++) {
+            const { data: s } = await supabase.auth.getSession();
+            if (s.session) break;
+            await new Promise((r) => setTimeout(r, 150));
+          }
+        }
+        try { sessionStorage.removeItem("a8_just_signed_up"); } catch {}
+        // window.location garante reload do guard com sessão fresca.
+        window.location.href = "/planos";
       }
     } catch (error: any) {
       justSignedUp.current = false;
