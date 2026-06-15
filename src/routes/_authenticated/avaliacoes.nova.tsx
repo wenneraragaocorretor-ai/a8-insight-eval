@@ -343,11 +343,11 @@ function NovaAvaliacao() {
   // Guard: sem assinatura ativa E sem créditos avulsos → /planos.
   useEffect(() => {
     if (!statusUso) return;
-    const planoAtivo = plano === "profissional" || plano === "pro" || plano === "expert";
-    if (!planoAtivo && statusUso.creditosAvulsos <= 0) {
+    if (!statusUso.assinaturaAtiva && statusUso.creditosAvulsos <= 0) {
       navigate({ to: "/planos", replace: true });
     }
-  }, [statusUso, plano, navigate]);
+  }, [statusUso, navigate]);
+
 
 
   const expertAtingiuLimite =
