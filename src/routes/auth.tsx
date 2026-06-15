@@ -58,9 +58,14 @@ function AuthPage() {
   async function continuarFluxo() {
     if (triggered.current) return;
     // Após CADASTRO: obrigatoriamente para /planos (escolhe plano antes de acessar).
-    if (justSignedUp.current) {
+    let justSignedUpFlag = false;
+    try { justSignedUpFlag = sessionStorage.getItem("a8_just_signed_up") === "true"; } catch {}
+    if (justSignedUp.current || justSignedUpFlag) {
       triggered.current = true;
-      try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+      try {
+        sessionStorage.removeItem("a8_plano_pendente");
+        sessionStorage.removeItem("a8_just_signed_up");
+      } catch {}
       navigate({ to: "/planos" });
       return;
     }
