@@ -51,6 +51,11 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
 
 
         const event = JSON.parse(payload);
+        console.log("[stripe-webhook] Evento recebido", {
+          type: event.type,
+          id: event.id,
+          livemode: event.livemode,
+        });
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { stripeRequest, PLANS, resolvePlanCodeFromPriceId } = await import("@/lib/stripe.server");
 
