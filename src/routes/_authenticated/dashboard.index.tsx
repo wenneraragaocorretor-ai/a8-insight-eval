@@ -50,7 +50,7 @@ function Dashboard() {
   const initialConfirming =
     !!search.session_id || search.pagamento === "sucesso" || search.pagamento === "ok";
   const [confirming, setConfirming] = useState(initialConfirming);
-  const [confirmMessage, setConfirmMessage] = useState("Confirmando seu pagamento...");
+  const [confirmMessage, setConfirmMessage] = useState("Atualizando seu plano...");
 
   const { data: avaliacoes = [], isLoading } = useQuery({
     queryKey: ["avaliacoes-list"],
@@ -78,6 +78,11 @@ function Dashboard() {
     setConfirming(true);
 
     const run = async () => {
+      // Captura plano atual como baseline para detectar mudança
+      const baselineRes = await refetchStatus();
+      const baselinePlano: string | null = (baselineRes.data as any)?.plano ?? null;
+      console.log("[checkout] plano baseline:", baselinePlano);
+
       let plano: string = "basico";
       let isPayment = false;
       if (sid) {
@@ -90,6 +95,7 @@ function Dashboard() {
           ]);
           if (res?.plano) plano = res.plano;
           isPayment = plano === "basico" || plano === "expert_extra";
+          console.log("[checkout] confirmarCheckout retornou:", { plano, isPayment });
         } catch (e) {
           console.error("[confirmarCheckout]", e);
         }
@@ -98,23 +104,27 @@ function Dashboard() {
       await queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
       await queryClient.invalidateQueries({ queryKey: ["cobrancas-avulsas"] });
 
-      // Polling: até 10× a cada 1s aguardando plano refletir no Supabase
+      // Polling: até 20× a cada 500ms aguardando plano refletir no Supabase
       let detected: string | null = null;
       let assinaturaAtivaOk = false;
       let creditosOk = false;
-      for (let i = 0; i < 10; i++) {
+      let planoMudou = false;
+      for (let i = 0; i < 20; i++) {
         const r = await refetchStatus();
         const d: any = r.data;
         if (d?.plano) {
           detected = d.plano;
           assinaturaAtivaOk = !!d.assinaturaAtiva;
           creditosOk = (d.creditosAvulsos ?? 0) > 0;
-          if (isPayment ? creditosOk : assinaturaAtivaOk && detected !== "basico" && detected !== "user") {
+          planoMudou = detected !== baselinePlano;
+          console.log("[checkout] poll", i, { detected, assinaturaAtivaOk, creditosOk, planoMudou });
+          if (isPayment ? creditosOk : (assinaturaAtivaOk && detected !== "basico" && detected !== "user")) {
             break;
           }
         }
-        await new Promise((res) => setTimeout(res, 1000));
+        await new Promise((res) => setTimeout(res, 500));
       }
+
 
       const sucesso = isPayment ? creditosOk : (assinaturaAtivaOk && !!detected);
       if (sucesso) {
