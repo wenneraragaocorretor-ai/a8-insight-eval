@@ -1751,7 +1751,8 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaPerfil(doc, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
-  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  aplicarRegressao(resultado, avaliacao, comparaveis);
+  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
