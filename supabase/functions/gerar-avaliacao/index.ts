@@ -328,6 +328,72 @@ Comparável #${i + 1} (${c.fonte}):
     result.area_base_tipo = result.area_base_tipo ?? baseImovel.label
     result.area_base_descricao = result.area_base_descricao ?? areaBaseDescricao
 
+    // ===== Análise do bairro com busca web (Claude web_search) =====
+    try {
+      const localizacao = String(imovel.localizacao ?? '').trim()
+      if (localizacao) {
+        const bairroSystem = `Você é um analista imobiliário. Você DEVE usar a ferramenta web_search para pesquisar dados reais e atuais sobre o bairro antes de responder. Use APENAS informações encontradas na pesquisa. Se não encontrar dados suficientes, informe explicitamente que não há dados disponíveis para esse bairro. Responda SOMENTE com um JSON válido no formato exato solicitado, sem texto fora do JSON e sem cercas de código.`
+
+        const bairroUser = `Antes de analisar o bairro, pesquise informações reais e atuais sobre: ${localizacao}.
+
+Busque dados sobre:
+- Perfil socioeconômico
+- Infraestrutura disponível
+- Valorização imobiliária
+- Segurança
+- Comércio e serviços próximos
+
+Devolva EXATAMENTE este JSON (sem texto extra, sem markdown):
+{
+  "bairro": "Nome do bairro",
+  "cidade": "Cidade/UF",
+  "potencial_valorizacao": "2-3 frases sobre potencial de valorização, baseado APENAS nos dados encontrados na pesquisa. Se sem dados, diga 'Não há dados públicos suficientes para o bairro.'",
+  "tendencias_mercado": "2-3 frases sobre tendências imobiliárias locais atuais, baseado APENAS na pesquisa. Se sem dados, diga 'Não há dados públicos suficientes para o bairro.'",
+  "descricao": "Resumo da região cobrindo perfil socioeconômico, infraestrutura, segurança, comércio e serviços (3-5 frases), baseado APENAS na pesquisa. Se sem dados, diga 'Não há dados públicos suficientes para o bairro.'"
+}`
+
+        const bairroResp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': anthropicApiKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-5',
+            max_tokens: 2048,
+            system: bairroSystem,
+            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+            messages: [{ role: 'user', content: bairroUser }],
+          }),
+        })
+
+        if (bairroResp.ok) {
+          const bairroData = await bairroResp.json()
+          const blocks: any[] = Array.isArray(bairroData?.content) ? bairroData.content : []
+          const textOut = blocks.filter((b) => b?.type === 'text').map((b) => b.text).join('\n').trim()
+          const m = textOut.match(/\{[\s\S]*\}/)
+          if (m) {
+            try {
+              const analiseBairro = JSON.parse(m[0])
+              result.analise_bairro = { ...(result.analise_bairro ?? {}), ...analiseBairro }
+              if (analiseBairro.potencial_valorizacao) result.potencial_valorizacao = analiseBairro.potencial_valorizacao
+              if (analiseBairro.tendencias_mercado) result.tendencias_mercado = analiseBairro.tendencias_mercado
+            } catch (e) {
+              console.error('Falha ao parsear JSON da análise do bairro:', e)
+            }
+          } else {
+            console.error('Resposta da busca do bairro sem JSON detectável')
+          }
+        } else {
+          console.error('Falha na busca web do bairro:', bairroResp.status, await bairroResp.text())
+        }
+      }
+    } catch (e) {
+      console.error('Erro na análise do bairro com web_search:', (e as Error).message)
+      // não bloqueia o laudo
+    }
+
 
 
     return new Response(JSON.stringify(result), {
