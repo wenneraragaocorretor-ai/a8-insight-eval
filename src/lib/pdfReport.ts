@@ -85,6 +85,69 @@ function labelValorM2(tipo: any): string {
   return "Valor/m² privativo";
 }
 
+// ---------- Regressão linear (mínimos quadrados) sobre comparáveis ----------
+// Pontos: (área_base_i, valor/m²_i). Aplica a equação à área do imóvel avaliando.
+export type RegressaoLinear = {
+  ok: boolean;
+  n: number;
+  a: number;          // intercepto
+  b: number;          // coeficiente angular
+  r2: number;         // coef. de determinação
+  valorM2: number;    // y estimado em x = areaAvaliada
+  valorTotal: number; // valorM2 * areaAvaliada
+  areaAvaliada: number;
+};
+
+function calcularRegressao(avaliacao: any, comparaveis: any[]): RegressaoLinear {
+  const tipo = avaliacao?.tipo_imovel;
+  const areaAvaliada = areaBaseDe(tipo, avaliacao).area;
+  const pts = (comparaveis || [])
+    .map((c) => {
+      const ab = areaBaseDe(tipo ?? c?.tipo, c).area;
+      const v = Number(c?.valor_anunciado);
+      return ab > 0 && v > 0 ? { x: ab, y: v / ab } : null;
+    })
+    .filter((p): p is { x: number; y: number } => p !== null);
+  const n = pts.length;
+  const base: RegressaoLinear = { ok: false, n, a: 0, b: 0, r2: 0, valorM2: 0, valorTotal: 0, areaAvaliada };
+  if (n < 2 || areaAvaliada <= 0) return base;
+  const sx = pts.reduce((s, p) => s + p.x, 0);
+  const sy = pts.reduce((s, p) => s + p.y, 0);
+  const sxy = pts.reduce((s, p) => s + p.x * p.y, 0);
+  const sxx = pts.reduce((s, p) => s + p.x * p.x, 0);
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return base;
+  const b = (n * sxy - sx * sy) / denom;
+  const a = (sy - b * sx) / n;
+  const ybar = sy / n;
+  const ssTot = pts.reduce((s, p) => s + (p.y - ybar) ** 2, 0);
+  const ssRes = pts.reduce((s, p) => s + (p.y - (a + b * p.x)) ** 2, 0);
+  const r2 = ssTot > 0 ? Math.max(0, 1 - ssRes / ssTot) : 1;
+  const valorM2 = a + b * areaAvaliada;
+  if (!Number.isFinite(valorM2) || valorM2 <= 0) return base;
+  const valorTotal = valorM2 * areaAvaliada;
+  return { ok: true, n, a, b, r2, valorM2, valorTotal, areaAvaliada };
+}
+
+// Aplica a regressão como valor oficial do resultado (central ±15%).
+// Anexa metadados em `resultado.regressao` para uso nas páginas do PDF.
+function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): RegressaoLinear {
+  const reg = calcularRegressao(avaliacao, comparaveis);
+  if (!resultado) return reg;
+  resultado.regressao = reg;
+  if (reg.ok) {
+    resultado.valor_central = Math.round(reg.valorTotal);
+    resultado.valor_minimo = Math.round(reg.valorTotal * 0.85);
+    resultado.valor_maximo = Math.round(reg.valorTotal * 1.15);
+    resultado.valor_unitario_medio = Math.round(reg.valorM2);
+    resultado.metodo_calculo = "regressao_linear";
+  }
+  return reg;
+}
+
+
+
+
 
 const fmtNum = (v: number | null | undefined, digits = 2) =>
   v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("pt-BR", { maximumFractionDigits: digits });
