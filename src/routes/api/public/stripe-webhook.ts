@@ -178,6 +178,38 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   break;
                 }
                 if (userId) {
+                  // Idempotência: tenta inserir cobrança PRIMEIRO. Se já existe
+                  // (unique em stripe_session_id), o Stripe está reentregando o
+                  // mesmo evento — NÃO credita de novo.
+                  const valorCents = typeof session.amount_total === "number"
+                    ? session.amount_total
+                    : (planCode === "expert_extra" ? 1200 : 15700);
+                  const tipo = planCode === "expert_extra" ? "expert_extra" : "basico_laudo";
+                  const descricao = planCode === "expert_extra"
+                    ? "Laudo adicional Expert"
+                    : "Laudo avulso Básico";
+                  const { error: cobrancaError } = await supabaseAdmin
+                    .from("cobrancas_avulsas")
+                    .insert({
+                      user_id: userId,
+                      tipo,
+                      valor_cents: valorCents,
+                      moeda: session.currency ?? "brl",
+                      stripe_session_id: session.id,
+                      stripe_payment_intent: (typeof session.payment_intent === "string" ? session.payment_intent : null),
+                      status: "paid",
+                      descricao,
+                    });
+                  if (cobrancaError) {
+                    if ((cobrancaError as any).code === "23505") {
+                      console.log("[stripe-webhook] Sessão já processada — ignorando crédito duplicado", {
+                        userId, sessionId: session.id,
+                      });
+                      break;
+                    }
+                    throw cobrancaError;
+                  }
+
                   const { data: existing } = await supabaseAdmin
                     .from("profiles")
                     .select("nome, creditos_avulsos, plano, subscription_status")
@@ -191,7 +223,6 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                     creditos_avulsos: novosCreditos,
                     stripe_customer_id: session.customer ?? null,
                   };
-                  // Pagamento confirmado: sempre sobrescreve o plano com o produto comprado.
                   if (planCode === "basico") {
                     upsertData.plano = "basico";
                     upsertData.subscription_status = null;
@@ -204,25 +235,6 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   const { error } = await supabaseAdmin.from("profiles").upsert(upsertData, { onConflict: "id" });
                   if (error) throw error;
                   console.log("[stripe-webhook] +1 crédito", { userId, planCode, novosCreditos });
-
-                  // Registra no histórico de cobranças avulsas (idempotente via unique session_id)
-                  const valorCents = typeof session.amount_total === "number"
-                    ? session.amount_total
-                    : (planCode === "expert_extra" ? 1200 : 15700);
-                  const tipo = planCode === "expert_extra" ? "expert_extra" : "basico_laudo";
-                  const descricao = planCode === "expert_extra"
-                    ? "Laudo adicional Expert"
-                    : "Laudo avulso Básico";
-                  await supabaseAdmin.from("cobrancas_avulsas").upsert({
-                    user_id: userId,
-                    tipo,
-                    valor_cents: valorCents,
-                    moeda: session.currency ?? "brl",
-                    stripe_session_id: session.id,
-                    stripe_payment_intent: (typeof session.payment_intent === "string" ? session.payment_intent : null),
-                    status: "paid",
-                    descricao,
-                  }, { onConflict: "stripe_session_id" });
                 }
               }
               break;
