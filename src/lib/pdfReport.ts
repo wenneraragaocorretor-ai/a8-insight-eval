@@ -1666,7 +1666,7 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
     doc.text("REGRESSÃO LINEAR — MÍNIMOS QUADRADOS", M + 6, boxY + 10);
 
     const sinal = reg.b >= 0 ? "+" : "−";
-    const sufY = sufixoAreaBase((resultado as any)?.tipo_imovel ?? (resultado as any)?.avaliacao?.tipo_imovel);
+    const sufY = sufixoAreaBase(tipoImovel);
     const eq = `y = ${fmtBRL(reg.a)} ${sinal} ${fmtBRL(Math.abs(reg.b))} · x   (x = área-base em m², y = R$/m² ${sufY})`;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
