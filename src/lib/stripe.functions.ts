@@ -153,6 +153,10 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Fallback caso o webhook ainda não tenha sido entregue (ex.: ambiente dev sem webhook).
     const { stripeRequest, PLANS, resolvePlanCodeFromPriceId } = await import("./stripe.server");
+    // IMPORTANTE: usar supabaseAdmin para escrever em `profiles` — o trigger
+    // `protect_billing_columns` rejeita updates de plano/subscription quando
+    // o role é `authenticated`. Só o service_role consegue sobrescrever.
+    const { supabaseAdmin } = await import("../integrations/supabase/client.server");
     const { supabase, userId } = context;
 
     const session = await stripeRequest(
@@ -188,10 +192,10 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
 
     const plan = PLANS[planCode];
 
-    // Busca nome existente (necessário para upsert pois é NOT NULL)
-    const { data: existing } = await supabase
+    // Busca estado atual (necessário para upsert: `nome` é NOT NULL; logs de debug)
+    const { data: existing } = await supabaseAdmin
       .from("profiles")
-      .select("nome, creditos_avulsos")
+      .select("nome, plano, subscription_status, stripe_subscription_id, creditos_avulsos")
       .eq("id", userId)
       .maybeSingle();
     const { data: userData } = await supabase.auth.getUser();
@@ -201,13 +205,21 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       userData.user?.email?.split("@")[0] ||
       "Usuário";
 
+    console.log("[confirmarCheckout] Plano atual no perfil:", {
+      userId,
+      planoAtual: existing?.plano ?? null,
+      statusAtual: existing?.subscription_status ?? null,
+      subAtual: existing?.stripe_subscription_id ?? null,
+      novoPlanCode: planCode,
+    });
+
     // ---- BÁSICO ou EXPERT_EXTRA: pagamento único, soma 1 crédito de laudo avulso ----
     if (plan.mode === "payment") {
       if (session.payment_status !== "paid") return { ok: false };
 
       // Idempotência: se já existe cobrança registrada para este session_id,
       // não credita de novo (previne replay attack via reuso de session_id).
-      const { data: existingCharge } = await supabase
+      const { data: existingCharge } = await supabaseAdmin
         .from("cobrancas_avulsas")
         .select("id")
         .eq("stripe_session_id", session.id)
@@ -220,7 +232,7 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       const valorCents = typeof session.amount_total === "number"
         ? session.amount_total
         : plan.price_cents;
-      const { error: cobrancaError } = await supabase.from("cobrancas_avulsas").insert({
+      const { error: cobrancaError } = await supabaseAdmin.from("cobrancas_avulsas").insert({
         user_id: userId,
         tipo: planCode === "expert_extra" ? "expert_extra" : "basico_laudo",
         valor_cents: valorCents,
@@ -231,7 +243,6 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
         descricao: planCode === "expert_extra" ? "Laudo adicional Expert" : "Laudo avulso Básico",
       });
       if (cobrancaError) {
-        // Violação de unique = corrida com webhook ou chamada duplicada — não credita.
         if ((cobrancaError as any).code === "23505") {
           return { ok: true, plano: planCode, creditosAvulsos: existing?.creditos_avulsos ?? 0, alreadyProcessed: true };
         }
@@ -245,13 +256,8 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
         creditos_avulsos: novosCreditos,
         stripe_customer_id: (session.customer as string) ?? undefined,
       };
-      // Pagamento confirmado: sempre sobrescreve o plano com o produto comprado.
-      // - basico         → plano "basico"
-      // - expert_extra   → plano "expert" (laudo adicional do Expert)
       if (planCode === "basico") {
         upsertData.plano = "basico";
-        // Se houver assinatura recorrente ativa, marca como cancelada localmente
-        // (o webhook do Stripe ainda processará o cancelamento real, se houver).
         upsertData.subscription_status = null;
         upsertData.stripe_subscription_id = null;
         upsertData.plan_price_id = null;
@@ -259,8 +265,13 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
       } else if (planCode === "expert_extra") {
         upsertData.plano = "expert";
       }
-      const { error } = await supabase.from("profiles").upsert(upsertData, { onConflict: "id" });
+      const { data: updRow, error } = await supabaseAdmin
+        .from("profiles")
+        .upsert(upsertData, { onConflict: "id" })
+        .select("plano, creditos_avulsos")
+        .single();
       if (error) throw new Error(`Falha ao creditar laudo: ${error.message}`);
+      console.log("[confirmarCheckout] ✅ Avulso aplicado:", updRow);
 
       return { ok: true, plano: planCode, creditosAvulsos: novosCreditos };
     }
@@ -274,7 +285,8 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
     const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
     const dbPlan = plan.db_plan;
 
-    const { data: updatedProfile, error } = await supabase.from("profiles").upsert(
+    // SEMPRE sobrescreve o plano com o produto recém-comprado (upgrade/downgrade).
+    const { data: updatedProfile, error } = await supabaseAdmin.from("profiles").upsert(
       {
         id: userId,
         nome,
@@ -288,13 +300,18 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
         stripe_customer_id: sub.customer,
       },
       { onConflict: "id" },
-    ).select("plano, subscription_status, plan_price_id").single();
+    ).select("plano, subscription_status, plan_price_id, stripe_subscription_id").single();
 
-    if (error) throw new Error(`Falha ao atualizar plano no perfil: ${error.message}`);
-    console.log("[confirmarCheckout] Perfil atualizado", {
+    if (error) {
+      console.error("[confirmarCheckout] ❌ Falha ao atualizar perfil:", error);
+      throw new Error(`Falha ao atualizar plano no perfil: ${error.message}`);
+    }
+    console.log("[confirmarCheckout] ✅ Perfil atualizado", {
       userId,
       sessionId: data.session_id,
-      plano: updatedProfile?.plano,
+      planoAntes: existing?.plano ?? null,
+      planoDepois: updatedProfile?.plano,
+      subId: updatedProfile?.stripe_subscription_id,
       priceId: updatedProfile?.plan_price_id,
     });
 
