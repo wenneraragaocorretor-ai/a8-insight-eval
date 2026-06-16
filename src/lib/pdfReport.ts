@@ -66,12 +66,12 @@ function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte:
     if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
     return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
   }
-  if (tn.includes("galp")) {
-    if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área útil", fonte: "util" };
+  if (tn.includes("galp") || tn.includes("barrac")) {
     if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
+    if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
     return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
   }
-  // Apartamento e demais
+  // Apartamento, sala comercial, loja e demais
   if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
   if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
   return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
@@ -79,10 +79,17 @@ function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte:
 
 function labelValorM2(tipo: any): string {
   const tn = String(tipo ?? "").toLowerCase();
-  if (tn.includes("terreno")) return "Valor/m² total";
-  if (tn.includes("casa") || tn.includes("sobrado")) return "Valor/m² construído";
-  if (tn.includes("galp")) return "Valor/m² útil";
+  if (tn.includes("terreno") || tn.includes("lote")) return "Valor/m² terreno";
+  if (tn.includes("casa") || tn.includes("sobrado") || tn.includes("galp") || tn.includes("barrac")) return "Valor/m² construído";
   return "Valor/m² privativo";
+}
+
+// Sufixo curto p/ rotular eixo Y / variável dependente em gráficos e equações.
+function sufixoAreaBase(tipo: any): string {
+  const tn = String(tipo ?? "").toLowerCase();
+  if (tn.includes("terreno") || tn.includes("lote")) return "terreno";
+  if (tn.includes("casa") || tn.includes("sobrado") || tn.includes("galp") || tn.includes("barrac")) return "construído";
+  return "privativo";
 }
 
 // ---------- Regressão linear (mínimos quadrados) sobre comparáveis ----------
