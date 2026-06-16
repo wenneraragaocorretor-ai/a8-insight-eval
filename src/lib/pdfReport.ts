@@ -1218,6 +1218,13 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   doc.setFontSize(11);
   doc.setTextColor(...GOLD);
   doc.text("VALOR DE MERCADO ESTIMADO", PW / 2, 58, { align: "center" });
+  const reg = (resultado as any)?.regressao;
+  if (reg?.ok) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 200, 210);
+    doc.text(`Calculado por regressão linear (mínimos quadrados) · R² = ${fmtNum(reg.r2, 3)} · n = ${reg.n}`, PW / 2, 66, { align: "center" });
+  }
 
   // Valor central enorme dourado
   doc.setFont("helvetica", "bold");
