@@ -85,6 +85,69 @@ function labelValorM2(tipo: any): string {
   return "Valor/m² privativo";
 }
 
+// ---------- Regressão linear (mínimos quadrados) sobre comparáveis ----------
+// Pontos: (área_base_i, valor/m²_i). Aplica a equação à área do imóvel avaliando.
+export type RegressaoLinear = {
+  ok: boolean;
+  n: number;
+  a: number;          // intercepto
+  b: number;          // coeficiente angular
+  r2: number;         // coef. de determinação
+  valorM2: number;    // y estimado em x = areaAvaliada
+  valorTotal: number; // valorM2 * areaAvaliada
+  areaAvaliada: number;
+};
+
+function calcularRegressao(avaliacao: any, comparaveis: any[]): RegressaoLinear {
+  const tipo = avaliacao?.tipo_imovel;
+  const areaAvaliada = areaBaseDe(tipo, avaliacao).area;
+  const pts = (comparaveis || [])
+    .map((c) => {
+      const ab = areaBaseDe(tipo ?? c?.tipo, c).area;
+      const v = Number(c?.valor_anunciado);
+      return ab > 0 && v > 0 ? { x: ab, y: v / ab } : null;
+    })
+    .filter((p): p is { x: number; y: number } => p !== null);
+  const n = pts.length;
+  const base: RegressaoLinear = { ok: false, n, a: 0, b: 0, r2: 0, valorM2: 0, valorTotal: 0, areaAvaliada };
+  if (n < 2 || areaAvaliada <= 0) return base;
+  const sx = pts.reduce((s, p) => s + p.x, 0);
+  const sy = pts.reduce((s, p) => s + p.y, 0);
+  const sxy = pts.reduce((s, p) => s + p.x * p.y, 0);
+  const sxx = pts.reduce((s, p) => s + p.x * p.x, 0);
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return base;
+  const b = (n * sxy - sx * sy) / denom;
+  const a = (sy - b * sx) / n;
+  const ybar = sy / n;
+  const ssTot = pts.reduce((s, p) => s + (p.y - ybar) ** 2, 0);
+  const ssRes = pts.reduce((s, p) => s + (p.y - (a + b * p.x)) ** 2, 0);
+  const r2 = ssTot > 0 ? Math.max(0, 1 - ssRes / ssTot) : 1;
+  const valorM2 = a + b * areaAvaliada;
+  if (!Number.isFinite(valorM2) || valorM2 <= 0) return base;
+  const valorTotal = valorM2 * areaAvaliada;
+  return { ok: true, n, a, b, r2, valorM2, valorTotal, areaAvaliada };
+}
+
+// Aplica a regressão como valor oficial do resultado (central ±15%).
+// Anexa metadados em `resultado.regressao` para uso nas páginas do PDF.
+function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): RegressaoLinear {
+  const reg = calcularRegressao(avaliacao, comparaveis);
+  if (!resultado) return reg;
+  resultado.regressao = reg;
+  if (reg.ok) {
+    resultado.valor_central = Math.round(reg.valorTotal);
+    resultado.valor_minimo = Math.round(reg.valorTotal * 0.85);
+    resultado.valor_maximo = Math.round(reg.valorTotal * 1.15);
+    resultado.valor_unitario_medio = Math.round(reg.valorM2);
+    resultado.metodo_calculo = "regressao_linear";
+  }
+  return reg;
+}
+
+
+
+
 
 const fmtNum = (v: number | null | undefined, digits = 2) =>
   v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("pt-BR", { maximumFractionDigits: digits });
@@ -1155,6 +1218,13 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   doc.setFontSize(11);
   doc.setTextColor(...GOLD);
   doc.text("VALOR DE MERCADO ESTIMADO", PW / 2, 58, { align: "center" });
+  const reg = (resultado as any)?.regressao;
+  if (reg?.ok) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 200, 210);
+    doc.text(`Calculado por regressão linear (mínimos quadrados) · R² = ${fmtNum(reg.r2, 3)} · n = ${reg.n}`, PW / 2, 66, { align: "center" });
+  }
 
   // Valor central enorme dourado
   doc.setFont("helvetica", "bold");
@@ -1500,7 +1570,7 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
 }
 
 // ---------- EXPERT EXTRA: TRATAMENTO ESTATÍSTICO ----------
-function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any) {
+function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any, resultado?: any) {
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Tratamento Estatístico");
@@ -1563,12 +1633,86 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
   const cvDesc = cv < 15 ? "amostra muito homogênea" : cv < 30 ? "amostra aceitável" : "amostra com alta dispersão";
-  textoMultilinha(
+  let cursorY = yRow + ch + 12;
+  cursorY = textoMultilinha(
     doc,
     `Tratamento por fatores de homogeneização (ABNT NBR 14653-2). Coef. de variação de ${fmtNum(cv, 1)}% — ${cvDesc}.`,
-    M, yRow + ch + 12, usable,
+    M, cursorY, usable,
     { size: 11, color: TEXT, lineHeight: 5.2 },
-  );
+  ) ?? cursorY + 10;
+
+  // ----- Regressão Linear (mínimos quadrados) -----
+  const reg: RegressaoLinear | undefined = resultado?.regressao;
+  if (reg?.ok) {
+    const boxY = cursorY + 8;
+    const boxH = 60;
+    doc.setFillColor(...NAVY);
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(M, boxY, usable, boxH, 3, 3, "FD");
+    doc.setFillColor(...GOLD);
+    doc.rect(M, boxY, usable, 1.6, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("REGRESSÃO LINEAR — MÍNIMOS QUADRADOS", M + 6, boxY + 10);
+
+    const sinal = reg.b >= 0 ? "+" : "−";
+    const eq = `y = ${fmtBRL(reg.a)} ${sinal} ${fmtBRL(Math.abs(reg.b))} · x   (x = área em m², y = R$/m²)`;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...WHITE);
+    doc.text(eq, M + 6, boxY + 19);
+
+    const r2 = reg.r2;
+    const qualidade = r2 > 0.8 ? "amostra excelente" : r2 >= 0.6 ? "amostra boa" : "amostra fraca";
+    const r2Color: [number, number, number] = r2 > 0.8 ? [80, 200, 140] : r2 >= 0.6 ? [240, 200, 80] : [240, 120, 120];
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 210, 230);
+    doc.text("R²", M + 6, boxY + 32);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(...r2Color);
+    doc.text(fmtNum(r2, 3), M + 6, boxY + 46);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...r2Color);
+    doc.text(qualidade, M + 6, boxY + 53);
+
+    // valor estimado pela regressão
+    const colX = M + usable * 0.45;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 210, 230);
+    doc.text(`VALOR/m² ESTIMADO (área ${fmtNum(reg.areaAvaliada, 0)} m²)`, colX, boxY + 32);
+    doc.setFontSize(16);
+    doc.setTextColor(...WHITE);
+    doc.text(fmtBRL(reg.valorM2), colX, boxY + 44);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 210, 230);
+    doc.text("VALOR TOTAL (regressão)", colX, boxY + 52);
+    doc.setFontSize(13);
+    doc.setTextColor(...GOLD);
+    doc.text(fmtBRL(reg.valorTotal), colX + 60, boxY + 52);
+
+    textoMultilinha(
+      doc,
+      `Interpretação do R²: > 0,80 amostra excelente · 0,60–0,80 amostra boa · < 0,60 amostra fraca. n = ${reg.n} comparáveis.`,
+      M, boxY + boxH + 6, usable,
+      { size: 9, color: GRAY, lineHeight: 4.6 },
+    );
+  } else if (resultado) {
+    textoMultilinha(
+      doc,
+      "Regressão linear não calculada: amostra insuficiente (mínimo 2 comparáveis com área e valor válidos).",
+      M, cursorY + 8, usable,
+      { size: 10, color: GRAY, lineHeight: 5 },
+    );
+  }
 }
 
 // ---------- EXPERT EXTRA: CAMPO DE ARBÍTRIO ----------
@@ -1642,6 +1786,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaLocalizacao(doc, avaliacao, corretor);
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
   else if (temFotos) paginaFotos(doc, rel, fotosLim, corretor);
+  aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
@@ -1687,7 +1832,8 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaPerfil(doc, rel, corretor);
   paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
-  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  aplicarRegressao(resultado, avaliacao, comparaveis);
+  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
@@ -2645,7 +2791,8 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
-  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  aplicarRegressao(resultado, avaliacao, comparaveis);
+  paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, resultado, corretor);
   if (temMkt && marketing) paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);
