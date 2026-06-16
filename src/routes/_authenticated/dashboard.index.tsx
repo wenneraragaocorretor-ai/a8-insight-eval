@@ -275,7 +275,7 @@ function Dashboard() {
                 ? `${creditos} disponível${creditos === 1 ? "" : "s"}`
                 : ehExpert
                   ? `${usadas} / ${limite ?? 20}`
-                  : `${usadas} / ${limite ?? 5}`}
+                  : `${usadas} / ${limite ?? 8}`}
             </div>
             <p className="text-xs text-muted-foreground">
               {ehBasico ? "Crédito por compra (R$ 157)" : "Mês atual"}
@@ -383,7 +383,7 @@ function Dashboard() {
               <p className="font-semibold text-brand-blue">
                 {ehBasico
                   ? "Você não tem laudos avulsos disponíveis"
-                  : `Você atingiu o limite de ${limite ?? 5} laudos/mês do Plano Profissional`}
+                  : `Você atingiu o limite de ${limite ?? 8} laudos/mês do Plano Profissional`}
               </p>
               <p className="text-sm text-muted-foreground">
                 {ehBasico
