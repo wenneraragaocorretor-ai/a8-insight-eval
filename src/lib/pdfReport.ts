@@ -1563,7 +1563,7 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
 }
 
 // ---------- EXPERT EXTRA: TRATAMENTO ESTATÍSTICO ----------
-function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any) {
+function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any, resultado?: any) {
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Tratamento Estatístico");
