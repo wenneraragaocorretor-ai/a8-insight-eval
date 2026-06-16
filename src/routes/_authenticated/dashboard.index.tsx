@@ -47,6 +47,10 @@ function Dashboard() {
   const confirmFn = useServerFn(confirmarCheckout);
   const [welcomePlano, setWelcomePlano] = useState<string | null>(null);
   const confirmedRef = useRef(false);
+  const initialConfirming =
+    !!search.session_id || search.pagamento === "sucesso" || search.pagamento === "ok";
+  const [confirming, setConfirming] = useState(initialConfirming);
+  const [confirmMessage, setConfirmMessage] = useState("Confirmando seu pagamento...");
 
   const { data: avaliacoes = [], isLoading } = useQuery({
     queryKey: ["avaliacoes-list"],
@@ -71,18 +75,21 @@ function Dashboard() {
     const triggered = sid || search.pagamento === "sucesso" || search.pagamento === "ok";
     if (!triggered || confirmedRef.current) return;
     confirmedRef.current = true;
+    setConfirming(true);
 
     const run = async () => {
       let plano: string = "basico";
-      let isPayment = false; // pagamento avulso (basico / expert_extra)
+      let isPayment = false;
       if (sid) {
         try {
-          const res: any = await confirmFn({ data: { session_id: sid } });
+          const res: any = await Promise.race([
+            confirmFn({ data: { session_id: sid } }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("timeout-confirm")), 10000),
+            ),
+          ]);
           if (res?.plano) plano = res.plano;
           isPayment = plano === "basico" || plano === "expert_extra";
-          if (import.meta.env.DEV) {
-            console.debug("[confirmarCheckout] plano retornado:", plano);
-          }
         } catch (e) {
           console.error("[confirmarCheckout]", e);
         }
@@ -91,36 +98,45 @@ function Dashboard() {
       await queryClient.invalidateQueries({ queryKey: ["assinatura-status"] });
       await queryClient.invalidateQueries({ queryKey: ["cobrancas-avulsas"] });
 
-      if (isPayment) {
-        // Compra avulsa — não tem subscription pra "esperar ativar".
-        // Refaz uma vez e exibe a mensagem correta para o plano comprado.
-        await refetchStatus();
-        if (plano === "expert_extra") {
-          setWelcomePlano("Expert (Laudo Avulso)");
-          toast.success("Pagamento confirmado! +1 laudo Expert adicional disponível.");
-        } else {
-          setWelcomePlano("Básico");
-          toast.success("Compra confirmada! +1 laudo Básico disponível.");
-        }
-      } else {
-        // Assinatura recorrente — pode levar alguns segundos pro webhook chegar.
-        let detected = plano;
-        let attempts = 0;
-        while (attempts < 8) {
-          const r = await refetchStatus();
-          if (r.data?.assinaturaAtiva && r.data?.plano && r.data.plano !== "basico" && r.data.plano !== "user") {
-            detected = r.data.plano;
+      // Polling: até 10× a cada 1s aguardando plano refletir no Supabase
+      let detected: string | null = null;
+      let assinaturaAtivaOk = false;
+      let creditosOk = false;
+      for (let i = 0; i < 10; i++) {
+        const r = await refetchStatus();
+        const d: any = r.data;
+        if (d?.plano) {
+          detected = d.plano;
+          assinaturaAtivaOk = !!d.assinaturaAtiva;
+          creditosOk = (d.creditosAvulsos ?? 0) > 0;
+          if (isPayment ? creditosOk : assinaturaAtivaOk && detected !== "basico" && detected !== "user") {
             break;
           }
-          attempts++;
-          await new Promise((res) => setTimeout(res, 1200));
         }
-        const label = PLAN_LABEL[detected] ?? "Básico";
-        setWelcomePlano(label);
-        toast.success(`Plano ${label} ativado com sucesso!`);
+        await new Promise((res) => setTimeout(res, 1000));
+      }
+
+      const sucesso = isPayment ? creditosOk : (assinaturaAtivaOk && !!detected);
+      if (sucesso) {
+        if (isPayment && plano === "expert_extra") {
+          setWelcomePlano("Expert (Laudo Avulso)");
+          toast.success("Pagamento confirmado! +1 laudo Expert adicional disponível.");
+        } else if (isPayment) {
+          setWelcomePlano("Básico");
+          toast.success("Compra confirmada! +1 laudo Básico disponível.");
+        } else {
+          const label = PLAN_LABEL[detected!] ?? PLAN_LABEL[plano] ?? "Plano";
+          setWelcomePlano(label);
+          toast.success(`Plano ${label} ativado com sucesso!`);
+        }
+      } else {
+        setConfirmMessage("Pagamento recebido! Seu plano será ativado em instantes.");
+        toast.message("Pagamento recebido! Seu plano será ativado em instantes.");
+        await new Promise((res) => setTimeout(res, 1500));
       }
 
       await refetchStatus();
+      setConfirming(false);
       navigate({ to: "/dashboard", search: {}, replace: true });
     };
     void run();
@@ -129,14 +145,29 @@ function Dashboard() {
   // Guard de acesso: sem assinatura ativa E sem créditos avulsos → /planos.
   useEffect(() => {
     if (!status) return;
-    if (search.session_id || search.pagamento) return; // aguardando confirmação de checkout
+    if (confirming) return; // aguardando confirmação de checkout
+    if (search.session_id || search.pagamento) return;
     const creditos = (status as any)?.creditosAvulsos ?? 0;
     if (!status.assinaturaAtiva && creditos <= 0) {
       navigate({ to: "/planos", replace: true });
     }
-  }, [status, search.session_id, search.pagamento, navigate]);
+  }, [status, confirming, search.session_id, search.pagamento, navigate]);
 
   if (!user) return null;
+
+  if (confirming) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="mx-auto h-12 w-12 rounded-full border-4 border-brand-blue/20 border-t-brand-blue animate-spin" />
+          <h2 className="text-xl font-semibold text-brand-blue">{confirmMessage}</h2>
+          <p className="text-sm text-muted-foreground">
+            Não feche esta janela. Estamos ativando seu plano com segurança.
+          </p>
+        </div>
+      </div>
+    );
+  }
   const nome = perfilData?.profile?.nome || user.user_metadata?.nome || user.email?.split("@")[0];
   const planoLabel = status?.plano ? (PLAN_LABEL[status.plano] ?? "—") : "—";
   const planoCode = status?.plano ?? null;
