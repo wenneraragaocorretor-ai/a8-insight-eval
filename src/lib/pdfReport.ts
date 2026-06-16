@@ -1705,6 +1705,7 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaLocalizacao(doc, avaliacao, corretor);
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
   else if (temFotos) paginaFotos(doc, rel, fotosLim, corretor);
+  aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
