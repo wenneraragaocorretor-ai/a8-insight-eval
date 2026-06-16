@@ -94,14 +94,7 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             veioDoCheckoutAtual: !!session?.id,
           });
 
-              userId,
-              subscriptionId: sub.id,
-              assinaturaAtualNoPerfil: existing.stripe_subscription_id ?? null,
-              priceId,
-              planCode,
-            });
-            return;
-          }
+
 
           // Se ativo mas não conseguiu identificar o plano → NÃO escreve plano (log para debug).
           // Se inativo/cancelado → zera plano (acesso bloqueado).
