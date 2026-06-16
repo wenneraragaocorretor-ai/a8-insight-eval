@@ -14,13 +14,28 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
     const { PLANS, ensurePrice, listConfiguredStripePrices, stripeRequest } = await import("./stripe.server");
     const { supabase, userId } = context;
 
-    const plan = PLANS[data.plano];
-    const priceId = await ensurePrice(plan);
+    console.log("[checkout] === INÍCIO ===", { userId, plano: data.plano, origin: data.origin });
 
-    const configuredPrices = await listConfiguredStripePrices();
-    console.log("[checkout] Price IDs configurados no Stripe:", configuredPrices);
-    console.log("Price ID selecionado:", priceId);
-    console.log("Plano mapeado:", data.plano, "→", plan.db_plan);
+    const plan = PLANS[data.plano];
+    console.log("[checkout] Plano recebido:", {
+      code: plan.code, lookup_key: plan.lookup_key, price_cents: plan.price_cents, mode: plan.mode,
+    });
+
+    let priceId: string;
+    try {
+      priceId = await ensurePrice(plan);
+      console.log("[checkout] Price ID resolvido:", priceId);
+    } catch (e: any) {
+      console.error("[checkout] FALHA em ensurePrice:", e?.message ?? e);
+      throw e;
+    }
+
+    try {
+      const configuredPrices = await listConfiguredStripePrices();
+      console.log("[checkout] Price IDs configurados no Stripe:", configuredPrices);
+    } catch (e: any) {
+      console.error("[checkout] Falha ao listar prices (ignorando):", e?.message ?? e);
+    }
 
     // Garante profile + stripe_customer_id (upsert cria a linha se faltar)
     const { data: profile } = await supabase
@@ -39,12 +54,18 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
 
     let customerId = profile?.stripe_customer_id ?? null;
     if (!customerId) {
-      const customer = await stripeRequest("POST", "/customers", {
-        email,
-        name: nome,
-        metadata: { user_id: userId },
-      });
-      customerId = customer.id;
+      try {
+        const customer = await stripeRequest("POST", "/customers", {
+          email, name: nome, metadata: { user_id: userId },
+        });
+        customerId = customer.id;
+        console.log("[checkout] Customer Stripe criado:", customerId);
+      } catch (e: any) {
+        console.error("[checkout] FALHA ao criar customer:", e?.message ?? e);
+        throw e;
+      }
+    } else {
+      console.log("[checkout] Customer Stripe existente:", customerId);
     }
 
     await supabase
@@ -70,9 +91,21 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
       sessionBody["payment_intent_data[metadata][plan_code]"] = data.plano;
     }
 
-    const session = await stripeRequest("POST", "/checkout/sessions", sessionBody);
+    let session: any;
+    try {
+      session = await stripeRequest("POST", "/checkout/sessions", sessionBody);
+      console.log("[checkout] ✅ Sessão criada:", {
+        id: session.id, url: session.url, mode: session.mode,
+        status: session.status, customer: session.customer, livemode: session.livemode,
+      });
+    } catch (e: any) {
+      console.error("[checkout] ❌ FALHA ao criar sessão Stripe:", {
+        message: e?.message ?? String(e), priceId, customerId, plano: data.plano,
+      });
+      throw e;
+    }
 
-    return { url: session.url as string, priceId, plano: data.plano };
+    return { url: session.url as string, priceId, plano: data.plano, sessionId: session.id };
   });
 
 export const getStatusAssinatura = createServerFn({ method: "GET" })
