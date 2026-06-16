@@ -79,22 +79,22 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           const isActive = sub.status === "active" || sub.status === "trialing";
           const { data: existing } = await supabaseAdmin
             .from("profiles")
-            .select("nome, plano, stripe_subscription_id")
+            .select("nome, plano, stripe_subscription_id, subscription_current_period_end")
             .eq("id", userId)
             .maybeSingle();
           const nome = existing?.nome || session?.customer_details?.name || session?.customer_details?.email?.split("@")[0] || "Usuário";
 
-          const veioDoCheckoutAtual = !!session?.id;
-          if (!veioDoCheckoutAtual && isActive && existing && existing.stripe_subscription_id !== sub.id) {
-            console.warn("[stripe-webhook] Evento de assinatura antiga ignorado para não sobrescrever plano comprado mais recente", {
-              userId,
-              subscriptionId: sub.id,
-              assinaturaAtualNoPerfil: existing.stripe_subscription_id ?? null,
-              priceId,
-              planCode,
-            });
-            return;
-          }
+          console.log("[stripe-webhook] Estado antes da atualização", {
+            userId,
+            planoAtual: existing?.plano ?? null,
+            subAtualNoPerfil: existing?.stripe_subscription_id ?? null,
+            novaSubId: sub.id,
+            novoStatus: sub.status,
+            novoPlanCode: planCode,
+            veioDoCheckoutAtual: !!session?.id,
+          });
+
+
 
           // Se ativo mas não conseguiu identificar o plano → NÃO escreve plano (log para debug).
           // Se inativo/cancelado → zera plano (acesso bloqueado).
