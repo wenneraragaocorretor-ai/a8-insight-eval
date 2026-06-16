@@ -1626,12 +1626,86 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
   const cvDesc = cv < 15 ? "amostra muito homogênea" : cv < 30 ? "amostra aceitável" : "amostra com alta dispersão";
-  textoMultilinha(
+  let cursorY = yRow + ch + 12;
+  cursorY = textoMultilinha(
     doc,
     `Tratamento por fatores de homogeneização (ABNT NBR 14653-2). Coef. de variação de ${fmtNum(cv, 1)}% — ${cvDesc}.`,
-    M, yRow + ch + 12, usable,
+    M, cursorY, usable,
     { size: 11, color: TEXT, lineHeight: 5.2 },
-  );
+  ) ?? cursorY + 10;
+
+  // ----- Regressão Linear (mínimos quadrados) -----
+  const reg: RegressaoLinear | undefined = resultado?.regressao;
+  if (reg?.ok) {
+    const boxY = cursorY + 8;
+    const boxH = 60;
+    doc.setFillColor(...NAVY);
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(M, boxY, usable, boxH, 3, 3, "FD");
+    doc.setFillColor(...GOLD);
+    doc.rect(M, boxY, usable, 1.6, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text("REGRESSÃO LINEAR — MÍNIMOS QUADRADOS", M + 6, boxY + 10);
+
+    const sinal = reg.b >= 0 ? "+" : "−";
+    const eq = `y = ${fmtBRL(reg.a)} ${sinal} ${fmtBRL(Math.abs(reg.b))} · x   (x = área em m², y = R$/m²)`;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...WHITE);
+    doc.text(eq, M + 6, boxY + 19);
+
+    const r2 = reg.r2;
+    const qualidade = r2 > 0.8 ? "amostra excelente" : r2 >= 0.6 ? "amostra boa" : "amostra fraca";
+    const r2Color: [number, number, number] = r2 > 0.8 ? [80, 200, 140] : r2 >= 0.6 ? [240, 200, 80] : [240, 120, 120];
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 210, 230);
+    doc.text("R²", M + 6, boxY + 32);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(...r2Color);
+    doc.text(fmtNum(r2, 3), M + 6, boxY + 46);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...r2Color);
+    doc.text(qualidade, M + 6, boxY + 53);
+
+    // valor estimado pela regressão
+    const colX = M + usable * 0.45;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 210, 230);
+    doc.text(`VALOR/m² ESTIMADO (área ${fmtNum(reg.areaAvaliada, 0)} m²)`, colX, boxY + 32);
+    doc.setFontSize(16);
+    doc.setTextColor(...WHITE);
+    doc.text(fmtBRL(reg.valorM2), colX, boxY + 44);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 210, 230);
+    doc.text("VALOR TOTAL (regressão)", colX, boxY + 52);
+    doc.setFontSize(13);
+    doc.setTextColor(...GOLD);
+    doc.text(fmtBRL(reg.valorTotal), colX + 60, boxY + 52);
+
+    textoMultilinha(
+      doc,
+      `Interpretação do R²: > 0,80 amostra excelente · 0,60–0,80 amostra boa · < 0,60 amostra fraca. n = ${reg.n} comparáveis.`,
+      M, boxY + boxH + 6, usable,
+      { size: 9, color: GRAY, lineHeight: 4.6 },
+    );
+  } else if (resultado) {
+    textoMultilinha(
+      doc,
+      "Regressão linear não calculada: amostra insuficiente (mínimo 2 comparáveis com área e valor válidos).",
+      M, cursorY + 8, usable,
+      { size: 10, color: GRAY, lineHeight: 5 },
+    );
+  }
 }
 
 // ---------- EXPERT EXTRA: CAMPO DE ARBÍTRIO ----------
