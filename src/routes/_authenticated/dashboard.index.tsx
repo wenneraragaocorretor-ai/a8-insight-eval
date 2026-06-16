@@ -50,7 +50,7 @@ function Dashboard() {
   const initialConfirming =
     !!search.session_id || search.pagamento === "sucesso" || search.pagamento === "ok";
   const [confirming, setConfirming] = useState(initialConfirming);
-  const [confirmMessage, setConfirmMessage] = useState("Confirmando seu pagamento...");
+  const [confirmMessage, setConfirmMessage] = useState("Atualizando seu plano...");
 
   const { data: avaliacoes = [], isLoading } = useQuery({
     queryKey: ["avaliacoes-list"],
