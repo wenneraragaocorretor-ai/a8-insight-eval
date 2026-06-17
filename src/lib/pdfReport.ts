@@ -1807,7 +1807,6 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaValor(doc, resultado, corretor);
   paginaContato(doc, corretor);
   rodape(doc);
-  marcaDagua(doc); // BÁSICO: marca d'água em todas as páginas
   return doc;
 }
 
