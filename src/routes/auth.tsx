@@ -50,6 +50,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
+  const [activeTab, setActiveTab] = useState<"login" | "signup">(readPendingPlan(search.plan) ? "signup" : "login");
   const triggered = useRef(false);
   const justSignedUp = useRef(false);
 
@@ -167,7 +168,18 @@ function AuthPage() {
     } catch (error: any) {
       justSignedUp.current = false;
       try { sessionStorage.removeItem("a8_just_signed_up"); } catch {}
-      toast.error(error.message || "Erro ao criar conta");
+      const msg: string = error?.message ?? "";
+      const code: string = error?.code ?? error?.error_code ?? "";
+      const jaExiste =
+        code === "user_already_exists" ||
+        /already registered|already exists|user already/i.test(msg);
+      if (jaExiste) {
+        toast.error("Este e-mail já está cadastrado. Faça login para continuar.", { duration: 6000 });
+        setActiveTab("login");
+      } else {
+        toast.error(msg || "Erro ao criar conta");
+      }
+
 
     } finally {
       setIsLoading(false);
@@ -213,7 +225,7 @@ function AuthPage() {
           </div>
         )}
 
-        <Tabs defaultValue={pendingPlan ? "signup" : "login"} className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="signup">Cadastro</TabsTrigger>
