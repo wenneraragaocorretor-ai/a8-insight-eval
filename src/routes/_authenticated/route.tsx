@@ -24,11 +24,7 @@ function AuthenticatedLayout() {
   const queryClient = useQueryClient();
   const { data: adminStatus, isLoading: loadingAdmin } = useQuery({
     queryKey: ["am-i-admin"],
-    queryFn: async () => {
-      const r = await fetchAdmin();
-      console.log("[admin] amIAdmin() ->", r);
-      return r;
-    },
+    queryFn: fetchAdmin,
     staleTime: 30 * 1000,
     refetchOnMount: true,
   });
@@ -43,10 +39,6 @@ function AuthenticatedLayout() {
     });
     return () => sub.subscription.unsubscribe();
   }, [queryClient]);
-
-  if (typeof window !== "undefined") {
-    console.log("[admin] header render — loading:", loadingAdmin, "isAdmin:", isAdmin, "raw:", adminStatus);
-  }
 
   return (
     <div className="min-h-screen flex w-full bg-background">
