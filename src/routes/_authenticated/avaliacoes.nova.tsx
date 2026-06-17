@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle } from "lucide-react";
+import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 
 const CARACTERISTICAS_OPCOES = [
