@@ -20,11 +20,11 @@ const NAV = [
   { to: "/admin/usuarios", label: "Usuários", icon: Users, exact: false },
   { to: "/admin/planos", label: "Redefinir plano", icon: CreditCard, exact: false },
   { to: "/admin/beta-testers", label: "Beta Testers", icon: Sparkles, exact: false },
+  { to: "/admin/afiliados", label: "Afiliados", icon: Handshake, exact: false },
 ];
 
 const SOON = [
   { label: "Cupons", icon: Ticket },
-  { label: "Afiliados", icon: Handshake },
 ];
 
 
