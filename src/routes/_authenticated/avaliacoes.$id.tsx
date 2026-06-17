@@ -358,7 +358,7 @@ function AvaliacaoDetalhe() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.fonte}</TableCell>
                     <TableCell>{c.localizacao || "—"}</TableCell>
-                    <TableCell className="text-right">{c.area}</TableCell>
+                    <TableCell className="text-right">{areaBase}</TableCell>
                     <TableCell className="text-right">{fmtBRL(Number(c.valor_anunciado))}</TableCell>
                     <TableCell className="text-right">
                       {areaBase > 0 ? fmtBRL(Number(c.valor_anunciado) / areaBase) : "—"}
