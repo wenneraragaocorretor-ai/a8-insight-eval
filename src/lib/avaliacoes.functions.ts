@@ -2,6 +2,53 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "../integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+export const atualizarValorFinalCorretor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({
+      avaliacao_id: z.string().uuid(),
+      valor_final_corretor: z.number().nullable(),
+    }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: aval, error: errA } = await supabase
+      .from("avaliacoes")
+      .select("user_id")
+      .eq("id", data.avaliacao_id)
+      .single();
+    if (errA || !aval) throw new Error("Avaliação não encontrada");
+    if (aval.user_id !== userId) throw new Error("Sem permissão para editar esta avaliação");
+
+    if (data.valor_final_corretor !== null) {
+      const { data: res } = await supabase
+        .from("resultados")
+        .select("valor_minimo, valor_maximo")
+        .eq("avaliacao_id", data.avaliacao_id)
+        .maybeSingle();
+      const min = Number(res?.valor_minimo);
+      const max = Number(res?.valor_maximo);
+      if (Number.isFinite(min) && Number.isFinite(max)) {
+        if (data.valor_final_corretor < min || data.valor_final_corretor > max) {
+          throw new Error(
+            `O valor deve estar entre ${min.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })} e ${max.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })} conforme o campo de arbítrio técnico (NBR 14653-2).`,
+          );
+        }
+      }
+    }
+
+    const { error: errU } = await supabase
+      .from("resultados")
+      .update({ valor_final_corretor: data.valor_final_corretor })
+      .eq("avaliacao_id", data.avaliacao_id);
+    if (errU) throw new Error("Falha ao salvar valor: " + errU.message);
+
+    return { ok: true, valor_final_corretor: data.valor_final_corretor };
+  });
+
+
+
 const evaluationSchema = z.object({
   imovel: z.object({
     tipo: z.string(),
