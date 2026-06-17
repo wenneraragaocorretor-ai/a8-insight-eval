@@ -136,8 +136,11 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
         limiteMes: null,
         creditosAvulsos: 0,
         isAdmin: true as const,
+        isBetaTester: false as const,
+        betaExpiraEm: null as string | null,
       };
     }
+
 
     const { data: profile } = await supabase
       .from("profiles")
