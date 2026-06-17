@@ -1,17 +1,18 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
+import { getAvaliacaoDetalhe, atualizarValorFinalCorretor } from "../../lib/avaliacoes.functions";
 
 import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
 import { supabase } from "../../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil, Save, RotateCcw } from "lucide-react";
 import { limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 import { ExpertChat } from "../../components/ExpertChat";
 
