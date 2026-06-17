@@ -179,18 +179,20 @@ function Dashboard() {
     );
   }
   const nome = perfilData?.profile?.nome || user.user_metadata?.nome || user.email?.split("@")[0];
-  const planoLabel = status?.plano ? (PLAN_LABEL[status.plano] ?? "—") : "—";
+  const ehAdmin = !!(status as any)?.isAdmin;
+  const planoLabel = ehAdmin
+    ? "Administrador (acesso total ilimitado)"
+    : status?.plano ? (PLAN_LABEL[status.plano] ?? "—") : "—";
   const planoCode = status?.plano ?? null;
-  const ehBasico = planoCode === "basico" || planoCode === "user";
-  const ehExpert = planoCode === "expert";
+  const ehBasico = !ehAdmin && (planoCode === "basico" || planoCode === "user");
+  const ehExpert = !ehAdmin && planoCode === "expert";
   const usadas = status?.avaliacoesMes ?? 0;
   const limite = status?.limiteMes;
   const creditos = (status as any)?.creditosAvulsos ?? 0;
   const ativa = status?.assinaturaAtiva;
-  // Só mostra "limite atingido" para usuários COM plano ativo.
-  // Sem plano (planoCode === null) nunca exibe esse aviso — eles veem a tela de planos.
-  const temPlanoAtivo = !!planoCode && !!ativa;
-  const ehProfissional = planoCode === "profissional" || planoCode === "pro";
+  // Só mostra "limite atingido" para usuários COM plano ativo. Admin nunca atinge limite.
+  const temPlanoAtivo = !ehAdmin && !!planoCode && !!ativa;
+  const ehProfissional = !ehAdmin && (planoCode === "profissional" || planoCode === "pro");
   const limiteAtingido = temPlanoAtivo && (
     ehBasico
       ? creditos <= 0
@@ -265,20 +267,22 @@ function Dashboard() {
         <Card className="premium-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {ehBasico ? "Laudos Avulsos" : "Avaliações no Mês"}
+              {ehAdmin ? "Avaliações no Mês" : ehBasico ? "Laudos Avulsos" : "Avaliações no Mês"}
             </CardTitle>
             <History className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {ehBasico
-                ? `${creditos} disponível${creditos === 1 ? "" : "s"}`
-                : ehExpert
-                  ? `${usadas} / ${limite ?? 20}`
-                  : `${usadas} / ${limite ?? 8}`}
+              {ehAdmin
+                ? `${usadas} (ilimitado)`
+                : ehBasico
+                  ? `${creditos} disponível${creditos === 1 ? "" : "s"}`
+                  : ehExpert
+                    ? `${usadas} / ${limite ?? 20}`
+                    : `${usadas} / ${limite ?? 8}`}
             </div>
             <p className="text-xs text-muted-foreground">
-              {ehBasico ? "Crédito por compra (R$ 157)" : "Mês atual"}
+              {ehAdmin ? "Sem limite mensal" : ehBasico ? "Crédito por compra (R$ 157)" : "Mês atual"}
             </p>
           </CardContent>
         </Card>
@@ -290,7 +294,7 @@ function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{planoLabel}</div>
             <p className="text-xs text-muted-foreground">
-              {ehBasico ? (
+              {ehAdmin ? "Acesso total a todos os recursos, sem cobrança" : ehBasico ? (
                 <Link to="/planos" className="text-brand-gold font-medium hover:underline">
                   Comprar laudo / fazer upgrade
                 </Link>
