@@ -85,6 +85,10 @@ function AvaliacaoDetalhe() {
     { id: 3, nome: "Modelo 3 — Laudo ABNT NBR 14653-2" },
   ];
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
+  useEffect(() => {
+    if (!disponiveis.includes(modelo)) setModelo(disponiveis[disponiveis.length - 1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminOverride]);
 
   // Valor final personalizado pelo corretor (dentro da faixa min/max do arbítrio).
   const valorCentralTecnico = Number(resultado?.valor_central) || 0;
