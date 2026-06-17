@@ -132,7 +132,13 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
     console.log("Iniciando processamento no servidor para o usuário:", userId);
 
     try {
-      // Enforça limites por plano.
+      // Admins têm acesso ilimitado e não consomem créditos.
+      const { data: isAdmin } = await supabase.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      });
+
+      // Enforça limites por plano (admins ignoram).
       const { data: profile } = await supabase
         .from("profiles")
         .select("plano, creditos_avulsos")
@@ -144,7 +150,9 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       // Flag: este laudo consome 1 crédito avulso?
       let consomeCredito = false;
 
-      if (plano === "basico" || plano === "user") {
+      if (isAdmin) {
+        // Sem limites, sem consumo.
+      } else if (plano === "basico" || plano === "user") {
         // Plano Básico: pay-per-laudo. Precisa ter pelo menos 1 crédito.
         if (creditos < 1) {
           throw new Error("Você não tem laudos avulsos disponíveis. Compre um novo laudo Básico (R$ 157,00) em /planos.");
@@ -179,6 +187,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           consomeCredito = true;
         }
       }
+
 
       const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
         body: data,
