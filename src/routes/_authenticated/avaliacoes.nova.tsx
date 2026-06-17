@@ -306,9 +306,12 @@ function NovaAvaliacao() {
     ambientes_outros_livres: "",
   });
 
-  const [plano, setPlano] = useState<string>("basico");
+  const [planoReal, setPlanoReal] = useState<string>("basico");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const isExpert = plano === "expert" || isAdmin;
+  const [adminOverride, setAdminOverride] = useState<string | null>(null);
+  // Plano efetivo: admin usa o modelo selecionado no dashboard; usuários comuns usam o real.
+  const plano = isAdmin ? (adminOverride ?? "expert") : planoReal;
+  const isExpert = plano === "expert";
   const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number; assinaturaAtiva: boolean } | null>(null);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
   const [comprandoExtra, setComprandoExtra] = useState(false);
