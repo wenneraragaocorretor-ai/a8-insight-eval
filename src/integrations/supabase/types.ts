@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      afiliados: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          percentual_comissao: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          email: string
+          id?: string
+          nome: string
+          percentual_comissao?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          percentual_comissao?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       avaliacoes: {
         Row: {
           ambientes_outros: Json | null
@@ -297,8 +333,59 @@ export type Database = {
           },
         ]
       }
+      indicacoes_afiliado: {
+        Row: {
+          afiliado_id: string
+          created_at: string
+          id: string
+          pago_em: string | null
+          plano: string
+          status: string
+          stripe_session_id: string | null
+          stripe_subscription_id: string | null
+          usuario_indicado_id: string
+          valor_comissao: number
+          valor_pago: number
+        }
+        Insert: {
+          afiliado_id: string
+          created_at?: string
+          id?: string
+          pago_em?: string | null
+          plano: string
+          status?: string
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+          usuario_indicado_id: string
+          valor_comissao: number
+          valor_pago: number
+        }
+        Update: {
+          afiliado_id?: string
+          created_at?: string
+          id?: string
+          pago_em?: string | null
+          plano?: string
+          status?: string
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+          usuario_indicado_id?: string
+          valor_comissao?: number
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indicacoes_afiliado_afiliado_id_fkey"
+            columns: ["afiliado_id"]
+            isOneToOne: false
+            referencedRelation: "afiliados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          afiliado_indicador_id: string | null
           beta_expira_em: string | null
           beta_plano: string | null
           cidade: string | null
@@ -326,6 +413,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          afiliado_indicador_id?: string | null
           beta_expira_em?: string | null
           beta_plano?: string | null
           cidade?: string | null
@@ -353,6 +441,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          afiliado_indicador_id?: string | null
           beta_expira_em?: string | null
           beta_plano?: string | null
           cidade?: string | null
@@ -379,7 +468,15 @@ export type Database = {
           tipo?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_afiliado_indicador_id_fkey"
+            columns: ["afiliado_indicador_id"]
+            isOneToOne: false
+            referencedRelation: "afiliados"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       resultados: {
         Row: {
@@ -464,9 +561,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      resolver_codigo_afiliado: { Args: { _codigo: string }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "afiliado"
       user_role: "user" | "pro" | "expert" | "basico" | "profissional"
     }
     CompositeTypes: {
@@ -595,7 +693,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "afiliado"],
       user_role: ["user", "pro", "expert", "basico", "profissional"],
     },
   },

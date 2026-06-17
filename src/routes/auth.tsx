@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { criarCheckoutSession } from "../lib/stripe.functions";
+import { vincularAfiliadoSeNecessario } from "../lib/affiliateRef";
 
 type PlanCode = "basico" | "profissional" | "expert";
 const PLAN_LABEL: Record<PlanCode, string> = {
@@ -101,7 +102,8 @@ function AuthPage() {
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        continuarFluxo();
+        // Tenta vincular afiliado (no-op se não houver ?ref= capturado).
+        vincularAfiliadoSeNecessario(session.user.id).finally(() => continuarFluxo());
       }
     });
     return () => subscription.unsubscribe();
@@ -160,6 +162,11 @@ function AuthPage() {
         triggered.current = false;
         return;
       }
+
+      // Vincula afiliado (se houver ?ref= capturado). Silencioso em caso de erro.
+      await vincularAfiliadoSeNecessario(session.user.id);
+
+
 
       console.log("[signup] sessão pronta, redirecionando para /planos");
       toast.success("Cadastro realizado! Escolha seu plano para continuar.");
