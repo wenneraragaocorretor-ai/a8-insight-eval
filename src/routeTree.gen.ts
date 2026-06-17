@@ -23,6 +23,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 import { Route as AuthenticatedAvaliacoesNovaRouteImport } from './routes/_authenticated/avaliacoes.nova'
 import { Route as AuthenticatedAvaliacoesIdRouteImport } from './routes/_authenticated/avaliacoes.$id'
+import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
 
 const TermosRoute = TermosRouteImport.update({
@@ -97,6 +98,12 @@ const AuthenticatedAvaliacoesIdRoute =
     path: '/avaliacoes/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminUsuariosRoute =
+  AuthenticatedAdminUsuariosRouteImport.update({
+    id: '/usuarios',
+    path: '/usuarios',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPlanosRoute =
   AuthenticatedAdminPlanosRouteImport.update({
     id: '/planos',
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/planos': typeof AuthenticatedPlanosRoute
   '/api/chat': typeof ApiChatRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
+  '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
@@ -129,6 +137,7 @@ export interface FileRoutesByTo {
   '/planos': typeof AuthenticatedPlanosRoute
   '/api/chat': typeof ApiChatRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
+  '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
@@ -147,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/api/chat': typeof ApiChatRoute
   '/_authenticated/admin/planos': typeof AuthenticatedAdminPlanosRoute
+  '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/_authenticated/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/planos'
     | '/api/chat'
     | '/admin/planos'
+    | '/admin/usuarios'
     | '/avaliacoes/$id'
     | '/avaliacoes/nova'
     | '/api/public/stripe-webhook'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/planos'
     | '/api/chat'
     | '/admin/planos'
+    | '/admin/usuarios'
     | '/avaliacoes/$id'
     | '/avaliacoes/nova'
     | '/api/public/stripe-webhook'
@@ -197,6 +209,7 @@ export interface FileRouteTypes {
     | '/_authenticated/planos'
     | '/api/chat'
     | '/_authenticated/admin/planos'
+    | '/_authenticated/admin/usuarios'
     | '/_authenticated/avaliacoes/$id'
     | '/_authenticated/avaliacoes/nova'
     | '/api/public/stripe-webhook'
@@ -314,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAvaliacoesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/usuarios': {
+      id: '/_authenticated/admin/usuarios'
+      path: '/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/planos': {
       id: '/_authenticated/admin/planos'
       path: '/planos'
@@ -326,11 +346,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPlanosRoute: typeof AuthenticatedAdminPlanosRoute
+  AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPlanosRoute: AuthenticatedAdminPlanosRoute,
+  AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
