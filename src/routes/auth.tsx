@@ -162,6 +162,11 @@ function AuthPage() {
         return;
       }
 
+      // Vincula afiliado (se houver ?ref= capturado). Silencioso em caso de erro.
+      await vincularAfiliadoSeNecessario(session.user.id);
+
+
+
       console.log("[signup] sessão pronta, redirecionando para /planos");
       toast.success("Cadastro realizado! Escolha seu plano para continuar.");
       // window.location garante reload do guard com sessão fresca.
