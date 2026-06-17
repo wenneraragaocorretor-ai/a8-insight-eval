@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { criarCheckoutSession } from "../lib/stripe.functions";
+import { vincularAfiliadoSeNecessario } from "../lib/affiliateRef";
 
 type PlanCode = "basico" | "profissional" | "expert";
 const PLAN_LABEL: Record<PlanCode, string> = {
