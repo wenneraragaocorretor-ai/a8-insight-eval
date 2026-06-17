@@ -104,23 +104,14 @@ function AdminPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <Link
-        to="/dashboard"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft size={16} /> Voltar ao dashboard
-      </Link>
-
-      <div className="flex items-center gap-3">
-        <ShieldCheck className="h-7 w-7 text-brand-gold" />
-        <div>
-          <h1 className="text-2xl font-bold text-brand-blue">Painel administrativo</h1>
-          <p className="text-sm text-muted-foreground">
-            Redefinir manualmente o plano de um usuário por e-mail.
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-brand-blue">Redefinir plano de usuário</h2>
+        <p className="text-sm text-muted-foreground">
+          Sobrescreve manualmente o plano de um usuário por e-mail.
+        </p>
       </div>
+
 
       <Card className="premium-card">
         <CardHeader>
