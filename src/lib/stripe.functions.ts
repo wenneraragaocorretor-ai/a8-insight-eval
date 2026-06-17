@@ -2,6 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "../integrations/supabase/auth-middleware";
 
+async function userIsAdmin(supabase: any, userId: string) {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error(`Falha ao verificar admin: ${error.message}`);
+  return !!data;
+}
+
 export const criarCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -114,10 +125,7 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
 
     // Admins têm acesso completo (Expert ilimitado), sem necessidade de assinatura.
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
+    const isAdmin = await userIsAdmin(supabase, userId);
     if (isAdmin) {
       return {
         plano: "expert" as const,

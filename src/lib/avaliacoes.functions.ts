@@ -2,6 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "../integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+async function userIsAdmin(supabase: any, userId: string) {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error(`Falha ao verificar admin: ${error.message}`);
+  return !!data;
+}
+
 export const atualizarValorFinalCorretor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -133,10 +144,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
 
     try {
       // Admins têm acesso ilimitado e não consomem créditos.
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: userId,
-        _role: "admin",
-      });
+      const isAdmin = await userIsAdmin(supabase, userId);
 
       // Enforça limites por plano (admins ignoram).
       const { data: profile } = await supabase
@@ -394,10 +402,7 @@ export const regerarAvaliacao = createServerFn({ method: "POST" })
     if (errAtual || !atual) throw new Error("Avaliação não encontrada");
     if (atual.user_id !== userId) throw new Error("Sem permissão para editar esta avaliação");
 
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
+    const isAdmin = await userIsAdmin(supabase, userId);
     const { data: profile } = await supabase
       .from("profiles")
       .select("plano")
