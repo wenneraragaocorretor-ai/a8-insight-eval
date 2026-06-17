@@ -225,7 +225,7 @@ function AuthPage() {
           </div>
         )}
 
-        <Tabs defaultValue={pendingPlan ? "signup" : "login"} className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="signup">Cadastro</TabsTrigger>
