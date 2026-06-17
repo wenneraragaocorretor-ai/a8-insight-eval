@@ -394,17 +394,22 @@ export const regerarAvaliacao = createServerFn({ method: "POST" })
     if (errAtual || !atual) throw new Error("Avaliação não encontrada");
     if (atual.user_id !== userId) throw new Error("Sem permissão para editar esta avaliação");
 
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
     const { data: profile } = await supabase
       .from("profiles")
       .select("plano")
       .eq("id", userId)
       .maybeSingle();
     const plano = (profile?.plano ?? "basico") as string;
-    const limite = limiteEdicoesPorPlano(plano);
+    const limite = isAdmin ? null : limiteEdicoesPorPlano(plano);
     const usadas = atual.edicoes_count ?? 0;
     if (limite !== null && usadas >= limite) {
       throw new Error(`Limite de ${limite} edição(ões) deste laudo atingido no plano atual.`);
     }
+
 
     // 2) Snapshot da versão atual antes de sobrescrever
     const [{ data: resultadoAtual }, { data: comparaveisAtuais }] = await Promise.all([
