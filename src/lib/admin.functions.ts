@@ -105,7 +105,7 @@ export const getAdminStats = createServerFn({ method: "GET" })
     const [profilesRes, laudosRes, receitaRes] = await Promise.all([
       supabaseAdmin.from("profiles").select("plano", { count: "exact" }),
       supabaseAdmin.from("avaliacoes").select("id", { count: "exact", head: true }),
-      supabaseAdmin.from("cobrancas_avulsas").select("valor_centavos, status"),
+      supabaseAdmin.from("cobrancas_avulsas").select("valor_cents, status"),
     ]);
 
     const totalUsuarios = profilesRes.count ?? 0;
@@ -121,9 +121,9 @@ export const getAdminStats = createServerFn({ method: "GET" })
     const totalLaudos = laudosRes.count ?? 0;
 
     let receitaCentavos = 0;
-    for (const c of (receitaRes.data ?? []) as Array<{ valor_centavos: number | null; status: string | null }>) {
+    for (const c of (receitaRes.data ?? []) as Array<{ valor_cents: number | null; status: string | null }>) {
       if (c.status === "paid" || c.status === "succeeded" || c.status === "complete") {
-        receitaCentavos += c.valor_centavos ?? 0;
+        receitaCentavos += c.valor_cents ?? 0;
       }
     }
 
