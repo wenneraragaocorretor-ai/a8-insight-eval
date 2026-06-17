@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle } from "lucide-react";
+import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 
 const CARACTERISTICAS_OPCOES = [
@@ -305,9 +306,12 @@ function NovaAvaliacao() {
     ambientes_outros_livres: "",
   });
 
-  const [plano, setPlano] = useState<string>("basico");
+  const [planoReal, setPlanoReal] = useState<string>("basico");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const isExpert = plano === "expert" || isAdmin;
+  const [adminOverride, setAdminOverride] = useState<string | null>(null);
+  // Plano efetivo: admin usa o modelo selecionado no dashboard; usuários comuns usam o real.
+  const plano = isAdmin ? (adminOverride ?? "expert") : planoReal;
+  const isExpert = plano === "expert";
   const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number; assinaturaAtiva: boolean } | null>(null);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
   const [comprandoExtra, setComprandoExtra] = useState(false);
@@ -324,7 +328,7 @@ function NovaAvaliacao() {
         assinaturaAtiva: !!s.assinaturaAtiva,
       });
       if ((s as any).isAdmin) setIsAdmin(true);
-      if (s.plano) setPlano(s.plano);
+      if (s.plano) setPlanoReal(s.plano);
     } catch (e) {
       console.error("[status]", e);
     }
@@ -337,8 +341,14 @@ function NovaAvaliacao() {
       const uid = userData?.user?.id;
       if (!uid) return;
       const { data } = await supabase.from("profiles").select("plano").eq("id", uid).maybeSingle();
-      if (data?.plano) setPlano(data.plano);
+      if (data?.plano) setPlanoReal(data.plano);
       await recarregarStatus();
+      try {
+        const v = typeof window !== "undefined" ? localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY) : null;
+        setAdminOverride(v || "expert");
+      } catch {
+        setAdminOverride("expert");
+      }
     })();
   }, []);
 
@@ -470,7 +480,7 @@ function NovaAvaliacao() {
   };
   const [fotos, setFotos] = useState<FotoItem[]>([]);
 
-  const maxFotos = isAdmin ? 50 : plano === "expert" ? 15 : plano === "profissional" || plano === "pro" ? 5 : 3;
+  const maxFotos = plano === "expert" ? 15 : plano === "profissional" || plano === "pro" ? 5 : 3;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Limpa as object URLs ao desmontar
