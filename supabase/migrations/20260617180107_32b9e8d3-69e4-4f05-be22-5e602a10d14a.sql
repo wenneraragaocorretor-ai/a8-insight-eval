@@ -1,0 +1,1 @@
+ALTER TABLE public.resultados ADD COLUMN IF NOT EXISTS valor_final_corretor numeric;

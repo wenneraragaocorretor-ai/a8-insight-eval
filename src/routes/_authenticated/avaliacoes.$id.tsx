@@ -1,17 +1,18 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { getAvaliacaoDetalhe } from "../../lib/avaliacoes.functions";
+import { getAvaliacaoDetalhe, atualizarValorFinalCorretor } from "../../lib/avaliacoes.functions";
 
 import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
 import { supabase } from "../../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil, Save, RotateCcw } from "lucide-react";
 import { limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 import { ExpertChat } from "../../components/ExpertChat";
 
@@ -58,6 +59,7 @@ function AvaliacaoDetalhe() {
   const { avaliacao, resultado, comparaveis, profile } = Route.useLoaderData();
   const rel = resultado?.relatorio_json || {};
   const navigate = useNavigate();
+  const router = useRouter();
 
   const plano = (profile?.plano ?? "basico") as string;
   const disponiveis = modelosDisponiveis(plano);
@@ -68,7 +70,17 @@ function AvaliacaoDetalhe() {
   ];
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
 
-  
+  // Valor final personalizado pelo corretor (dentro da faixa min/max do arbítrio).
+  const valorCentralTecnico = Number(resultado?.valor_central) || 0;
+  const valorFinalSalvo = (resultado as any)?.valor_final_corretor;
+  const [valorFinalInput, setValorFinalInput] = useState<string>(
+    String(Number.isFinite(Number(valorFinalSalvo)) && Number(valorFinalSalvo) > 0
+      ? Number(valorFinalSalvo)
+      : valorCentralTecnico),
+  );
+  const [savingValor, setSavingValor] = useState(false);
+  const salvarValorFinal = useServerFn(atualizarValorFinalCorretor);
+
   const fetchMarketing = useServerFn(gerarMarketingAvaliacao);
   const [marketing, setMarketing] = useState<MarketingResultado | null>(null);
   const [loadingMkt, setLoadingMkt] = useState(false);
@@ -321,6 +333,90 @@ function AvaliacaoDetalhe() {
           <CardContent><div className="text-2xl font-bold">{fmtBRL(resultado?.valor_maximo)}</div></CardContent>
         </Card>
       </div>
+
+      <Card className="premium-card border-brand-gold/40">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Pencil size={16} /> Valor final a constar no laudo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const min = Number(resultado?.valor_minimo) || 0;
+            const max = Number(resultado?.valor_maximo) || 0;
+            const parsed = Number(String(valorFinalInput).replace(/\./g, "").replace(",", "."));
+            const valido = Number.isFinite(parsed) && parsed >= min && parsed <= max;
+            const alterado = Number.isFinite(parsed) && Math.round(parsed) !== Math.round(Number(valorFinalSalvo ?? valorCentralTecnico));
+            const handleSalvar = async () => {
+              if (!valido) {
+                toast.error(`O valor deve estar entre ${fmtBRL(min)} e ${fmtBRL(max)} conforme o campo de arbítrio técnico (NBR 14653-2).`);
+                return;
+              }
+              setSavingValor(true);
+              try {
+                await salvarValorFinal({ data: { avaliacao_id: avaliacao.id, valor_final_corretor: Math.round(parsed) } });
+                toast.success("Valor final do laudo salvo");
+                await router.invalidate();
+              } catch (e: any) {
+                toast.error(e?.message || "Falha ao salvar valor");
+              } finally {
+                setSavingValor(false);
+              }
+            };
+            const handleResetar = async () => {
+              setSavingValor(true);
+              try {
+                await salvarValorFinal({ data: { avaliacao_id: avaliacao.id, valor_final_corretor: null } });
+                setValorFinalInput(String(valorCentralTecnico));
+                toast.success("Valor restaurado para o cálculo técnico");
+                await router.invalidate();
+              } catch (e: any) {
+                toast.error(e?.message || "Falha ao restaurar");
+              } finally {
+                setSavingValor(false);
+              }
+            };
+            return (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">R$</span>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={valorFinalInput}
+                      onChange={(e) => setValorFinalInput(e.target.value)}
+                      className="w-44 text-lg font-semibold"
+                    />
+                  </div>
+                  <Button onClick={handleSalvar} disabled={!valido || !alterado || savingValor} className="gap-2 bg-brand-gold text-primary-foreground">
+                    <Save size={16} /> Salvar
+                  </Button>
+                  {valorFinalSalvo != null && (
+                    <Button variant="outline" onClick={handleResetar} disabled={savingValor} className="gap-2">
+                      <RotateCcw size={16} /> Usar valor calculado
+                    </Button>
+                  )}
+                </div>
+                {!valido ? (
+                  <p className="text-xs text-destructive">
+                    O valor deve estar entre {fmtBRL(min)} e {fmtBRL(max)} conforme o campo de arbítrio técnico (NBR 14653-2).
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Faixa permitida: {fmtBRL(min)} – {fmtBRL(max)}. Valor calculado pela regressão: {fmtBRL(valorCentralTecnico)}.
+                    {valorFinalSalvo != null && Math.round(Number(valorFinalSalvo)) !== Math.round(valorCentralTecnico) && (
+                      <span> Valor personalizado salvo: <strong>{fmtBRL(Number(valorFinalSalvo))}</strong>.</span>
+                    )}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
+
 
       {rel.analise && (
         <Card className="premium-card">

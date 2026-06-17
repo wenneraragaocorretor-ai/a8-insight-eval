@@ -143,10 +143,19 @@ function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): R
   if (!resultado) return reg;
   resultado.regressao = reg;
   if (reg.ok) {
-    resultado.valor_central = Math.round(reg.valorTotal);
-    resultado.valor_minimo = Math.round(reg.valorTotal * 0.85);
-    resultado.valor_maximo = Math.round(reg.valorTotal * 1.15);
-    resultado.valor_unitario_medio = Math.round(reg.valorM2);
+    const tech = Math.round(reg.valorTotal);
+    const min = Math.round(reg.valorTotal * 0.85);
+    const max = Math.round(reg.valorTotal * 1.15);
+    const override = Number(resultado.valor_final_corretor);
+    const useOverride = Number.isFinite(override) && override >= min && override <= max;
+    resultado.valor_central = useOverride ? Math.round(override) : tech;
+    resultado.valor_central_tecnico = tech;
+    resultado.valor_minimo = min;
+    resultado.valor_maximo = max;
+    resultado.valor_unitario_medio =
+      useOverride && reg.areaAvaliada > 0
+        ? Math.round(override / reg.areaAvaliada)
+        : Math.round(reg.valorM2);
     resultado.metodo_calculo = "regressao_linear";
   }
   return reg;
