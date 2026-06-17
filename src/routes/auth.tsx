@@ -135,29 +135,40 @@ function AuthPage() {
         },
       });
       if (error) throw error;
-      if (data.user) {
-        toast.success("Cadastro realizado! Escolha seu plano para continuar.");
-        triggered.current = true;
-        try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+      if (!data.user) throw new Error("Não foi possível criar a conta.");
 
-        // Se já há sessão (auto-confirm ON), navega direto. Caso contrário,
-        // aguarda brevemente a sessão ser persistida antes de redirecionar,
-        // para o guard de /_authenticated não bouncear para /auth.
-        if (!data.session) {
-          for (let i = 0; i < 10; i++) {
-            const { data: s } = await supabase.auth.getSession();
-            if (s.session) break;
-            await new Promise((r) => setTimeout(r, 150));
-          }
+      triggered.current = true;
+      try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+
+      // Aguarda a sessão estar persistida antes de redirecionar — senão o guard
+      // do /_authenticated/planos bouncea para /auth (sem sessão no localStorage).
+      let session = data.session;
+      if (!session) {
+        for (let i = 0; i < 30; i++) {
+          const { data: s } = await supabase.auth.getSession();
+          if (s.session) { session = s.session; break; }
+          await new Promise((r) => setTimeout(r, 150));
         }
-        try { sessionStorage.removeItem("a8_just_signed_up"); } catch {}
-        // window.location garante reload do guard com sessão fresca.
-        window.location.href = "/planos";
       }
+      try { sessionStorage.removeItem("a8_just_signed_up"); } catch {}
+
+      if (!session) {
+        // Sem sessão (provavelmente confirmação por e-mail obrigatória).
+        toast.success("Conta criada! Confirme seu e-mail para continuar e escolher seu plano.");
+        justSignedUp.current = false;
+        triggered.current = false;
+        return;
+      }
+
+      console.log("[signup] sessão pronta, redirecionando para /planos");
+      toast.success("Cadastro realizado! Escolha seu plano para continuar.");
+      // window.location garante reload do guard com sessão fresca.
+      window.location.href = "/planos";
     } catch (error: any) {
       justSignedUp.current = false;
       try { sessionStorage.removeItem("a8_just_signed_up"); } catch {}
       toast.error(error.message || "Erro ao criar conta");
+
     } finally {
       setIsLoading(false);
     }
