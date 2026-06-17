@@ -1536,7 +1536,7 @@ function NovaAvaliacao() {
               <Button
                 onClick={() => setStep(3)}
                 className="bg-brand-blue"
-                disabled={comparaveis.some((c) => !c.fonte || !c.localizacao || !c.area || !c.valor || Number(c.valor) < 10000)}
+                disabled={comparaveis.some((c) => !c.localizacao || !c.area || Number(c.area) <= 0 || !c.valor || Number(c.valor) < 10000)}
               >
                 Próximo
               </Button>
