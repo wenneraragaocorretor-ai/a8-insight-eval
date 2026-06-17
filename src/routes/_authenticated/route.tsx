@@ -1,5 +1,8 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../integrations/supabase/client";
+import { amIAdmin } from "../../lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -13,6 +16,7 @@ export const Route = createFileRoute("/_authenticated")({
   },
   component: AuthenticatedLayout,
 });
+
 
 function AuthenticatedLayout() {
   return (
