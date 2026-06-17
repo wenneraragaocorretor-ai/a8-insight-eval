@@ -19,13 +19,14 @@ const NAV = [
   { to: "/admin", label: "Visão Geral", icon: BarChart3, exact: true },
   { to: "/admin/usuarios", label: "Usuários", icon: Users, exact: false },
   { to: "/admin/planos", label: "Redefinir plano", icon: CreditCard, exact: false },
+  { to: "/admin/beta-testers", label: "Beta Testers", icon: Sparkles, exact: false },
 ];
 
 const SOON = [
-  { label: "Beta Testers", icon: Sparkles },
   { label: "Cupons", icon: Ticket },
   { label: "Afiliados", icon: Handshake },
 ];
+
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
