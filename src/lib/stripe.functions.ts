@@ -164,7 +164,9 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       avaliacoesMes: count ?? 0,
       limiteMes: limite,
       creditosAvulsos: profile?.creditos_avulsos ?? 0,
+      isAdmin: false as const,
     };
+
   });
 
 export const confirmarCheckout = createServerFn({ method: "POST" })
