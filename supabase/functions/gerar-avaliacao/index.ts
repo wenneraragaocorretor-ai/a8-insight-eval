@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -6,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -35,44 +34,56 @@ serve(async (req) => {
 
     // Plan/credit gate (defense in depth — main check is in server fn)
     const admin = createClient(supabaseUrl, serviceKey)
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('plano, creditos_avulsos')
-      .eq('id', userId)
+
+    // Admin bypass: usuários com role 'admin' têm acesso ilimitado, sem checagem de plano/crédito.
+    const { data: adminRole } = await admin
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
       .maybeSingle()
-    if (!profile) {
-      return new Response(JSON.stringify({ error: 'Perfil não encontrado' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-    const plano = profile.plano as string | null
-    const creditos = Number(profile.creditos_avulsos ?? 0)
-    if (!plano || (plano !== 'basico' && plano !== 'profissional' && plano !== 'expert')) {
-      return new Response(JSON.stringify({ error: 'Plano inválido' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-    if (plano === 'basico' && creditos < 1) {
-      return new Response(JSON.stringify({ error: 'Sem créditos disponíveis' }), {
-        status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-    if (plano === 'profissional' || plano === 'expert') {
-      // Início do mês em UTC para evitar edge-cases de fuso horário
-      const now = new Date()
-      const inicioMes = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-      const { count } = await admin
-        .from('avaliacoes')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('created_at', inicioMes.toISOString())
-      const limite = plano === 'expert' ? 20 : 8
-      if ((count ?? 0) >= limite && creditos < 1) {
-        return new Response(JSON.stringify({
-          error: `Limite mensal ${plano === 'expert' ? 'Expert' : 'Profissional'} atingido (${limite} laudos). Adquira créditos avulsos para continuar.`,
-        }), {
+    const isAdmin = !!adminRole
+    console.log('gerar-avaliacao: userId=', userId, 'isAdmin=', isAdmin)
+
+    if (!isAdmin) {
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('plano, creditos_avulsos')
+        .eq('id', userId)
+        .maybeSingle()
+      if (!profile) {
+        return new Response(JSON.stringify({ error: 'Perfil não encontrado' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const plano = profile.plano as string | null
+      const creditos = Number(profile.creditos_avulsos ?? 0)
+      if (!plano || (plano !== 'basico' && plano !== 'profissional' && plano !== 'expert')) {
+        return new Response(JSON.stringify({ error: 'Plano inválido' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      if (plano === 'basico' && creditos < 1) {
+        return new Response(JSON.stringify({ error: 'Sem créditos disponíveis' }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
+      }
+      if (plano === 'profissional' || plano === 'expert') {
+        const now = new Date()
+        const inicioMes = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+        const { count } = await admin
+          .from('avaliacoes')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .gte('created_at', inicioMes.toISOString())
+        const limite = plano === 'expert' ? 20 : 8
+        if ((count ?? 0) >= limite && creditos < 1) {
+          return new Response(JSON.stringify({
+            error: `Limite mensal ${plano === 'expert' ? 'Expert' : 'Profissional'} atingido (${limite} laudos). Adquira créditos avulsos para continuar.`,
+          }), {
+            status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
       }
     }
 
