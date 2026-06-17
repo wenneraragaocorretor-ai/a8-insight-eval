@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getAvaliacaoDetalhe, atualizarValorFinalCorretor } from "../../lib/avaliacoes.functions";
+import { amIAdmin } from "../../lib/admin.functions";
+import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
