@@ -59,6 +59,7 @@ function AvaliacaoDetalhe() {
   const { avaliacao, resultado, comparaveis, profile } = Route.useLoaderData();
   const rel = resultado?.relatorio_json || {};
   const navigate = useNavigate();
+  const router = useRouter();
 
   const plano = (profile?.plano ?? "basico") as string;
   const disponiveis = modelosDisponiveis(plano);
@@ -69,7 +70,17 @@ function AvaliacaoDetalhe() {
   ];
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
 
-  
+  // Valor final personalizado pelo corretor (dentro da faixa min/max do arbítrio).
+  const valorCentralTecnico = Number(resultado?.valor_central) || 0;
+  const valorFinalSalvo = (resultado as any)?.valor_final_corretor;
+  const [valorFinalInput, setValorFinalInput] = useState<string>(
+    String(Number.isFinite(Number(valorFinalSalvo)) && Number(valorFinalSalvo) > 0
+      ? Number(valorFinalSalvo)
+      : valorCentralTecnico),
+  );
+  const [savingValor, setSavingValor] = useState(false);
+  const salvarValorFinal = useServerFn(atualizarValorFinalCorretor);
+
   const fetchMarketing = useServerFn(gerarMarketingAvaliacao);
   const [marketing, setMarketing] = useState<MarketingResultado | null>(null);
   const [loadingMkt, setLoadingMkt] = useState(false);
