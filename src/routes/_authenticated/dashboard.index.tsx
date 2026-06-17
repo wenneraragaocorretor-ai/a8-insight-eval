@@ -304,6 +304,7 @@ function Dashboard() {
                 </Link>
               )}
             </p>
+            {ehAdmin && <AdminModeloSelector />}
           </CardContent>
         </Card>
         <Card className="premium-card">
