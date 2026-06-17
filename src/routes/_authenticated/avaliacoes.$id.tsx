@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getAvaliacaoDetalhe, atualizarValorFinalCorretor } from "../../lib/avaliacoes.functions";
+import { amIAdmin } from "../../lib/admin.functions";
+import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
@@ -61,7 +63,21 @@ function AvaliacaoDetalhe() {
   const navigate = useNavigate();
   const router = useRouter();
 
-  const plano = (profile?.plano ?? "basico") as string;
+  const planoReal = (profile?.plano ?? "basico") as string;
+  const fetchAmIAdmin = useServerFn(amIAdmin);
+  const [adminOverride, setAdminOverride] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetchAmIAdmin();
+        if ((r as any)?.admin) {
+          const v = (typeof window !== "undefined" && localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY)) || "expert";
+          setAdminOverride(v);
+        }
+      } catch {}
+    })();
+  }, []);
+  const plano = adminOverride ?? planoReal;
   const disponiveis = modelosDisponiveis(plano);
   const todosModelos: { id: ModeloPdf; nome: string }[] = [
     { id: 1, nome: "Modelo 1 — Estudo Simplificado" },
@@ -69,6 +85,10 @@ function AvaliacaoDetalhe() {
     { id: 3, nome: "Modelo 3 — Laudo ABNT NBR 14653-2" },
   ];
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
+  useEffect(() => {
+    if (!disponiveis.includes(modelo)) setModelo(disponiveis[disponiveis.length - 1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminOverride]);
 
   // Valor final personalizado pelo corretor (dentro da faixa min/max do arbítrio).
   const valorCentralTecnico = Number(resultado?.valor_central) || 0;
