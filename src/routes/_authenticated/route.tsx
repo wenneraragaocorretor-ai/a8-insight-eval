@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "../../integrations/supabase/client";
 import { amIAdmin } from "../../lib/admin.functions";
 
@@ -20,12 +21,32 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const fetchAdmin = useServerFn(amIAdmin);
-  const { data: adminStatus } = useQuery({
+  const queryClient = useQueryClient();
+  const { data: adminStatus, isLoading: loadingAdmin } = useQuery({
     queryKey: ["am-i-admin"],
-    queryFn: () => fetchAdmin(),
-    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const r = await fetchAdmin();
+      console.log("[admin] amIAdmin() ->", r);
+      return r;
+    },
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
   });
   const isAdmin = !!adminStatus?.admin;
+
+  // Invalida cache de admin quando a sessão muda (login/logout)
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        queryClient.invalidateQueries({ queryKey: ["am-i-admin"] });
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [queryClient]);
+
+  if (typeof window !== "undefined") {
+    console.log("[admin] header render — loading:", loadingAdmin, "isAdmin:", isAdmin, "raw:", adminStatus);
+  }
 
   return (
     <div className="min-h-screen flex w-full bg-background">
