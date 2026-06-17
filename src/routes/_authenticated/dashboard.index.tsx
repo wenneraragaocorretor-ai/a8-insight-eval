@@ -267,20 +267,22 @@ function Dashboard() {
         <Card className="premium-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {ehBasico ? "Laudos Avulsos" : "Avaliações no Mês"}
+              {ehAdmin ? "Avaliações no Mês" : ehBasico ? "Laudos Avulsos" : "Avaliações no Mês"}
             </CardTitle>
             <History className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {ehBasico
-                ? `${creditos} disponível${creditos === 1 ? "" : "s"}`
-                : ehExpert
-                  ? `${usadas} / ${limite ?? 20}`
-                  : `${usadas} / ${limite ?? 8}`}
+              {ehAdmin
+                ? `${usadas} (ilimitado)`
+                : ehBasico
+                  ? `${creditos} disponível${creditos === 1 ? "" : "s"}`
+                  : ehExpert
+                    ? `${usadas} / ${limite ?? 20}`
+                    : `${usadas} / ${limite ?? 8}`}
             </div>
             <p className="text-xs text-muted-foreground">
-              {ehBasico ? "Crédito por compra (R$ 157)" : "Mês atual"}
+              {ehAdmin ? "Sem limite mensal" : ehBasico ? "Crédito por compra (R$ 157)" : "Mês atual"}
             </p>
           </CardContent>
         </Card>
@@ -292,7 +294,7 @@ function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{planoLabel}</div>
             <p className="text-xs text-muted-foreground">
-              {ehBasico ? (
+              {ehAdmin ? "Acesso total a todos os recursos, sem cobrança" : ehBasico ? (
                 <Link to="/planos" className="text-brand-gold font-medium hover:underline">
                   Comprar laudo / fazer upgrade
                 </Link>
