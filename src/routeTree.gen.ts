@@ -15,6 +15,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AfiliadosLoginRouteImport } from './routes/afiliados.login'
+import { Route as AfiliadosDashboardRouteImport } from './routes/afiliados.dashboard'
 import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -54,6 +56,16 @@ const IndexRoute = IndexRouteImport.update({
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AfiliadosLoginRoute = AfiliadosLoginRouteImport.update({
+  id: '/afiliados/login',
+  path: '/afiliados/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AfiliadosDashboardRoute = AfiliadosDashboardRouteImport.update({
+  id: '/afiliados/dashboard',
+  path: '/afiliados/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
@@ -126,6 +138,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/perfil': typeof AuthenticatedPerfilRoute
   '/planos': typeof AuthenticatedPlanosRoute
+  '/afiliados/dashboard': typeof AfiliadosDashboardRoute
+  '/afiliados/login': typeof AfiliadosLoginRoute
   '/api/chat': typeof ApiChatRoute
   '/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
@@ -143,6 +157,8 @@ export interface FileRoutesByTo {
   '/termos': typeof TermosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/planos': typeof AuthenticatedPlanosRoute
+  '/afiliados/dashboard': typeof AfiliadosDashboardRoute
+  '/afiliados/login': typeof AfiliadosLoginRoute
   '/api/chat': typeof ApiChatRoute
   '/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
@@ -163,6 +179,8 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/planos': typeof AuthenticatedPlanosRoute
+  '/afiliados/dashboard': typeof AfiliadosDashboardRoute
+  '/afiliados/login': typeof AfiliadosLoginRoute
   '/api/chat': typeof ApiChatRoute
   '/_authenticated/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/_authenticated/admin/planos': typeof AuthenticatedAdminPlanosRoute
@@ -183,6 +201,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/perfil'
     | '/planos'
+    | '/afiliados/dashboard'
+    | '/afiliados/login'
     | '/api/chat'
     | '/admin/beta-testers'
     | '/admin/planos'
@@ -200,6 +220,8 @@ export interface FileRouteTypes {
     | '/termos'
     | '/perfil'
     | '/planos'
+    | '/afiliados/dashboard'
+    | '/afiliados/login'
     | '/api/chat'
     | '/admin/beta-testers'
     | '/admin/planos'
@@ -219,6 +241,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/perfil'
     | '/_authenticated/planos'
+    | '/afiliados/dashboard'
+    | '/afiliados/login'
     | '/api/chat'
     | '/_authenticated/admin/beta-testers'
     | '/_authenticated/admin/planos'
@@ -236,6 +260,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
+  AfiliadosDashboardRoute: typeof AfiliadosDashboardRoute
+  AfiliadosLoginRoute: typeof AfiliadosLoginRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
@@ -282,6 +308,20 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/afiliados/login': {
+      id: '/afiliados/login'
+      path: '/afiliados/login'
+      fullPath: '/afiliados/login'
+      preLoaderRoute: typeof AfiliadosLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/afiliados/dashboard': {
+      id: '/afiliados/dashboard'
+      path: '/afiliados/dashboard'
+      fullPath: '/afiliados/dashboard'
+      preLoaderRoute: typeof AfiliadosDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/planos': {
@@ -408,6 +448,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
+  AfiliadosDashboardRoute: AfiliadosDashboardRoute,
+  AfiliadosLoginRoute: AfiliadosLoginRoute,
   ApiChatRoute: ApiChatRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
