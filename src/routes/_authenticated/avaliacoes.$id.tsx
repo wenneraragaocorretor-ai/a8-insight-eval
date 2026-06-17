@@ -341,7 +341,15 @@ function AvaliacaoDetalhe() {
               <TableRow>
                 <TableHead>Fonte</TableHead>
                 <TableHead>Localização</TableHead>
-                <TableHead className="text-right">Área (m²)</TableHead>
+                <TableHead className="text-right">
+                  Área (m²){" "}
+                  {(() => {
+                    const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
+                    if (tn.includes("terreno") || tn.includes("lote")) return <span className="text-xs font-normal text-muted-foreground">terreno</span>;
+                    if (tn.includes("apart") || tn.includes("sala") || tn.includes("loja")) return <span className="text-xs font-normal text-muted-foreground">privativa</span>;
+                    return <span className="text-xs font-normal text-muted-foreground">construída</span>;
+                  })()}
+                </TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">R$/m²</TableHead>
               </TableRow>
