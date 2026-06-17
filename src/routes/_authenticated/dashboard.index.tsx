@@ -470,3 +470,31 @@ function Dashboard() {
     </div>
   );
 }
+
+export const ADMIN_PLANO_OVERRIDE_KEY = "lov_admin_plano_modelo";
+
+function AdminModeloSelector() {
+  const [valor, setValor] = useState<string>(() => {
+    if (typeof window === "undefined") return "expert";
+    return localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY) || "expert";
+  });
+  const onChange = (v: string) => {
+    setValor(v);
+    try { localStorage.setItem(ADMIN_PLANO_OVERRIDE_KEY, v); } catch {}
+    toast.success(`Modelo de teste: ${v.charAt(0).toUpperCase() + v.slice(1)}`);
+  };
+  return (
+    <div className="mt-3 flex items-center gap-2">
+      <label className="text-xs text-muted-foreground whitespace-nowrap">Modelo de teste:</label>
+      <select
+        value={valor}
+        onChange={(e) => onChange(e.target.value)}
+        className="text-xs border border-input rounded-md px-2 py-1 bg-background"
+      >
+        <option value="basico">Básico</option>
+        <option value="profissional">Profissional</option>
+        <option value="expert">Expert</option>
+      </select>
+    </div>
+  );
+}
