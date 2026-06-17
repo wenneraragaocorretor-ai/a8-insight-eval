@@ -137,6 +137,98 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           });
         }
 
+        // Registra comissão de afiliado SOBRE O PRIMEIRO PAGAMENTO.
+        // Idempotente: a constraint UNIQUE(usuario_indicado_id) em
+        // indicacoes_afiliado é a proteção final contra duplicidade
+        // (reenvio do mesmo evento, race condition, upgrade de plano).
+        // NUNCA pode quebrar o restante do webhook — try/catch isolado.
+        async function registrarComissaoAfiliado(userId: string | undefined, session: any) {
+          try {
+            if (!userId) return;
+
+            const { data: profile, error: profileErr } = await supabaseAdmin
+              .from("profiles")
+              .select("afiliado_indicador_id, plano")
+              .eq("id", userId)
+              .maybeSingle();
+            if (profileErr) throw profileErr;
+
+            const afiliadoId = profile?.afiliado_indicador_id;
+            if (!afiliadoId) {
+              console.log("[afiliado] usuário sem indicador, pulando", { userId });
+              return;
+            }
+            const plano = profile?.plano;
+            if (!plano) {
+              console.log("[afiliado] plano ainda não definido no perfil, pulando", { userId });
+              return;
+            }
+
+            // Revalida que o afiliado AINDA está ativo no momento do pagamento.
+            const { data: afiliado, error: afErr } = await supabaseAdmin
+              .from("afiliados")
+              .select("id, percentual_comissao, ativo")
+              .eq("id", afiliadoId)
+              .maybeSingle();
+            if (afErr) throw afErr;
+            if (!afiliado || !afiliado.ativo) {
+              console.log("[afiliado] afiliado inativo, pulando comissão", { userId, afiliadoId });
+              return;
+            }
+
+            // Checagem prévia (rápida). A UNIQUE constraint é a salvaguarda real.
+            const { data: ja } = await supabaseAdmin
+              .from("indicacoes_afiliado")
+              .select("id")
+              .eq("usuario_indicado_id", userId)
+              .maybeSingle();
+            if (ja) {
+              console.log("[afiliado] comissão já existe para este usuário, pulando", { userId });
+              return;
+            }
+
+            const valorPago = typeof session?.amount_total === "number"
+              ? session.amount_total / 100
+              : 0;
+            if (valorPago <= 0) {
+              console.warn("[afiliado] amount_total inválido, pulando", { userId, sessionId: session?.id });
+              return;
+            }
+            const pct = Number(afiliado.percentual_comissao);
+            const valorComissao = Math.round(valorPago * pct) / 100;
+
+            const { error: insErr } = await supabaseAdmin
+              .from("indicacoes_afiliado")
+              .insert({
+                afiliado_id: afiliado.id,
+                usuario_indicado_id: userId,
+                plano,
+                valor_pago: valorPago,
+                valor_comissao: valorComissao,
+                status: "pendente",
+                stripe_session_id: session?.id ?? null,
+              });
+
+            if (insErr) {
+              // 23505 = unique_violation na UNIQUE(usuario_indicado_id).
+              // Cobre a corrida entre o SELECT acima e o INSERT.
+              if ((insErr as any).code === "23505") {
+                console.log("[afiliado] comissão já existe para este usuário, pulando (unique race)", { userId });
+                return;
+              }
+              throw insErr;
+            }
+
+            console.log(
+              `[afiliado] comissão registrada: R$ ${valorComissao.toFixed(2)} para afiliado ${afiliado.id}`,
+              { userId, plano, valorPago },
+            );
+          } catch (e: any) {
+            // Nunca propaga: afiliado é secundário ao processamento do pagamento.
+            console.error("[afiliado] erro ao registrar comissão (não bloqueante):", e?.message ?? e);
+          }
+        }
+
         try {
           switch (event.type) {
             case "checkout.session.completed": {
@@ -150,6 +242,9 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   sub.metadata = { ...sub.metadata, ...session.metadata };
                 }
                 await applySubscription(sub, session);
+                // Comissão de afiliado (primeiro pagamento de assinatura).
+                const userIdSub = sub.metadata?.user_id ?? session?.metadata?.user_id;
+                await registrarComissaoAfiliado(userIdSub, session);
               } else if (session.mode === "payment" && session.payment_status === "paid") {
                 // Pagamento único — Básico (laudo avulso) ou Expert Extra: +1 crédito
                 const userId = session.metadata?.user_id;
@@ -235,6 +330,8 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   const { error } = await supabaseAdmin.from("profiles").upsert(upsertData, { onConflict: "id" });
                   if (error) throw error;
                   console.log("[stripe-webhook] +1 crédito", { userId, planCode, novosCreditos });
+                  // Comissão de afiliado (laudo avulso pode ser o primeiro pagamento).
+                  await registrarComissaoAfiliado(userId, session);
                 }
               }
               break;
