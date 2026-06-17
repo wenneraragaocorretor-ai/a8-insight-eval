@@ -50,6 +50,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
+  const [activeTab, setActiveTab] = useState<"login" | "signup">(readPendingPlan(search.plan) ? "signup" : "login");
   const triggered = useRef(false);
   const justSignedUp = useRef(false);
 
