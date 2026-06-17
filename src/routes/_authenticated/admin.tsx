@@ -1,10 +1,17 @@
 import { createFileRoute, Link, Outlet, useRouterState, redirect } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, BarChart3, Users, Sparkles, Ticket, Handshake, CreditCard, ArrowLeft } from "lucide-react";
 import { amIAdmin } from "../../lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  beforeLoad: async () => {
+    try {
+      const r = await amIAdmin();
+      if (!r.admin) throw redirect({ to: "/dashboard" });
+    } catch (e: any) {
+      if (e && typeof e === "object" && "to" in e) throw e;
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: AdminLayout,
 });
 
@@ -21,25 +28,9 @@ const SOON = [
 ];
 
 function AdminLayout() {
-  const fetchAdmin = useServerFn(amIAdmin);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { data, isLoading } = useQuery({
-    queryKey: ["am-i-admin"],
-    queryFn: () => fetchAdmin(),
-  });
 
-  if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto py-16 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
-  if (!data?.admin) {
-    // Redireciona ao dashboard se não for admin
-    throw redirect({ to: "/dashboard" });
-  }
 
   const isActive = (to: string, exact: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
