@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const fetchAdmin = useServerFn(amIAdmin);
   const queryClient = useQueryClient();
-  const { data: adminStatus, isLoading: loadingAdmin } = useQuery({
+  const { data: adminStatus } = useQuery({
     queryKey: ["am-i-admin"],
     queryFn: fetchAdmin,
     staleTime: 30 * 1000,
