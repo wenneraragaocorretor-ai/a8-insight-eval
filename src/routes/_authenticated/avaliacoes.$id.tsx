@@ -200,9 +200,26 @@ function AvaliacaoDetalhe() {
               </span>
             )}
           </div>
-          <p className="text-muted-foreground">
-            {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {avaliacao?.area_total} m²
-          </p>
+          {(() => {
+            const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
+            const total = Number(avaliacao?.area_total);
+            const priv = Number((avaliacao as any)?.area_privativa);
+            const isApto = tn.includes("apart") || tn.includes("sala") || tn.includes("loja");
+            const isTerreno = tn.includes("terreno") || tn.includes("lote");
+            let areaTxt = "";
+            if (isTerreno) {
+              areaTxt = `${total} m² terreno`;
+            } else if (isApto && Number.isFinite(priv) && priv > 0) {
+              areaTxt = `${priv} m² privativos${Number.isFinite(total) && total > 0 && total !== priv ? ` | ${total} m² totais` : ""}`;
+            } else {
+              areaTxt = `${total} m² construídos`;
+            }
+            return (
+              <p className="text-muted-foreground">
+                {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {areaTxt}
+              </p>
+            );
+          })()}
           {(avaliacao as any)?.ultima_edicao_em && (
             <p className="text-xs text-muted-foreground mt-1">
               Última edição em{" "}
@@ -272,9 +289,31 @@ function AvaliacaoDetalhe() {
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Target size={16} /> Valor Central</CardTitle></CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-brand-gold">{fmtBRL(resultado?.valor_central)}</div>
-            {resultado?.valor_unitario_medio && (
-              <p className="text-xs text-muted-foreground mt-1">{fmtBRL(resultado.valor_unitario_medio)}/m²</p>
-            )}
+            {(() => {
+              const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
+              const total = Number(avaliacao?.area_total);
+              const priv = Number((avaliacao as any)?.area_privativa);
+              const isApto = tn.includes("apart") || tn.includes("sala") || tn.includes("loja");
+              const isTerreno = tn.includes("terreno") || tn.includes("lote");
+              const vc = Number(resultado?.valor_central);
+              const vum = Number(resultado?.valor_unitario_medio);
+              let baseLabel = "construído";
+              let baseArea = total;
+              if (isTerreno) { baseLabel = "terreno"; baseArea = total; }
+              else if (isApto && Number.isFinite(priv) && priv > 0) { baseLabel = "privativo"; baseArea = priv; }
+              const valorBase = Number.isFinite(vum) && vum > 0 ? vum : (baseArea > 0 ? vc / baseArea : 0);
+              const showTotalRef = isApto && Number.isFinite(priv) && priv > 0 && Number.isFinite(total) && total > 0 && total !== priv && vc > 0;
+              return (
+                <>
+                  {valorBase > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">{fmtBRL(valorBase)}/m² {baseLabel}</p>
+                  )}
+                  {showTotalRef && (
+                    <p className="text-xs text-muted-foreground">{fmtBRL(vc / total)}/m² total (referência)</p>
+                  )}
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
         <Card className="premium-card">
@@ -302,7 +341,15 @@ function AvaliacaoDetalhe() {
               <TableRow>
                 <TableHead>Fonte</TableHead>
                 <TableHead>Localização</TableHead>
-                <TableHead className="text-right">Área (m²)</TableHead>
+                <TableHead className="text-right">
+                  Área (m²){" "}
+                  {(() => {
+                    const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
+                    if (tn.includes("terreno") || tn.includes("lote")) return <span className="text-xs font-normal text-muted-foreground">terreno</span>;
+                    if (tn.includes("apart") || tn.includes("sala") || tn.includes("loja")) return <span className="text-xs font-normal text-muted-foreground">privativa</span>;
+                    return <span className="text-xs font-normal text-muted-foreground">construída</span>;
+                  })()}
+                </TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">R$/m²</TableHead>
               </TableRow>
@@ -319,7 +366,7 @@ function AvaliacaoDetalhe() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.fonte}</TableCell>
                     <TableCell>{c.localizacao || "—"}</TableCell>
-                    <TableCell className="text-right">{c.area}</TableCell>
+                    <TableCell className="text-right">{areaBase}</TableCell>
                     <TableCell className="text-right">{fmtBRL(Number(c.valor_anunciado))}</TableCell>
                     <TableCell className="text-right">
                       {areaBase > 0 ? fmtBRL(Number(c.valor_anunciado) / areaBase) : "—"}
