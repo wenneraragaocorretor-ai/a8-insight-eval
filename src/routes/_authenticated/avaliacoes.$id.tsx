@@ -334,6 +334,90 @@ function AvaliacaoDetalhe() {
         </Card>
       </div>
 
+      <Card className="premium-card border-brand-gold/40">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Pencil size={16} /> Valor final a constar no laudo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const min = Number(resultado?.valor_minimo) || 0;
+            const max = Number(resultado?.valor_maximo) || 0;
+            const parsed = Number(String(valorFinalInput).replace(/\./g, "").replace(",", "."));
+            const valido = Number.isFinite(parsed) && parsed >= min && parsed <= max;
+            const alterado = Number.isFinite(parsed) && Math.round(parsed) !== Math.round(Number(valorFinalSalvo ?? valorCentralTecnico));
+            const handleSalvar = async () => {
+              if (!valido) {
+                toast.error(`O valor deve estar entre ${fmtBRL(min)} e ${fmtBRL(max)} conforme o campo de arbítrio técnico (NBR 14653-2).`);
+                return;
+              }
+              setSavingValor(true);
+              try {
+                await salvarValorFinal({ data: { avaliacao_id: avaliacao.id, valor_final_corretor: Math.round(parsed) } });
+                toast.success("Valor final do laudo salvo");
+                await router.invalidate();
+              } catch (e: any) {
+                toast.error(e?.message || "Falha ao salvar valor");
+              } finally {
+                setSavingValor(false);
+              }
+            };
+            const handleResetar = async () => {
+              setSavingValor(true);
+              try {
+                await salvarValorFinal({ data: { avaliacao_id: avaliacao.id, valor_final_corretor: null } });
+                setValorFinalInput(String(valorCentralTecnico));
+                toast.success("Valor restaurado para o cálculo técnico");
+                await router.invalidate();
+              } catch (e: any) {
+                toast.error(e?.message || "Falha ao restaurar");
+              } finally {
+                setSavingValor(false);
+              }
+            };
+            return (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">R$</span>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={valorFinalInput}
+                      onChange={(e) => setValorFinalInput(e.target.value)}
+                      className="w-44 text-lg font-semibold"
+                    />
+                  </div>
+                  <Button onClick={handleSalvar} disabled={!valido || !alterado || savingValor} className="gap-2 bg-brand-gold text-primary-foreground">
+                    <Save size={16} /> Salvar
+                  </Button>
+                  {valorFinalSalvo != null && (
+                    <Button variant="outline" onClick={handleResetar} disabled={savingValor} className="gap-2">
+                      <RotateCcw size={16} /> Usar valor calculado
+                    </Button>
+                  )}
+                </div>
+                {!valido ? (
+                  <p className="text-xs text-destructive">
+                    O valor deve estar entre {fmtBRL(min)} e {fmtBRL(max)} conforme o campo de arbítrio técnico (NBR 14653-2).
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Faixa permitida: {fmtBRL(min)} – {fmtBRL(max)}. Valor calculado pela regressão: {fmtBRL(valorCentralTecnico)}.
+                    {valorFinalSalvo != null && Math.round(Number(valorFinalSalvo)) !== Math.round(valorCentralTecnico) && (
+                      <span> Valor personalizado salvo: <strong>{fmtBRL(Number(valorFinalSalvo))}</strong>.</span>
+                    )}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
+
+
       {rel.analise && (
         <Card className="premium-card">
           <CardHeader><CardTitle>Análise de Mercado</CardTitle></CardHeader>
