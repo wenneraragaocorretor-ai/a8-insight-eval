@@ -381,6 +381,7 @@ export type Database = {
           relatorio_json: Json | null
           user_id: string
           valor_central: number | null
+          valor_final_corretor: number | null
           valor_maximo: number | null
           valor_minimo: number | null
           valor_unitario_medio: number | null
@@ -393,6 +394,7 @@ export type Database = {
           relatorio_json?: Json | null
           user_id: string
           valor_central?: number | null
+          valor_final_corretor?: number | null
           valor_maximo?: number | null
           valor_minimo?: number | null
           valor_unitario_medio?: number | null
@@ -405,6 +407,7 @@ export type Database = {
           relatorio_json?: Json | null
           user_id?: string
           valor_central?: number | null
+          valor_final_corretor?: number | null
           valor_maximo?: number | null
           valor_minimo?: number | null
           valor_unitario_medio?: number | null
