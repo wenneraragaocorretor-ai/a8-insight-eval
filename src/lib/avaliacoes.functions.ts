@@ -132,7 +132,13 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
     console.log("Iniciando processamento no servidor para o usuário:", userId);
 
     try {
-      // Enforça limites por plano.
+      // Admins têm acesso ilimitado e não consomem créditos.
+      const { data: isAdmin } = await supabase.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      });
+
+      // Enforça limites por plano (admins ignoram).
       const { data: profile } = await supabase
         .from("profiles")
         .select("plano, creditos_avulsos")
@@ -144,7 +150,9 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       // Flag: este laudo consome 1 crédito avulso?
       let consomeCredito = false;
 
-      if (plano === "basico" || plano === "user") {
+      if (isAdmin) {
+        // Sem limites, sem consumo.
+      } else if (plano === "basico" || plano === "user") {
         // Plano Básico: pay-per-laudo. Precisa ter pelo menos 1 crédito.
         if (creditos < 1) {
           throw new Error("Você não tem laudos avulsos disponíveis. Compre um novo laudo Básico (R$ 157,00) em /planos.");
@@ -179,6 +187,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           consomeCredito = true;
         }
       }
+
 
       const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
         body: data,
@@ -385,17 +394,22 @@ export const regerarAvaliacao = createServerFn({ method: "POST" })
     if (errAtual || !atual) throw new Error("Avaliação não encontrada");
     if (atual.user_id !== userId) throw new Error("Sem permissão para editar esta avaliação");
 
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
     const { data: profile } = await supabase
       .from("profiles")
       .select("plano")
       .eq("id", userId)
       .maybeSingle();
     const plano = (profile?.plano ?? "basico") as string;
-    const limite = limiteEdicoesPorPlano(plano);
+    const limite = isAdmin ? null : limiteEdicoesPorPlano(plano);
     const usadas = atual.edicoes_count ?? 0;
     if (limite !== null && usadas >= limite) {
       throw new Error(`Limite de ${limite} edição(ões) deste laudo atingido no plano atual.`);
     }
+
 
     // 2) Snapshot da versão atual antes de sobrescrever
     const [{ data: resultadoAtual }, { data: comparaveisAtuais }] = await Promise.all([

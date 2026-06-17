@@ -1,5 +1,8 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../integrations/supabase/client";
+import { amIAdmin } from "../../lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -14,7 +17,16 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
+
 function AuthenticatedLayout() {
+  const fetchAdmin = useServerFn(amIAdmin);
+  const { data: adminStatus } = useQuery({
+    queryKey: ["am-i-admin"],
+    queryFn: () => fetchAdmin(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const isAdmin = !!adminStatus?.admin;
+
   return (
     <div className="min-h-screen flex w-full bg-background">
       <div className="flex-1 flex flex-col">
@@ -47,6 +59,17 @@ function AuthenticatedLayout() {
             >
               Planos
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="text-sm font-medium text-brand-gold hover:text-brand-gold/80"
+                activeProps={{ className: "text-sm font-medium text-brand-gold underline" }}
+                translate="no"
+              >
+                Painel Admin
+              </Link>
+            )}
+
             <button
               onClick={async () => {
                 await supabase.auth.signOut();

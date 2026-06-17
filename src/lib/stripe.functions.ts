@@ -112,11 +112,31 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+
+    // Admins têm acesso completo (Expert ilimitado), sem necessidade de assinatura.
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (isAdmin) {
+      return {
+        plano: "expert" as const,
+        assinaturaAtiva: true,
+        statusAssinatura: "admin",
+        proximoCiclo: null,
+        avaliacoesMes: 0,
+        limiteMes: null,
+        creditosAvulsos: 0,
+        isAdmin: true as const,
+      };
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("plano, subscription_status, subscription_current_period_end, plan_price_id, creditos_avulsos")
       .eq("id", userId)
       .maybeSingle();
+
 
     const inicioMes = new Date();
     inicioMes.setDate(1);
@@ -144,7 +164,9 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       avaliacoesMes: count ?? 0,
       limiteMes: limite,
       creditosAvulsos: profile?.creditos_avulsos ?? 0,
+      isAdmin: false as const,
     };
+
   });
 
 export const confirmarCheckout = createServerFn({ method: "POST" })
