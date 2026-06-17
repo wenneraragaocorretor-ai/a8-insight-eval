@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     if (!isAdmin) {
       const { data: profile } = await admin
         .from('profiles')
-        .select('plano, creditos_avulsos')
+        .select('plano, creditos_avulsos, is_beta_tester, beta_plano, beta_expira_em')
         .eq('id', userId)
         .maybeSingle()
       if (!profile) {
@@ -56,19 +56,30 @@ Deno.serve(async (req) => {
           status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
-      const plano = profile.plano as string | null
+
+      // Beta tester bypass: trata como se tivesse o plano completo do beta_plano até a expiração
+      const betaAtivo =
+        !!profile.is_beta_tester &&
+        !!profile.beta_plano &&
+        !!profile.beta_expira_em &&
+        new Date(profile.beta_expira_em as string) > new Date()
+
+      const planoEfetivo = betaAtivo
+        ? (profile.beta_plano as string)
+        : (profile.plano as string | null)
       const creditos = Number(profile.creditos_avulsos ?? 0)
-      if (!plano || (plano !== 'basico' && plano !== 'profissional' && plano !== 'expert')) {
+
+      if (!planoEfetivo || (planoEfetivo !== 'basico' && planoEfetivo !== 'profissional' && planoEfetivo !== 'expert')) {
         return new Response(JSON.stringify({ error: 'Plano inválido' }), {
           status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
-      if (plano === 'basico' && creditos < 1) {
+      if (!betaAtivo && planoEfetivo === 'basico' && creditos < 1) {
         return new Response(JSON.stringify({ error: 'Sem créditos disponíveis' }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
-      if (plano === 'profissional' || plano === 'expert') {
+      if (!betaAtivo && (planoEfetivo === 'profissional' || planoEfetivo === 'expert')) {
         const now = new Date()
         const inicioMes = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
         const { count } = await admin
@@ -76,16 +87,17 @@ Deno.serve(async (req) => {
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId)
           .gte('created_at', inicioMes.toISOString())
-        const limite = plano === 'expert' ? 20 : 8
+        const limite = planoEfetivo === 'expert' ? 20 : 8
         if ((count ?? 0) >= limite && creditos < 1) {
           return new Response(JSON.stringify({
-            error: `Limite mensal ${plano === 'expert' ? 'Expert' : 'Profissional'} atingido (${limite} laudos). Adquira créditos avulsos para continuar.`,
+            error: `Limite mensal ${planoEfetivo === 'expert' ? 'Expert' : 'Profissional'} atingido (${limite} laudos). Adquira créditos avulsos para continuar.`,
           }), {
             status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         }
       }
     }
+
 
     const { imovel, comparaveis } = await req.json()
     const anthropicApiKey = Deno.env.get('CHAVE_API_ANTROPICA')

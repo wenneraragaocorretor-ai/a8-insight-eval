@@ -184,3 +184,66 @@ export const listarUsuariosAdmin = createServerFn({ method: "POST" })
       created_at: r.created_at,
     }));
   });
+
+// ============= BETA TESTERS =============
+
+export const listarBetaTesters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, nome, email, beta_plano, beta_expira_em, is_beta_tester")
+      .eq("is_beta_tester", true)
+      .order("beta_expira_em", { ascending: true });
+    if (error) throw new Error(`Falha ao listar beta testers: ${error.message}`);
+    return data ?? [];
+  });
+
+export const liberarBetaTester = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({
+      user_id: z.string().uuid(),
+      plano: z.enum(PLANO_VALUES),
+      expira_em: z.string().min(10), // ISO date or datetime
+    }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+    const expira = new Date(data.expira_em);
+    if (isNaN(expira.getTime())) throw new Error("Data de expiração inválida");
+    if (expira <= new Date()) throw new Error("A data de expiração deve ser no futuro");
+    const { data: updated, error } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        is_beta_tester: true,
+        beta_plano: data.plano,
+        beta_expira_em: expira.toISOString(),
+      } as any)
+      .eq("id", data.user_id)
+      .select("id, nome, email, beta_plano, beta_expira_em, is_beta_tester")
+      .single();
+    if (error) throw new Error(`Falha ao liberar beta: ${error.message}`);
+    console.log("[admin] Beta liberado", {
+      admin: context.userId, target: data.user_id, plano: data.plano, expira: expira.toISOString(),
+    });
+    return { ok: true, profile: updated };
+  });
+
+export const revogarBetaTester = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ user_id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("../integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ is_beta_tester: false, beta_plano: null, beta_expira_em: null } as any)
+      .eq("id", data.user_id);
+    if (error) throw new Error(`Falha ao revogar beta: ${error.message}`);
+    console.log("[admin] Beta revogado", { admin: context.userId, target: data.user_id });
+    return { ok: true };
+  });

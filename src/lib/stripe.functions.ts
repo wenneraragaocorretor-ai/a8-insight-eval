@@ -136,12 +136,15 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
         limiteMes: null,
         creditosAvulsos: 0,
         isAdmin: true as const,
+        isBetaTester: false as const,
+        betaExpiraEm: null as string | null,
       };
     }
 
+
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plano, subscription_status, subscription_current_period_end, plan_price_id, creditos_avulsos")
+      .select("plano, subscription_status, subscription_current_period_end, plan_price_id, creditos_avulsos, is_beta_tester, beta_plano, beta_expira_em")
       .eq("id", userId)
       .maybeSingle();
 
@@ -155,6 +158,30 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .gte("created_at", inicioMes.toISOString());
+
+    // ---- BETA TESTER: acesso liberado e completo ao beta_plano até a data definida ----
+    const agora = new Date();
+    const betaAtivo =
+      !!profile?.is_beta_tester &&
+      !!profile?.beta_plano &&
+      !!profile?.beta_expira_em &&
+      new Date(profile.beta_expira_em) > agora;
+    if (betaAtivo) {
+      const bp = profile!.beta_plano as "basico" | "profissional" | "expert";
+      const limBeta = bp === "expert" ? 20 : bp === "profissional" ? 8 : 1;
+      return {
+        plano: bp,
+        assinaturaAtiva: true,
+        statusAssinatura: "beta" as const,
+        proximoCiclo: profile!.beta_expira_em,
+        avaliacoesMes: count ?? 0,
+        limiteMes: limBeta,
+        creditosAvulsos: bp === "basico" ? Math.max(1, profile?.creditos_avulsos ?? 0) : (profile?.creditos_avulsos ?? 0),
+        isAdmin: false as const,
+        isBetaTester: true as const,
+        betaExpiraEm: profile!.beta_expira_em,
+      };
+    }
 
     const plano = (profile?.plano ?? null) as "basico" | "profissional" | "expert" | "user" | "pro" | null;
     let limite: number | null;
@@ -173,9 +200,12 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       limiteMes: limite,
       creditosAvulsos: profile?.creditos_avulsos ?? 0,
       isAdmin: false as const,
+      isBetaTester: false as const,
+      betaExpiraEm: null as string | null,
     };
 
   });
+
 
 export const confirmarCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

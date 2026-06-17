@@ -299,6 +299,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          beta_expira_em: string | null
+          beta_plano: string | null
           cidade: string | null
           cnai: string | null
           cpf: string | null
@@ -308,6 +310,7 @@ export type Database = {
           email: string | null
           estado: string | null
           id: string
+          is_beta_tester: boolean
           logo_url: string | null
           nome: string
           nome_imobiliaria: string | null
@@ -323,6 +326,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          beta_expira_em?: string | null
+          beta_plano?: string | null
           cidade?: string | null
           cnai?: string | null
           cpf?: string | null
@@ -332,6 +337,7 @@ export type Database = {
           email?: string | null
           estado?: string | null
           id: string
+          is_beta_tester?: boolean
           logo_url?: string | null
           nome: string
           nome_imobiliaria?: string | null
@@ -347,6 +353,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          beta_expira_em?: string | null
+          beta_plano?: string | null
           cidade?: string | null
           cnai?: string | null
           cpf?: string | null
@@ -356,6 +364,7 @@ export type Database = {
           email?: string | null
           estado?: string | null
           id?: string
+          is_beta_tester?: boolean
           logo_url?: string | null
           nome?: string
           nome_imobiliaria?: string | null

@@ -25,6 +25,7 @@ import { Route as AuthenticatedAvaliacoesNovaRouteImport } from './routes/_authe
 import { Route as AuthenticatedAvaliacoesIdRouteImport } from './routes/_authenticated/avaliacoes.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
+import { Route as AuthenticatedAdminBetaTestersRouteImport } from './routes/_authenticated/admin.beta-testers'
 
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
@@ -110,6 +111,12 @@ const AuthenticatedAdminPlanosRoute =
     path: '/planos',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminBetaTestersRoute =
+  AuthenticatedAdminBetaTestersRouteImport.update({
+    id: '/beta-testers',
+    path: '/beta-testers',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/planos': typeof AuthenticatedPlanosRoute
   '/api/chat': typeof ApiChatRoute
+  '/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
@@ -136,6 +144,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/planos': typeof AuthenticatedPlanosRoute
   '/api/chat': typeof ApiChatRoute
+  '/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
@@ -155,6 +164,7 @@ export interface FileRoutesById {
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/api/chat': typeof ApiChatRoute
+  '/_authenticated/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/_authenticated/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/planos'
     | '/api/chat'
+    | '/admin/beta-testers'
     | '/admin/planos'
     | '/admin/usuarios'
     | '/avaliacoes/$id'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/planos'
     | '/api/chat'
+    | '/admin/beta-testers'
     | '/admin/planos'
     | '/admin/usuarios'
     | '/avaliacoes/$id'
@@ -208,6 +220,7 @@ export interface FileRouteTypes {
     | '/_authenticated/perfil'
     | '/_authenticated/planos'
     | '/api/chat'
+    | '/_authenticated/admin/beta-testers'
     | '/_authenticated/admin/planos'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/avaliacoes/$id'
@@ -341,16 +354,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPlanosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/beta-testers': {
+      id: '/_authenticated/admin/beta-testers'
+      path: '/beta-testers'
+      fullPath: '/admin/beta-testers'
+      preLoaderRoute: typeof AuthenticatedAdminBetaTestersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminBetaTestersRoute: typeof AuthenticatedAdminBetaTestersRoute
   AuthenticatedAdminPlanosRoute: typeof AuthenticatedAdminPlanosRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminBetaTestersRoute: AuthenticatedAdminBetaTestersRoute,
   AuthenticatedAdminPlanosRoute: AuthenticatedAdminPlanosRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
