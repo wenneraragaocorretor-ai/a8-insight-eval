@@ -328,7 +328,7 @@ function NovaAvaliacao() {
         assinaturaAtiva: !!s.assinaturaAtiva,
       });
       if ((s as any).isAdmin) setIsAdmin(true);
-      if (s.plano) setPlano(s.plano);
+      if (s.plano) setPlanoReal(s.plano);
     } catch (e) {
       console.error("[status]", e);
     }
