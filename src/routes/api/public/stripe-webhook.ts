@@ -242,6 +242,9 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   sub.metadata = { ...sub.metadata, ...session.metadata };
                 }
                 await applySubscription(sub, session);
+                // Comissão de afiliado (primeiro pagamento de assinatura).
+                const userIdSub = sub.metadata?.user_id ?? session?.metadata?.user_id;
+                await registrarComissaoAfiliado(userIdSub, session);
               } else if (session.mode === "payment" && session.payment_status === "paid") {
                 // Pagamento único — Básico (laudo avulso) ou Expert Extra: +1 crédito
                 const userId = session.metadata?.user_id;
@@ -327,6 +330,8 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   const { error } = await supabaseAdmin.from("profiles").upsert(upsertData, { onConflict: "id" });
                   if (error) throw error;
                   console.log("[stripe-webhook] +1 crédito", { userId, planCode, novosCreditos });
+                  // Comissão de afiliado (laudo avulso pode ser o primeiro pagamento).
+                  await registrarComissaoAfiliado(userId, session);
                 }
               }
               break;
