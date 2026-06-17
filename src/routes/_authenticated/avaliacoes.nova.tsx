@@ -480,7 +480,7 @@ function NovaAvaliacao() {
   };
   const [fotos, setFotos] = useState<FotoItem[]>([]);
 
-  const maxFotos = isAdmin ? 50 : plano === "expert" ? 15 : plano === "profissional" || plano === "pro" ? 5 : 3;
+  const maxFotos = plano === "expert" ? 15 : plano === "profissional" || plano === "pro" ? 5 : 3;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Limpa as object URLs ao desmontar
