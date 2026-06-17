@@ -353,6 +353,7 @@ function NovaAvaliacao() {
 
 
   const expertAtingiuLimite =
+    !isAdmin &&
     plano === "expert" &&
     statusUso !== null &&
     statusUso.limiteMes !== null &&
