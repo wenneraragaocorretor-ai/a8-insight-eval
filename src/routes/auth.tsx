@@ -102,7 +102,8 @@ function AuthPage() {
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        continuarFluxo();
+        // Tenta vincular afiliado (no-op se não houver ?ref= capturado).
+        vincularAfiliadoSeNecessario(session.user.id).finally(() => continuarFluxo());
       }
     });
     return () => subscription.unsubscribe();
