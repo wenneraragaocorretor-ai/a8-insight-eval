@@ -179,18 +179,20 @@ function Dashboard() {
     );
   }
   const nome = perfilData?.profile?.nome || user.user_metadata?.nome || user.email?.split("@")[0];
-  const planoLabel = status?.plano ? (PLAN_LABEL[status.plano] ?? "—") : "—";
+  const ehAdmin = !!(status as any)?.isAdmin;
+  const planoLabel = ehAdmin
+    ? "Administrador (acesso total ilimitado)"
+    : status?.plano ? (PLAN_LABEL[status.plano] ?? "—") : "—";
   const planoCode = status?.plano ?? null;
-  const ehBasico = planoCode === "basico" || planoCode === "user";
-  const ehExpert = planoCode === "expert";
+  const ehBasico = !ehAdmin && (planoCode === "basico" || planoCode === "user");
+  const ehExpert = !ehAdmin && planoCode === "expert";
   const usadas = status?.avaliacoesMes ?? 0;
   const limite = status?.limiteMes;
   const creditos = (status as any)?.creditosAvulsos ?? 0;
   const ativa = status?.assinaturaAtiva;
-  // Só mostra "limite atingido" para usuários COM plano ativo.
-  // Sem plano (planoCode === null) nunca exibe esse aviso — eles veem a tela de planos.
-  const temPlanoAtivo = !!planoCode && !!ativa;
-  const ehProfissional = planoCode === "profissional" || planoCode === "pro";
+  // Só mostra "limite atingido" para usuários COM plano ativo. Admin nunca atinge limite.
+  const temPlanoAtivo = !ehAdmin && !!planoCode && !!ativa;
+  const ehProfissional = !ehAdmin && (planoCode === "profissional" || planoCode === "pro");
   const limiteAtingido = temPlanoAtivo && (
     ehBasico
       ? creditos <= 0
