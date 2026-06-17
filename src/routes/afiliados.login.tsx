@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "../integrations/supabase/client";
@@ -34,13 +34,9 @@ function AfiliadosLoginPage() {
       if (!data.session) return;
       try {
         const r = await checkAfiliado();
-        if (r.afiliado) {
-          throw redirect({ to: "/afiliados/dashboard" });
-        }
-      } catch (e: any) {
-        if (e && typeof e === "object" && "to" in e) {
-          navigate({ to: "/afiliados/dashboard" });
-        }
+        if (r.afiliado) navigate({ to: "/afiliados/dashboard" });
+      } catch {
+        /* fica na tela de login */
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
