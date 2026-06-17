@@ -244,6 +244,35 @@ function Dashboard() {
       )}
 
 
+      {(() => {
+        const ehBeta = !!(status as any)?.isBetaTester;
+        const expIso = (status as any)?.betaExpiraEm as string | null;
+        if (!ehBeta || !expIso) return null;
+        const exp = new Date(expIso);
+        const diasRestantes = Math.ceil((exp.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        const planoBeta = PLAN_LABEL[(status as any)?.plano ?? ""] ?? "—";
+        const dataFmt = exp.toLocaleDateString("pt-BR");
+        const urgente = diasRestantes <= 3;
+        return (
+          <Card className={`premium-card border-2 ${urgente ? "border-orange-400 bg-orange-50" : "border-brand-gold bg-brand-gold/5"}`}>
+            <CardContent className="flex items-center gap-3 py-4">
+              <div className="flex-1">
+                <p className={`font-semibold ${urgente ? "text-orange-900" : "text-brand-blue"}`}>
+                  {urgente
+                    ? `⏰ Seu período de teste termina em ${Math.max(0, diasRestantes)} dia${diasRestantes === 1 ? "" : "s"}. Assine um plano para continuar.`
+                    : `🎁 Você está em período de teste gratuito do Plano ${planoBeta} até ${dataFmt}.`}
+                </p>
+              </div>
+              {urgente && (
+                <Link to="/planos">
+                  <Button className="bg-brand-gold text-primary-foreground">Ver planos</Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {welcomePlano && (
         <Card className="premium-card border-2 border-brand-gold bg-brand-gold/5">
           <CardContent className="flex items-center gap-3 py-4">
@@ -260,6 +289,7 @@ function Dashboard() {
           </CardContent>
         </Card>
       )}
+
 
 
 
