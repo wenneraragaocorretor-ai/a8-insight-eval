@@ -200,9 +200,26 @@ function AvaliacaoDetalhe() {
               </span>
             )}
           </div>
-          <p className="text-muted-foreground">
-            {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {avaliacao?.area_total} m²
-          </p>
+          {(() => {
+            const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
+            const total = Number(avaliacao?.area_total);
+            const priv = Number((avaliacao as any)?.area_privativa);
+            const isApto = tn.includes("apart") || tn.includes("sala") || tn.includes("loja");
+            const isTerreno = tn.includes("terreno") || tn.includes("lote");
+            let areaTxt = "";
+            if (isTerreno) {
+              areaTxt = `${total} m² terreno`;
+            } else if (isApto && Number.isFinite(priv) && priv > 0) {
+              areaTxt = `${priv} m² privativos${Number.isFinite(total) && total > 0 && total !== priv ? ` | ${total} m² totais` : ""}`;
+            } else {
+              areaTxt = `${total} m² construídos`;
+            }
+            return (
+              <p className="text-muted-foreground">
+                {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {areaTxt}
+              </p>
+            );
+          })()}
           {(avaliacao as any)?.ultima_edicao_em && (
             <p className="text-xs text-muted-foreground mt-1">
               Última edição em{" "}
