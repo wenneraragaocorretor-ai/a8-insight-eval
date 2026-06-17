@@ -306,7 +306,8 @@ function NovaAvaliacao() {
   });
 
   const [plano, setPlano] = useState<string>("basico");
-  const isExpert = plano === "expert";
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const isExpert = plano === "expert" || isAdmin;
   const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number; assinaturaAtiva: boolean } | null>(null);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
   const [comprandoExtra, setComprandoExtra] = useState(false);
@@ -322,6 +323,7 @@ function NovaAvaliacao() {
         creditosAvulsos: (s as any).creditosAvulsos ?? 0,
         assinaturaAtiva: !!s.assinaturaAtiva,
       });
+      if ((s as any).isAdmin) setIsAdmin(true);
       if (s.plano) setPlano(s.plano);
     } catch (e) {
       console.error("[status]", e);
