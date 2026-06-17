@@ -28,6 +28,7 @@ import { Route as AuthenticatedAvaliacoesIdRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
 import { Route as AuthenticatedAdminBetaTestersRouteImport } from './routes/_authenticated/admin.beta-testers'
+import { Route as AuthenticatedAdminAfiliadosRouteImport } from './routes/_authenticated/admin.afiliados'
 
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
@@ -129,6 +130,12 @@ const AuthenticatedAdminBetaTestersRoute =
     path: '/beta-testers',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAfiliadosRoute =
+  AuthenticatedAdminAfiliadosRouteImport.update({
+    id: '/afiliados',
+    path: '/afiliados',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/afiliados/dashboard': typeof AfiliadosDashboardRoute
   '/afiliados/login': typeof AfiliadosLoginRoute
   '/api/chat': typeof ApiChatRoute
+  '/admin/afiliados': typeof AuthenticatedAdminAfiliadosRoute
   '/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -160,6 +168,7 @@ export interface FileRoutesByTo {
   '/afiliados/dashboard': typeof AfiliadosDashboardRoute
   '/afiliados/login': typeof AfiliadosLoginRoute
   '/api/chat': typeof ApiChatRoute
+  '/admin/afiliados': typeof AuthenticatedAdminAfiliadosRoute
   '/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -182,6 +191,7 @@ export interface FileRoutesById {
   '/afiliados/dashboard': typeof AfiliadosDashboardRoute
   '/afiliados/login': typeof AfiliadosLoginRoute
   '/api/chat': typeof ApiChatRoute
+  '/_authenticated/admin/afiliados': typeof AuthenticatedAdminAfiliadosRoute
   '/_authenticated/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/_authenticated/admin/planos': typeof AuthenticatedAdminPlanosRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/afiliados/dashboard'
     | '/afiliados/login'
     | '/api/chat'
+    | '/admin/afiliados'
     | '/admin/beta-testers'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/afiliados/dashboard'
     | '/afiliados/login'
     | '/api/chat'
+    | '/admin/afiliados'
     | '/admin/beta-testers'
     | '/admin/planos'
     | '/admin/usuarios'
@@ -244,6 +256,7 @@ export interface FileRouteTypes {
     | '/afiliados/dashboard'
     | '/afiliados/login'
     | '/api/chat'
+    | '/_authenticated/admin/afiliados'
     | '/_authenticated/admin/beta-testers'
     | '/_authenticated/admin/planos'
     | '/_authenticated/admin/usuarios'
@@ -401,10 +414,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBetaTestersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/afiliados': {
+      id: '/_authenticated/admin/afiliados'
+      path: '/afiliados'
+      fullPath: '/admin/afiliados'
+      preLoaderRoute: typeof AuthenticatedAdminAfiliadosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAfiliadosRoute: typeof AuthenticatedAdminAfiliadosRoute
   AuthenticatedAdminBetaTestersRoute: typeof AuthenticatedAdminBetaTestersRoute
   AuthenticatedAdminPlanosRoute: typeof AuthenticatedAdminPlanosRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
@@ -412,6 +433,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAfiliadosRoute: AuthenticatedAdminAfiliadosRoute,
   AuthenticatedAdminBetaTestersRoute: AuthenticatedAdminBetaTestersRoute,
   AuthenticatedAdminPlanosRoute: AuthenticatedAdminPlanosRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
