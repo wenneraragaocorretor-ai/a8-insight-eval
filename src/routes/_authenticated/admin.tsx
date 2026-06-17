@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState, redirect } from "@tanstack/react-router";
-import { Loader2, ShieldCheck, BarChart3, Users, Sparkles, Ticket, Handshake, CreditCard, ArrowLeft } from "lucide-react";
+import { ShieldCheck, BarChart3, Users, Sparkles, Ticket, Handshake, CreditCard, ArrowLeft } from "lucide-react";
 import { amIAdmin } from "../../lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
