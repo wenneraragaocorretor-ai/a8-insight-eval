@@ -63,7 +63,21 @@ function AvaliacaoDetalhe() {
   const navigate = useNavigate();
   const router = useRouter();
 
-  const plano = (profile?.plano ?? "basico") as string;
+  const planoReal = (profile?.plano ?? "basico") as string;
+  const fetchAmIAdmin = useServerFn(amIAdmin);
+  const [adminOverride, setAdminOverride] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetchAmIAdmin();
+        if ((r as any)?.admin) {
+          const v = (typeof window !== "undefined" && localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY)) || "expert";
+          setAdminOverride(v);
+        }
+      } catch {}
+    })();
+  }, []);
+  const plano = adminOverride ?? planoReal;
   const disponiveis = modelosDisponiveis(plano);
   const todosModelos: { id: ModeloPdf; nome: string }[] = [
     { id: 1, nome: "Modelo 1 — Estudo Simplificado" },
