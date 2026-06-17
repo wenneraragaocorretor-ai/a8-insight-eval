@@ -14,7 +14,7 @@ import {
   redefinirPlanoUsuario,
 } from "../../lib/admin.functions";
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/_authenticated/admin/planos")({
   component: AdminPage,
 });
 
