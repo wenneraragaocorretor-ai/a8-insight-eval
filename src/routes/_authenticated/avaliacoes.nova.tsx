@@ -341,8 +341,14 @@ function NovaAvaliacao() {
       const uid = userData?.user?.id;
       if (!uid) return;
       const { data } = await supabase.from("profiles").select("plano").eq("id", uid).maybeSingle();
-      if (data?.plano) setPlano(data.plano);
+      if (data?.plano) setPlanoReal(data.plano);
       await recarregarStatus();
+      try {
+        const v = typeof window !== "undefined" ? localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY) : null;
+        setAdminOverride(v || "expert");
+      } catch {
+        setAdminOverride("expert");
+      }
     })();
   }, []);
 
