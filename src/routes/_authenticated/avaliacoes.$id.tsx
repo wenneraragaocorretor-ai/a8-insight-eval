@@ -154,6 +154,19 @@ function AvaliacaoDetalhe() {
       });
       return;
     }
+    if (camposExpertFaltando.length > 0) {
+      toast.error(
+        `Esta avaliação foi criada antes do upgrade de plano e está faltando informações para o laudo completo (${camposExpertFaltando.join(", ")}). Edite a avaliação para preencher os campos da Ficha Técnica Detalhada antes de gerar este modelo de PDF.`,
+        {
+          duration: 12000,
+          action: {
+            label: "Editar agora",
+            onClick: () => navigate({ to: "/avaliacoes/nova", search: { edit: avaliacao.id } as any }),
+          },
+        },
+      );
+      return;
+    }
     // Carrega fotos do imóvel (paths privados → dataURL) para embutir no PDF
     const fotosPaths: string[] = Array.isArray((avaliacao as any)?.fotos) ? (avaliacao as any).fotos : [];
     const fotosMeta: Array<{ path: string; legenda?: string; principal?: boolean; comentario_ia?: string }> =
