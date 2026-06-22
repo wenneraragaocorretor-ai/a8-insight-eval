@@ -85,10 +85,29 @@ function AvaliacaoDetalhe() {
     { id: 3, nome: "Modelo 3 — Laudo ABNT NBR 14653-2" },
   ];
   const [modelo, setModelo] = useState<ModeloPdf>(disponiveis[disponiveis.length - 1]);
+  const disponiveisKey = disponiveis.join(",");
   useEffect(() => {
-    if (!disponiveis.includes(modelo)) setModelo(disponiveis[disponiveis.length - 1]);
+    // Sempre que o conjunto de modelos disponíveis mudar (troca de plano real
+    // ou troca do override de admin no dashboard), seleciona o maior modelo
+    // disponível de forma síncrona — não depende do modelo anterior estar
+    // fora da lista.
+    setModelo(disponiveis[disponiveis.length - 1]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminOverride]);
+  }, [disponiveisKey]);
+
+  // Campos obrigatórios para o Modelo 3 (Laudo Expert NBR 14653-2).
+  // Avaliações criadas antes do upgrade para Expert podem não ter esses dados.
+  const camposExpertFaltando = (() => {
+    if (modelo !== 3) return [] as string[];
+    const a: any = avaliacao;
+    const faltando: string[] = [];
+    if (!a?.idade_real) faltando.push("Idade real do imóvel");
+    if (!a?.posicao_solar) faltando.push("Posição solar");
+    if (!a?.topografia) faltando.push("Topografia");
+    if (!a?.zoneamento) faltando.push("Zoneamento");
+    if (!Array.isArray(a?.tipo_acabamento) || a.tipo_acabamento.length === 0) faltando.push("Tipo de acabamento");
+    return faltando;
+  })();
 
   // Valor final personalizado pelo corretor (dentro da faixa min/max do arbítrio).
   const valorCentralTecnico = Number(resultado?.valor_central) || 0;
