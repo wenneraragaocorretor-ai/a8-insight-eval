@@ -1076,7 +1076,7 @@ function NovaAvaliacao() {
               </div>
             )}
 
-            {isExpert && (
+            {temFichaCompleta && (
               <div className="md:col-span-2 rounded-lg border border-brand-gold/40 bg-brand-gold/5 p-5 space-y-5">
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="bg-brand-gold/15 text-brand-gold rounded-md p-2">
@@ -1084,11 +1084,11 @@ function NovaAvaliacao() {
                   </div>
                   <h3 className="text-lg font-semibold text-brand-blue">Ficha Técnica Detalhada</h3>
                   <span className="text-xs font-bold uppercase tracking-wide bg-brand-gold text-white px-2 py-0.5 rounded">
-                    Expert
+                    Profissional / Expert
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Campos avançados exclusivos do Plano Expert — refinam a análise técnica do imóvel.
+                  Campos avançados disponíveis nos Planos Profissional e Expert — refinam a análise técnica do imóvel.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
