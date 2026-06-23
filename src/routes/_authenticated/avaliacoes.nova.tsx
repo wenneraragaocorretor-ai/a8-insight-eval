@@ -312,6 +312,8 @@ function NovaAvaliacao() {
   // Plano efetivo: admin usa o modelo selecionado no dashboard; usuários comuns usam o real.
   const plano = isAdmin ? (adminOverride ?? "expert") : planoReal;
   const isExpert = plano === "expert";
+  // Ficha Técnica Completa é vendida tanto no plano Profissional quanto no Expert.
+  const temFichaCompleta = plano === "profissional" || plano === "pro" || plano === "expert";
   const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number; assinaturaAtiva: boolean } | null>(null);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
   const [comprandoExtra, setComprandoExtra] = useState(false);
