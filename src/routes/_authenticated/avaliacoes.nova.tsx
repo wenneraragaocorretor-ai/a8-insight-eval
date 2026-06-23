@@ -312,6 +312,8 @@ function NovaAvaliacao() {
   // Plano efetivo: admin usa o modelo selecionado no dashboard; usuários comuns usam o real.
   const plano = isAdmin ? (adminOverride ?? "expert") : planoReal;
   const isExpert = plano === "expert";
+  // Ficha Técnica Completa é vendida tanto no plano Profissional quanto no Expert.
+  const temFichaCompleta = plano === "profissional" || plano === "pro" || plano === "expert";
   const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number; assinaturaAtiva: boolean } | null>(null);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
   const [comprandoExtra, setComprandoExtra] = useState(false);
@@ -752,13 +754,13 @@ function NovaAvaliacao() {
                 principal: temPrincipal ? f.principal : i === 0,
               }));
             })(),
-            // Ficha Técnica Detalhada — só envia se Expert
-            idade_real: isExpert ? imovel.idade_real || undefined : undefined,
-            idade_aparente: isExpert ? imovel.idade_aparente || undefined : undefined,
-            posicao_solar: isExpert ? imovel.posicao_solar || undefined : undefined,
-            topografia: isExpert ? imovel.topografia || undefined : undefined,
-            zoneamento: isExpert ? imovel.zoneamento || undefined : undefined,
-            infraestrutura_lazer: isExpert
+            // Ficha Técnica Detalhada — Profissional e Expert
+            idade_real: temFichaCompleta ? imovel.idade_real || undefined : undefined,
+            idade_aparente: temFichaCompleta ? imovel.idade_aparente || undefined : undefined,
+            posicao_solar: temFichaCompleta ? imovel.posicao_solar || undefined : undefined,
+            topografia: temFichaCompleta ? imovel.topografia || undefined : undefined,
+            zoneamento: temFichaCompleta ? imovel.zoneamento || undefined : undefined,
+            infraestrutura_lazer: temFichaCompleta
               ? [
                   ...imovel.infraestrutura_lazer,
                   ...imovel.lazer_outros
@@ -767,10 +769,10 @@ function NovaAvaliacao() {
                     .filter((s) => s.length > 0),
                 ]
               : [],
-            vagas_cobertas: isExpert ? imovel.vagas_cobertas || undefined : undefined,
-            vagas_descobertas: isExpert ? imovel.vagas_descobertas || undefined : undefined,
-            total_andares: isExpert ? imovel.total_andares || undefined : undefined,
-            tipo_acabamento: isExpert
+            vagas_cobertas: temFichaCompleta ? imovel.vagas_cobertas || undefined : undefined,
+            vagas_descobertas: temFichaCompleta ? imovel.vagas_descobertas || undefined : undefined,
+            total_andares: temFichaCompleta ? imovel.total_andares || undefined : undefined,
+            tipo_acabamento: temFichaCompleta
               ? [
                   ...imovel.tipo_acabamento,
                   ...imovel.acabamento_outros
@@ -780,7 +782,7 @@ function NovaAvaliacao() {
                 ]
               : [],
             numero_pavimentos:
-              isExpert && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
+              temFichaCompleta && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
                 ? imovel.numero_pavimentos || undefined
                 : undefined,
             ambientes_sociais: [
@@ -1074,7 +1076,7 @@ function NovaAvaliacao() {
               </div>
             )}
 
-            {isExpert && (
+            {temFichaCompleta && (
               <div className="md:col-span-2 rounded-lg border border-brand-gold/40 bg-brand-gold/5 p-5 space-y-5">
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="bg-brand-gold/15 text-brand-gold rounded-md p-2">
@@ -1082,11 +1084,11 @@ function NovaAvaliacao() {
                   </div>
                   <h3 className="text-lg font-semibold text-brand-blue">Ficha Técnica Detalhada</h3>
                   <span className="text-xs font-bold uppercase tracking-wide bg-brand-gold text-white px-2 py-0.5 rounded">
-                    Expert
+                    Profissional / Expert
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Campos avançados exclusivos do Plano Expert — refinam a análise técnica do imóvel.
+                  Campos avançados disponíveis nos Planos Profissional e Expert — refinam a análise técnica do imóvel.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
