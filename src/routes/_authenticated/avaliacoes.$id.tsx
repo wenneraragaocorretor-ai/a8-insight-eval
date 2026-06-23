@@ -95,10 +95,10 @@ function AvaliacaoDetalhe() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disponiveisKey]);
 
-  // Campos obrigatórios para o Modelo 3 (Laudo Expert NBR 14653-2).
-  // Avaliações criadas antes do upgrade para Expert podem não ter esses dados.
+  // Campos obrigatórios para a Ficha Técnica Detalhada (Modelos 2 e 3).
+  // Avaliações criadas antes do upgrade podem não ter esses dados.
   const camposExpertFaltando = (() => {
-    if (modelo !== 3) return [] as string[];
+    if (modelo !== 2 && modelo !== 3) return [] as string[];
     const a: any = avaliacao;
     const faltando: string[] = [];
     if (!a?.idade_real) faltando.push("Idade real do imóvel");
