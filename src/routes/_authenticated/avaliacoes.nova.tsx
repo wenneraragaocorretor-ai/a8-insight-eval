@@ -754,13 +754,13 @@ function NovaAvaliacao() {
                 principal: temPrincipal ? f.principal : i === 0,
               }));
             })(),
-            // Ficha Técnica Detalhada — só envia se Expert
-            idade_real: isExpert ? imovel.idade_real || undefined : undefined,
-            idade_aparente: isExpert ? imovel.idade_aparente || undefined : undefined,
-            posicao_solar: isExpert ? imovel.posicao_solar || undefined : undefined,
-            topografia: isExpert ? imovel.topografia || undefined : undefined,
-            zoneamento: isExpert ? imovel.zoneamento || undefined : undefined,
-            infraestrutura_lazer: isExpert
+            // Ficha Técnica Detalhada — Profissional e Expert
+            idade_real: temFichaCompleta ? imovel.idade_real || undefined : undefined,
+            idade_aparente: temFichaCompleta ? imovel.idade_aparente || undefined : undefined,
+            posicao_solar: temFichaCompleta ? imovel.posicao_solar || undefined : undefined,
+            topografia: temFichaCompleta ? imovel.topografia || undefined : undefined,
+            zoneamento: temFichaCompleta ? imovel.zoneamento || undefined : undefined,
+            infraestrutura_lazer: temFichaCompleta
               ? [
                   ...imovel.infraestrutura_lazer,
                   ...imovel.lazer_outros
@@ -769,10 +769,10 @@ function NovaAvaliacao() {
                     .filter((s) => s.length > 0),
                 ]
               : [],
-            vagas_cobertas: isExpert ? imovel.vagas_cobertas || undefined : undefined,
-            vagas_descobertas: isExpert ? imovel.vagas_descobertas || undefined : undefined,
-            total_andares: isExpert ? imovel.total_andares || undefined : undefined,
-            tipo_acabamento: isExpert
+            vagas_cobertas: temFichaCompleta ? imovel.vagas_cobertas || undefined : undefined,
+            vagas_descobertas: temFichaCompleta ? imovel.vagas_descobertas || undefined : undefined,
+            total_andares: temFichaCompleta ? imovel.total_andares || undefined : undefined,
+            tipo_acabamento: temFichaCompleta
               ? [
                   ...imovel.tipo_acabamento,
                   ...imovel.acabamento_outros
@@ -782,7 +782,7 @@ function NovaAvaliacao() {
                 ]
               : [],
             numero_pavimentos:
-              isExpert && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
+              temFichaCompleta && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
                 ? imovel.numero_pavimentos || undefined
                 : undefined,
             ambientes_sociais: [
