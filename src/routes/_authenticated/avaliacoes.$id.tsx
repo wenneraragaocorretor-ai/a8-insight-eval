@@ -352,19 +352,19 @@ function AvaliacaoDetalhe() {
           <CardContent>
             <div className="text-3xl font-bold text-brand-gold">{fmtBRL(resultado?.valor_central)}</div>
             {(() => {
-              const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
               const total = Number(avaliacao?.area_total);
-              const priv = Number((avaliacao as any)?.area_privativa);
-              const isApto = tn.includes("apart") || tn.includes("sala") || tn.includes("loja");
-              const isTerreno = tn.includes("terreno") || tn.includes("lote");
+              const base = areaBaseDe(avaliacao?.tipo_imovel, avaliacao);
               const vc = Number(resultado?.valor_central);
               const vum = Number(resultado?.valor_unitario_medio);
-              let baseLabel = "construído";
-              let baseArea = total;
-              if (isTerreno) { baseLabel = "terreno"; baseArea = total; }
-              else if (isApto && Number.isFinite(priv) && priv > 0) { baseLabel = "privativo"; baseArea = priv; }
-              const valorBase = Number.isFinite(vum) && vum > 0 ? vum : (baseArea > 0 ? vc / baseArea : 0);
-              const showTotalRef = isApto && Number.isFinite(priv) && priv > 0 && Number.isFinite(total) && total > 0 && total !== priv && vc > 0;
+              const baseLabel = labelValorM2(avaliacao?.tipo_imovel).replace("Valor/m² ", "");
+              const valorBase =
+                Number.isFinite(vum) && vum > 0 ? vum : base.area > 0 ? vc / base.area : 0;
+              const showTotalRef =
+                base.fonte !== "total" &&
+                Number.isFinite(total) &&
+                total > 0 &&
+                total !== base.area &&
+                vc > 0;
               return (
                 <>
                   {valorBase > 0 && (
