@@ -137,37 +137,9 @@ Deno.serve(async (req) => {
     }
 
 
-    // ABNT NBR 14653-2 — área base do cálculo conforme tipo de imóvel
-    const pick = (priv: any, total: any) => {
-      const p = Number(priv); const t = Number(total)
-      if (Number.isFinite(p) && p > 0) return { area: p, fonte: 'privativa' as const }
-      return { area: Number.isFinite(t) ? t : 0, fonte: 'total' as const }
-    }
-    const areaBaseDe = (im: any, tipoRef?: string) => {
-      const tn = String(tipoRef ?? im.tipo ?? '').toLowerCase()
-      const total = im.area_total ?? im.area
-      if (tn.includes('terreno')) {
-        return { area: Number(total) || 0, fonte: 'total' as const, label: 'área total do terreno' }
-      }
-      if (tn.includes('apart')) {
-        const r = pick(im.area_privativa, total)
-        return { ...r, label: r.fonte === 'privativa' ? 'área privativa' : 'área total' }
-      }
-      if (tn.includes('casa') || tn.includes('sobrado')) {
-        const r = pick(im.area_privativa, total)
-        return { ...r, label: r.fonte === 'privativa' ? 'área construída' : 'área total' }
-      }
-      if (tn.includes('galp')) {
-        const r = pick(im.area_privativa, total)
-        return { ...r, label: r.fonte === 'privativa' ? 'área privativa do galpão' : 'área total' }
-      }
-      const r = pick(im.area_privativa, total)
-      return { ...r, label: r.fonte === 'privativa' ? 'área privativa/útil' : 'área total' }
-    }
-
-
-    const baseImovel = areaBaseDe(imovel)
-    const basesComparaveis = comparaveis.map((c: any) => areaBaseDe(c, imovel.tipo))
+    // Área-base: regra única importada de ../_shared/area-base.ts
+    const baseImovel = areaBaseDe(imovel.tipo, imovel)
+    const basesComparaveis = comparaveis.map((c: any) => areaBaseDe(imovel.tipo, c))
     const areaBaseDescricao = `Cálculo baseado em ${baseImovel.label}: ${baseImovel.area}m²`
 
     const padraoStr = String(imovel.padrao ?? "").toLowerCase()
