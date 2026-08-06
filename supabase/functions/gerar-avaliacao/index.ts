@@ -403,6 +403,24 @@ Comparável #${i + 1} (${c.fonte}):
     result.area_base_calculo = result.area_base_calculo ?? baseImovel.area
     result.area_base_tipo = result.area_base_tipo ?? baseImovel.label
     result.area_base_descricao = result.area_base_descricao ?? areaBaseDescricao
+    if (!Array.isArray(result.analise_fotos_individual)) result.analise_fotos_individual = []
+    if (typeof result.analise_fotos !== 'string') result.analise_fotos = ''
+
+    // Validação rigorosa: se falhar, nada é gravado e nenhum crédito é consumido.
+    const parsed = buildResultadoSchema(fotosImagens.length).safeParse(result)
+    if (!parsed.success) {
+      // Log técnico sem endereço completo nem dados pessoais.
+      console.error(
+        'Resposta da IA reprovada na validação:',
+        parsed.error.issues.map((i) => `${i.path.join('.') || '(raiz)'}: ${i.message}`).join(' | '),
+      )
+      throw new RespostaIAInvalida(
+        'A IA retornou um resultado inconsistente e o laudo não foi gerado. Nenhum crédito foi consumido. Tente novamente.',
+      )
+    }
+    result = parsed.data
+
+
 
     // ===== Análise do bairro com busca web (Claude web_search) =====
     try {
