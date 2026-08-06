@@ -181,6 +181,7 @@ type Comparavel = {
   localizacao: string;
   area: number;
   area_privativa: number;
+  area_construida: number;
   quartos: number;
   suites: number;
   banheiros: number;
@@ -201,6 +202,7 @@ const novoComparavel = (id: number): Comparavel => ({
   localizacao: "",
   area: 0,
   area_privativa: 0,
+  area_construida: 0,
   quartos: 0,
   suites: 0,
   banheiros: 0,
