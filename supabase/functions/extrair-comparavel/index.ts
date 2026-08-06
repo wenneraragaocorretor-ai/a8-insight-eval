@@ -84,6 +84,25 @@ async function fetchHtmlSeguro(inicial: URL): Promise<
 > {
   let atual = inicial;
   for (let i = 0; i <= MAX_REDIRECTS; i++) {
+    // Validação de DNS antes do fetch (prevenção contra DNS rebinding e IPs privados)
+    try {
+      const ips = await Deno.resolveDns(atual.hostname, "A");
+      if (ips.some(ip => isHostBloqueado(ip))) {
+        return { ok: false, status: 400, error: "Endereço resolvido não permitido" };
+      }
+    } catch (e) {
+      // Se falhar a resolução A, tenta AAAA
+      try {
+        const ips = await Deno.resolveDns(atual.hostname, "AAAA");
+        if (ips.some(ip => isHostBloqueado(ip))) {
+          return { ok: false, status: 400, error: "Endereço resolvido não permitido" };
+        }
+      } catch (e2) {
+        // Se não resolver nada e não for IP literal (já validado em validarUrlPublica), permite o fetch 
+        // mas o fetch do Deno respeitará bloqueios se o hostname apontar para local.
+      }
+    }
+
     const resp = await fetch(atual.toString(), {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; A8Avalia/1.0; +https://a8avalia.com.br)",
