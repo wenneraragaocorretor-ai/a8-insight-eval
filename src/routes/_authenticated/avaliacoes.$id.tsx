@@ -8,6 +8,7 @@ import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
+import { areaBaseDe, labelValorM2 } from "../../lib/areaBase";
 import { supabase } from "../../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
