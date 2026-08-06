@@ -306,14 +306,6 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       }
 
       return { id: avaliacaoId, ...aiResult };
-        const { error: errCred } = await supabase
-          .from("profiles")
-          .update({ creditos_avulsos: Math.max(0, creditos - 1) })
-          .eq("id", userId);
-        if (errCred) console.error("Falha ao debitar crédito avulso:", errCred.message);
-      }
-
-      return { id: avaliacao.id, ...aiResult };
     } catch (error: any) {
       console.error("Erro crítico no fluxo de avaliação:", error);
       throw new Error(error.message || "Falha ao processar avaliação");
