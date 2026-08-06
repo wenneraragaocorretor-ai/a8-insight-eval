@@ -304,6 +304,7 @@ function NovaAvaliacao() {
     ambientes_servico_outros: "",
     ambientes_outros: [] as string[],
     ambientes_outros_livres: "",
+    area_construida: 0,
   });
 
   const [planoReal, setPlanoReal] = useState<string>("basico");

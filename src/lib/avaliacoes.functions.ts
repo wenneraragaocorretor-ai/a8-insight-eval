@@ -68,6 +68,7 @@ const evaluationSchema = z.object({
     endereco_completo: z.string().optional(),
     area_total: z.number(),
     area_privativa: z.number().optional(),
+    area_construida: z.number().optional(),
     quartos: z.number(),
     suites: z.number().optional(),
     banheiros: z.number(),
@@ -105,6 +106,7 @@ const evaluationSchema = z.object({
     localizacao: z.string(),
     area: z.number(),
     area_privativa: z.number().optional(),
+    area_construida: z.number().optional(),
     quartos: z.number().optional(),
     suites: z.number().optional(),
     banheiros: z.number().optional(),
@@ -223,6 +225,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
           endereco_completo: data.imovel.endereco_completo ?? null,
           area_total: data.imovel.area_total,
           area_privativa: data.imovel.area_privativa ?? null,
+          area_construida: data.imovel.area_construida ?? null,
           quartos: data.imovel.quartos,
           suites: data.imovel.suites ?? null,
           banheiros: data.imovel.banheiros,
@@ -275,6 +278,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         tipo: data.imovel.tipo,
         area: c.area,
         area_privativa: c.area_privativa ?? null,
+        area_construida: c.area_construida ?? null,
         quartos: c.quartos ?? null,
         suites: c.suites ?? null,
         banheiros: c.banheiros ?? null,
@@ -300,6 +304,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         valor_maximo: aiResult.valor_maximo,
         valor_unitario_medio: aiResult.valor_unitario_medio,
         relatorio_json: aiResult,
+        versao_metodologia: 2,
       });
       if (errR) console.error("Erro ao salvar resultado final:", errR);
 
