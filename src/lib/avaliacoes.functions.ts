@@ -303,6 +303,16 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       });
       if (errR) console.error("Erro ao salvar resultado final:", errR);
 
+      // Só debita o crédito avulso depois que o laudo (avaliação + resultado)
+      // foi gravado com sucesso. Falhas anteriores lançam antes deste ponto.
+      if (consomeCredito && !errR) {
+        const { error: errCred } = await supabase
+          .from("profiles")
+          .update({ creditos_avulsos: Math.max(0, creditos - 1) })
+          .eq("id", userId);
+        if (errCred) console.error("Falha ao debitar crédito avulso:", errCred.message);
+      }
+
       return { id: avaliacao.id, ...aiResult };
     } catch (error: any) {
       console.error("Erro crítico no fluxo de avaliação:", error);
