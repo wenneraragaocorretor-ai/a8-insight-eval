@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated")({
     if (typeof window === "undefined") return;
     const { data, error } = await supabase.auth.getSession();
     if (error || !data.session) {
-      throw redirect({ to: "/auth" });
+      throw redirect({ to: "/auth", search: { plan: undefined } });
     }
     return { user: data.session.user };
   },

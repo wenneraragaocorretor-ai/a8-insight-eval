@@ -59,7 +59,7 @@ const fmtBRL = (v: number | null | undefined) =>
 
 function AvaliacaoDetalhe() {
   const { avaliacao, resultado, comparaveis, profile } = Route.useLoaderData();
-  const rel = resultado?.relatorio_json || {};
+  const rel: any = (resultado?.relatorio_json as any) || {};
   const navigate = useNavigate();
   const router = useRouter();
 

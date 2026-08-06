@@ -101,7 +101,7 @@ function AfiliadosLoginPage() {
               <Button type="submit" className="w-full bg-brand-blue" disabled={isLoading}>
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
-              <Link to="/auth" className="text-xs text-muted-foreground hover:text-foreground">
+              <Link to="/auth" search={{ plan: undefined }} className="text-xs text-muted-foreground hover:text-foreground">
                 Não é afiliado? Acessar login normal
               </Link>
             </CardFooter>
