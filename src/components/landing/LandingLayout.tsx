@@ -43,6 +43,7 @@ function SiteNav() {
         <div className="flex items-center gap-3">
           <Link
             to="/auth"
+            search={{ plan: undefined }}
             className="hidden sm:inline-flex text-sm text-white/90 hover:text-[#C8A951] transition-colors px-3 py-2"
           >
             Entrar
@@ -108,7 +109,7 @@ function Footer() {
               <li><a href="/#diferenciais" className="hover:text-[#C8A951] transition-colors">Diferenciais</a></li>
               <li><a href="/#como-funciona" className="hover:text-[#C8A951] transition-colors">Como funciona</a></li>
               <li><a href="/#planos" className="hover:text-[#C8A951] transition-colors">Planos</a></li>
-              <li><Link to="/auth" className="hover:text-[#C8A951] transition-colors">Entrar</Link></li>
+              <li><Link to="/auth" search={{ plan: undefined }} className="hover:text-[#C8A951] transition-colors">Entrar</Link></li>
             </ul>
           </div>
 
