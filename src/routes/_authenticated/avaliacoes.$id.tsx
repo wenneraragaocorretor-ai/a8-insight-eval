@@ -502,12 +502,7 @@ function AvaliacaoDetalhe() {
             </TableHeader>
             <TableBody>
               {comparaveis.map((c: any) => {
-                const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
-                const priv = Number(c.area_privativa);
-                const total = Number(c.area);
-                const areaBase = tn.includes("terreno")
-                  ? total
-                  : (Number.isFinite(priv) && priv > 0 ? priv : total);
+                const areaBase = areaBaseDe(avaliacao?.tipo_imovel, c).area;
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.fonte}</TableCell>
