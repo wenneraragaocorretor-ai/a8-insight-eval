@@ -219,7 +219,7 @@ const novoComparavel = (id: number): Comparavel => ({
   valor: 0,
 });
 
-export const Route = createFileRoute("/_authenticated/avaliacoes/nova")({
+export const Route = createFileRoute("/_authenticated/avaliacoes/nova" as any)({
   validateSearch: (s: Record<string, unknown>): { edit?: string } => ({
     edit: typeof s.edit === "string" ? s.edit : undefined,
   }),
