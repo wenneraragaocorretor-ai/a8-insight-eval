@@ -120,6 +120,12 @@ const evaluationSchema = z.object({
   })).min(3),
 });
 
+// Limites mensais de laudos por plano — DEVEM ser idênticos aos da
+// Edge Function `gerar-avaliacao`.
+const LIMITE_MENSAL_PROFISSIONAL = 8;
+const LIMITE_MENSAL_EXPERT = 20;
+
+
 export function limiteEdicoesPorPlano(plano: string): number | null {
   switch (plano) {
     case "expert":
