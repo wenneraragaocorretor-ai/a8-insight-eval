@@ -56,6 +56,7 @@ export type Database = {
           ambientes_servico: Json | null
           ambientes_sociais: Json | null
           andar: number | null
+          area_construida: number | null
           area_privativa: number | null
           area_total: number | null
           banheiros: number | null
@@ -98,6 +99,7 @@ export type Database = {
           ambientes_servico?: Json | null
           ambientes_sociais?: Json | null
           andar?: number | null
+          area_construida?: number | null
           area_privativa?: number | null
           area_total?: number | null
           banheiros?: number | null
@@ -140,6 +142,7 @@ export type Database = {
           ambientes_servico?: Json | null
           ambientes_sociais?: Json | null
           andar?: number | null
+          area_construida?: number | null
           area_privativa?: number | null
           area_total?: number | null
           banheiros?: number | null
@@ -254,6 +257,7 @@ export type Database = {
         Row: {
           andar: number | null
           area: number | null
+          area_construida: number | null
           area_privativa: number | null
           avaliacao_id: string
           banheiros: number | null
@@ -278,6 +282,7 @@ export type Database = {
         Insert: {
           andar?: number | null
           area?: number | null
+          area_construida?: number | null
           area_privativa?: number | null
           avaliacao_id: string
           banheiros?: number | null
@@ -302,6 +307,7 @@ export type Database = {
         Update: {
           andar?: number | null
           area?: number | null
+          area_construida?: number | null
           area_privativa?: number | null
           avaliacao_id?: string
           banheiros?: number | null
@@ -491,6 +497,7 @@ export type Database = {
           valor_maximo: number | null
           valor_minimo: number | null
           valor_unitario_medio: number | null
+          versao_metodologia: number | null
         }
         Insert: {
           avaliacao_id: string
@@ -504,6 +511,7 @@ export type Database = {
           valor_maximo?: number | null
           valor_minimo?: number | null
           valor_unitario_medio?: number | null
+          versao_metodologia?: number | null
         }
         Update: {
           avaliacao_id?: string
@@ -517,6 +525,7 @@ export type Database = {
           valor_maximo?: number | null
           valor_minimo?: number | null
           valor_unitario_medio?: number | null
+          versao_metodologia?: number | null
         }
         Relationships: [
           {
@@ -554,6 +563,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gravar_avaliacao_com_credito: {
+        Args: {
+          p_avaliacao_data: Json
+          p_comparaveis_data: Json
+          p_consome_credito: boolean
+          p_resultado_data: Json
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -118,6 +118,7 @@ function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): R
         ? Math.round(override / reg.areaAvaliada)
         : Math.round(reg.valorM2);
     resultado.metodo_calculo = "regressao_linear";
+    resultado.versao_metodologia = resultado.versao_metodologia || 2;
   }
   return reg;
 }

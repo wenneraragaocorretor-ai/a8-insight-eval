@@ -68,6 +68,7 @@ const evaluationSchema = z.object({
     endereco_completo: z.string().optional(),
     area_total: z.number(),
     area_privativa: z.number().optional(),
+    area_construida: z.number().optional(),
     quartos: z.number(),
     suites: z.number().optional(),
     banheiros: z.number(),
@@ -105,6 +106,7 @@ const evaluationSchema = z.object({
     localizacao: z.string(),
     area: z.number(),
     area_privativa: z.number().optional(),
+    area_construida: z.number().optional(),
     quartos: z.number().optional(),
     suites: z.number().optional(),
     banheiros: z.number().optional(),
@@ -212,69 +214,61 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       }
 
 
-      const { data: avaliacao, error: errA } = await supabase
-        .from("avaliacoes")
-        .insert({
-          user_id: userId,
-          tipo_relatorio: "Estudo de Mercado Simplificado",
-          tipo_imovel: data.imovel.tipo,
-          finalidade: data.imovel.finalidade,
-          localizacao: data.imovel.localizacao,
-          endereco_completo: data.imovel.endereco_completo ?? null,
-          area_total: data.imovel.area_total,
-          area_privativa: data.imovel.area_privativa ?? null,
-          quartos: data.imovel.quartos,
-          suites: data.imovel.suites ?? null,
-          banheiros: data.imovel.banheiros,
-          vagas: data.imovel.vagas,
-          andar: data.imovel.andar ?? null,
-          padrao: data.imovel.padrao,
-          conservacao: data.imovel.conservacao,
-          posicao: data.imovel.posicao ?? null,
-          caracteristicas: data.imovel.caracteristicas,
-          observacoes: data.imovel.observacoes,
-          fotos: data.imovel.fotos ?? [],
-          fotos_meta: (() => {
-            const baseMeta = Array.isArray(data.imovel.fotos_meta) ? data.imovel.fotos_meta : [];
-            const aiPerFoto = Array.isArray(aiResult.analise_fotos_individual) ? aiResult.analise_fotos_individual : [];
-            return baseMeta.map((m: any, i: number) => ({
-              path: m.path,
-              legenda: m.legenda ?? "",
-              principal: !!m.principal,
-              comentario_ia: typeof aiPerFoto[i] === "string" ? aiPerFoto[i] : (aiPerFoto[i]?.comentario ?? ""),
-            }));
-          })(),
-          idade_real: data.imovel.idade_real ?? null,
-          idade_aparente: data.imovel.idade_aparente ?? null,
-          posicao_solar: data.imovel.posicao_solar ?? null,
-          topografia: data.imovel.topografia ?? null,
-          zoneamento: data.imovel.zoneamento ?? null,
-          infraestrutura_lazer: data.imovel.infraestrutura_lazer ?? [],
-          vagas_cobertas: data.imovel.vagas_cobertas ?? null,
-          vagas_descobertas: data.imovel.vagas_descobertas ?? null,
-          total_andares: data.imovel.total_andares ?? null,
-          tipo_acabamento: data.imovel.tipo_acabamento ?? [],
-          numero_pavimentos: data.imovel.numero_pavimentos ?? null,
-          ambientes_sociais: data.imovel.ambientes_sociais ?? [],
-          ambientes_servico: data.imovel.ambientes_servico ?? [],
-          ambientes_outros: data.imovel.ambientes_outros ?? [],
-          status: "concluido",
-        })
-        .select()
-        .single();
-
-
-      if (errA) throw errA;
-
-
+      // Prepara os dados para a transação RPC
+      const avaliacaoData = {
+        tipo_relatorio: "Estudo de Mercado Simplificado",
+        tipo_imovel: data.imovel.tipo,
+        finalidade: data.imovel.finalidade,
+        localizacao: data.imovel.localizacao,
+        endereco_completo: data.imovel.endereco_completo ?? null,
+        area_total: data.imovel.area_total,
+        area_privativa: data.imovel.area_privativa ?? null,
+        area_construida: data.imovel.area_construida ?? null,
+        quartos: data.imovel.quartos,
+        suites: data.imovel.suites ?? null,
+        banheiros: data.imovel.banheiros,
+        vagas: data.imovel.vagas,
+        andar: data.imovel.andar ?? null,
+        padrao: data.imovel.padrao,
+        conservacao: data.imovel.conservacao,
+        posicao: data.imovel.posicao ?? null,
+        caracteristicas: data.imovel.caracteristicas,
+        observacoes: data.imovel.observacoes,
+        fotos: data.imovel.fotos ?? [],
+        fotos_meta: (() => {
+          const baseMeta = Array.isArray(data.imovel.fotos_meta) ? data.imovel.fotos_meta : [];
+          const aiPerFoto = Array.isArray(aiResult.analise_fotos_individual) ? aiResult.analise_fotos_individual : [];
+          return baseMeta.map((m: any, i: number) => ({
+            path: m.path,
+            legenda: m.legenda ?? "",
+            principal: !!m.principal,
+            comentario_ia: typeof aiPerFoto[i] === "string" ? aiPerFoto[i] : (aiPerFoto[i]?.comentario ?? ""),
+          }));
+        })(),
+        idade_real: data.imovel.idade_real ?? null,
+        idade_aparente: data.imovel.idade_aparente ?? null,
+        posicao_solar: data.imovel.posicao_solar ?? null,
+        topografia: data.imovel.topografia ?? null,
+        zoneamento: data.imovel.zoneamento ?? null,
+        infraestrutura_lazer: data.imovel.infraestrutura_lazer ?? [],
+        vagas_cobertas: data.imovel.vagas_cobertas ?? null,
+        vagas_descobertas: data.imovel.vagas_descobertas ?? null,
+        total_andares: data.imovel.total_andares ?? null,
+        tipo_acabamento: data.imovel.tipo_acabamento ?? [],
+        numero_pavimentos: data.imovel.numero_pavimentos ?? null,
+        ambientes_sociais: data.imovel.ambientes_sociais ?? [],
+        ambientes_servico: data.imovel.ambientes_servico ?? [],
+        ambientes_outros: data.imovel.ambientes_outros ?? [],
+        status: "concluido",
+      };
 
       const comparaveisData = data.comparaveis.map(c => ({
-        avaliacao_id: avaliacao.id,
         fonte: c.fonte,
         localizacao: c.localizacao,
         tipo: data.imovel.tipo,
         area: c.area,
         area_privativa: c.area_privativa ?? null,
+        area_construida: c.area_construida ?? null,
         quartos: c.quartos ?? null,
         suites: c.suites ?? null,
         banheiros: c.banheiros ?? null,
@@ -289,31 +283,29 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         valor_anunciado: c.valor,
       }));
 
-      const { error: errC } = await supabase.from("comparaveis").insert(comparaveisData);
-      if (errC) console.error("Erro ao salvar comparáveis:", errC);
-
-      const { error: errR } = await supabase.from("resultados").insert({
-        avaliacao_id: avaliacao.id,
-        user_id: userId,
+      const resultadoData = {
         valor_minimo: aiResult.valor_minimo,
         valor_central: aiResult.valor_central,
         valor_maximo: aiResult.valor_maximo,
         valor_unitario_medio: aiResult.valor_unitario_medio,
         relatorio_json: aiResult,
-      });
-      if (errR) console.error("Erro ao salvar resultado final:", errR);
+        versao_metodologia: 2,
+      };
 
-      // Só debita o crédito avulso depois que o laudo (avaliação + resultado)
-      // foi gravado com sucesso. Falhas anteriores lançam antes deste ponto.
-      if (consomeCredito && !errR) {
-        const { error: errCred } = await supabase
-          .from("profiles")
-          .update({ creditos_avulsos: Math.max(0, creditos - 1) })
-          .eq("id", userId);
-        if (errCred) console.error("Falha ao debitar crédito avulso:", errCred.message);
+      // Executa a transação via RPC
+      const { data: avaliacaoId, error: rpcError } = await supabase.rpc("gravar_avaliacao_com_credito", {
+        p_avaliacao_data: avaliacaoData,
+        p_comparaveis_data: comparaveisData,
+        p_resultado_data: resultadoData,
+        p_consome_credito: consomeCredito
+      });
+
+      if (rpcError) {
+        console.error("Erro na transação RPC:", rpcError);
+        throw new Error("Falha ao gravar avaliação e atualizar créditos: " + rpcError.message);
       }
 
-      return { id: avaliacao.id, ...aiResult };
+      return { id: avaliacaoId, ...aiResult };
     } catch (error: any) {
       console.error("Erro crítico no fluxo de avaliação:", error);
       throw new Error(error.message || "Falha ao processar avaliação");

@@ -321,7 +321,8 @@ ${fotosImagens.length > 0 ? `ANÁLISE DAS FOTOS (OBRIGATÓRIO): As ${fotosImagen
 - Finalidade: ${imovel.finalidade}
 - Localização: ${imovel.localizacao}
 - Área total: ${imovel.area_total}m²
-- Área privativa/construída: ${fmt(imovel.area_privativa)}m²
+- Área privativa/útil: ${fmt(imovel.area_privativa)}m²
+- Área construída: ${fmt(imovel.area_construida)}m²
 - ÁREA BASE DO CÁLCULO (NBR 14653-2): ${baseImovel.area}m² (${baseImovel.label})
 - Quartos: ${imovel.quartos} | Suítes: ${fmt(imovel.suites)} | Banheiros: ${imovel.banheiros} | Vagas: ${imovel.vagas}
 - Andar: ${fmt(imovel.andar)}

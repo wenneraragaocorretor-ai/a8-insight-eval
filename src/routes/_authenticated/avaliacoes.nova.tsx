@@ -138,6 +138,7 @@ const camposDoTipo = (tipo: string) => {
     vagas: true,
     andar: false,
     areaPrivativa: true,
+    areaConstruida: false,
     conservacao: true,
     caracteristicas: true,
   };
@@ -146,7 +147,7 @@ const camposDoTipo = (tipo: string) => {
       return { ...base, andar: true };
     case "Casa":
     case "Sobrado":
-      return { ...base, andar: false };
+      return { ...base, andar: false, areaConstruida: true };
     case "Terreno":
       return {
         ...base,
@@ -160,7 +161,7 @@ const camposDoTipo = (tipo: string) => {
         caracteristicas: false,
       };
     case "Sala Comercial":
-      return { ...base, quartos: false, suites: false, andar: true };
+      return { ...base, quartos: false, suites: false, andar: true, areaConstruida: false };
     case "Galpão":
       return {
         ...base,
@@ -169,6 +170,7 @@ const camposDoTipo = (tipo: string) => {
         banheiros: true,
         andar: false,
         areaPrivativa: false,
+        areaConstruida: true,
       };
     default:
       return base;
@@ -181,6 +183,7 @@ type Comparavel = {
   localizacao: string;
   area: number;
   area_privativa: number;
+  area_construida: number;
   quartos: number;
   suites: number;
   banheiros: number;
@@ -201,6 +204,7 @@ const novoComparavel = (id: number): Comparavel => ({
   localizacao: "",
   area: 0,
   area_privativa: 0,
+  area_construida: 0,
   quartos: 0,
   suites: 0,
   banheiros: 0,
@@ -304,6 +308,7 @@ function NovaAvaliacao() {
     ambientes_servico_outros: "",
     ambientes_outros: [] as string[],
     ambientes_outros_livres: "",
+    area_construida: 0,
   });
 
   const [planoReal, setPlanoReal] = useState<string>("basico");
@@ -545,6 +550,7 @@ function NovaAvaliacao() {
               localizacao: c.localizacao ?? "",
               area: Number(c.area) || 0,
               area_privativa: Number(c.area_privativa) || 0,
+              area_construida: Number(c.area_construida) || 0,
               quartos: Number(c.quartos) || 0,
               suites: Number(c.suites) || 0,
               banheiros: Number(c.banheiros) || 0,
@@ -670,6 +676,7 @@ function NovaAvaliacao() {
         vagas: novoCampos.vagas ? prev.vagas : 0,
         andar: novoCampos.andar ? prev.andar : 0,
         area_privativa: novoCampos.areaPrivativa ? prev.area_privativa : 0,
+        area_construida: novoCampos.areaConstruida ? prev.area_construida : 0,
         conservacao: novoCampos.conservacao ? prev.conservacao : "Bom",
         caracteristicas: novoCampos.caracteristicas ? prev.caracteristicas : [],
       }));
@@ -737,6 +744,7 @@ function NovaAvaliacao() {
           imovel: {
             ...imovel,
             area_privativa: c.areaPrivativa ? imovel.area_privativa || undefined : undefined,
+            area_construida: c.areaConstruida ? imovel.area_construida || undefined : undefined,
             quartos: c.quartos ? imovel.quartos : 0,
             suites: c.suites ? imovel.suites || undefined : undefined,
             banheiros: c.banheiros ? imovel.banheiros : 0,
@@ -813,6 +821,7 @@ function NovaAvaliacao() {
             localizacao: c2.localizacao,
             area: c2.area,
             area_privativa: c.areaPrivativa ? c2.area_privativa || undefined : undefined,
+            area_construida: c.areaConstruida ? c2.area_construida || undefined : undefined,
             quartos: c.quartos ? c2.quartos || undefined : undefined,
             suites: c.suites ? c2.suites || undefined : undefined,
             banheiros: c.banheiros ? c2.banheiros || undefined : undefined,
@@ -910,6 +919,17 @@ function NovaAvaliacao() {
                 onChange={(e) => setImovelField("area_total", toNum(e.target.value))}
               />
             </div>
+            {campos.areaConstruida && (
+              <div className="space-y-2">
+                <Label>Área Construída (m²)</Label>
+                <Input
+                  type="number"
+                  value={imovel.area_construida || ""}
+                  placeholder="Informe a área edificada"
+                  onChange={(e) => setImovelField("area_construida", toNum(e.target.value))}
+                />
+              </div>
+            )}
             {campos.areaPrivativa && (
               <div className="space-y-2">
                 <Label>Área Privativa (m²)</Label>
@@ -1431,6 +1451,13 @@ function NovaAvaliacao() {
                     </p>
                   )}
                 </div>
+                {campos.areaConstruida && (
+                  <div className="space-y-2">
+                    <Label>Área Construída (m²)</Label>
+                    <Input type="number" value={c.area_construida || ""} placeholder="Opcional"
+                      onChange={(e) => updateComp(index, { area_construida: toNum(e.target.value) })} />
+                  </div>
+                )}
                 {campos.areaPrivativa && (
                   <div className="space-y-2">
                     <Label>Área Privativa (m²)</Label>
