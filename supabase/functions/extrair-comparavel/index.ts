@@ -182,34 +182,25 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    let parsed: URL;
-    try { parsed = new URL(url); } catch {
-      return new Response(JSON.stringify({ error: "URL inválida" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (!["http:", "https:"].includes(parsed.protocol)) {
-      return new Response(JSON.stringify({ error: "URL inválida" }), {
+    const parsed = validarUrlPublica(url);
+    if (!parsed) {
+      return new Response(JSON.stringify({ error: "URL inválida ou não permitida" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch the page HTML
+    // Fetch the page HTML (redirects revalidados, teto de bytes, só HTML)
     let html = "";
+    let finalUrl = parsed;
     try {
-      const resp = await fetch(parsed.toString(), {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; A8Avalia/1.0; +https://a8avalia.com.br)",
-          "Accept": "text/html,application/xhtml+xml",
-        },
-        redirect: "follow",
-      });
-      if (!resp.ok) {
-        return new Response(JSON.stringify({ error: `Falha ao acessar URL (status ${resp.status})` }), {
-          status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      const r = await fetchHtmlSeguro(parsed);
+      if (!r.ok) {
+        return new Response(JSON.stringify({ error: r.error }), {
+          status: r.status, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      html = await resp.text();
+      html = r.html;
+      finalUrl = r.finalUrl;
     } catch (e: any) {
       return new Response(JSON.stringify({ error: "Não foi possível acessar a página: " + (e?.message ?? "erro de rede") }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -217,7 +208,7 @@ serve(async (req) => {
     }
 
     const htmlLimpo = limparHtml(html);
-    const dominio = parsed.hostname.replace(/^www\./, "");
+    const dominio = finalUrl.hostname.replace(/^www\./, "");
 
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") ?? Deno.env.get("CHAVE_API_ANTROPICA") ?? "";
     if (!anthropicKey) {
