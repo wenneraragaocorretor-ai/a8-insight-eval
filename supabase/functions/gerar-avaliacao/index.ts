@@ -7,6 +7,79 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// ===== Validação rigorosa do JSON devolvido pela IA =====
+// Erro de validação = nada é gravado e nenhum crédito é consumido.
+class RespostaIAInvalida extends Error {}
+
+/** Converte números vindos como texto ("R$ 450.000,00", "5.000,50") quando seguro. */
+const numeroMonetario = z.preprocess((v) => {
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    const limpo = v.replace(/[^\d.,-]/g, '').trim()
+    if (!limpo) return v
+    // pt-BR: ponto = milhar, vírgula = decimal
+    const normalizado = limpo.includes(',')
+      ? limpo.replace(/\./g, '').replace(',', '.')
+      : limpo
+    const n = Number(normalizado)
+    return Number.isFinite(n) ? n : v
+  }
+  return v
+}, z.number().finite().positive())
+
+const textoObrigatorio = z.preprocess(
+  (v) => (typeof v === 'string' ? v.trim() : v),
+  z.string().min(1),
+)
+const listaTextos = z.array(z.union([z.string(), z.record(z.any())])).min(1)
+
+function buildResultadoSchema(qtdFotos: number) {
+  return z
+    .object({
+      valor_minimo: numeroMonetario,
+      valor_central: numeroMonetario,
+      valor_maximo: numeroMonetario,
+      valor_unitario_medio: numeroMonetario,
+      area_base_calculo: numeroMonetario,
+      area_base_tipo: textoObrigatorio,
+      area_base_descricao: textoObrigatorio,
+      resumo_texto: textoObrigatorio,
+      pontos_positivos: listaTextos,
+      pontos_atencao: z.array(z.union([z.string(), z.record(z.any())])),
+      potencial_valorizacao: textoObrigatorio,
+      tendencias_mercado: textoObrigatorio,
+      perfil_profissao: textoObrigatorio,
+      perfil_renda: textoObrigatorio,
+      perfil_preferencias: textoObrigatorio,
+      perfil_interesses: textoObrigatorio,
+      analise_bairro: z.record(z.any()),
+      perfil_publico: z.record(z.any()),
+      dicas_precificacao: listaTextos,
+      estrategias_venda: listaTextos,
+      dicas_anuncio: listaTextos,
+      analise_fotos: z.string(),
+      analise_fotos_individual: z.array(z.union([z.string(), z.record(z.any())])),
+    })
+    .passthrough()
+    .superRefine((v, ctx) => {
+      if (!(v.valor_minimo <= v.valor_central && v.valor_central <= v.valor_maximo)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['valor_central'],
+          message: 'faixa incoerente: exige valor_minimo <= valor_central <= valor_maximo',
+        })
+      }
+      if (v.analise_fotos_individual.length !== qtdFotos) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['analise_fotos_individual'],
+          message: `esperado ${qtdFotos} item(ns), recebido ${v.analise_fotos_individual.length}`,
+        })
+      }
+    })
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
