@@ -8,6 +8,7 @@ import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 import { gerarMarketingAvaliacao, type MarketingResultado } from "../../lib/marketing.functions";
 import { modelosDisponiveis, type ModeloPdf } from "../../lib/pdfReport";
+import { areaBaseDe, labelValorM2, sufixoAreaBase } from "../../lib/areaBase";
 import { supabase } from "../../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
@@ -265,19 +266,16 @@ function AvaliacaoDetalhe() {
             )}
           </div>
           {(() => {
-            const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
             const total = Number(avaliacao?.area_total);
-            const priv = Number((avaliacao as any)?.area_privativa);
-            const isApto = tn.includes("apart") || tn.includes("sala") || tn.includes("loja");
-            const isTerreno = tn.includes("terreno") || tn.includes("lote");
-            let areaTxt = "";
-            if (isTerreno) {
-              areaTxt = `${total} m² terreno`;
-            } else if (isApto && Number.isFinite(priv) && priv > 0) {
-              areaTxt = `${priv} m² privativos${Number.isFinite(total) && total > 0 && total !== priv ? ` | ${total} m² totais` : ""}`;
-            } else {
-              areaTxt = `${total} m² construídos`;
-            }
+            const base = areaBaseDe(avaliacao?.tipo_imovel, avaliacao);
+            const areaTxt =
+              base.area > 0
+                ? `${base.area} m² (${base.label})${
+                    Number.isFinite(total) && total > 0 && total !== base.area
+                      ? ` | ${total} m² totais`
+                      : ""
+                  }`
+                : `${Number.isFinite(total) ? total : 0} m²`;
             return (
               <p className="text-muted-foreground">
                 {avaliacao?.tipo_imovel} • {avaliacao?.localizacao} • {areaTxt}
@@ -354,19 +352,19 @@ function AvaliacaoDetalhe() {
           <CardContent>
             <div className="text-3xl font-bold text-brand-gold">{fmtBRL(resultado?.valor_central)}</div>
             {(() => {
-              const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
               const total = Number(avaliacao?.area_total);
-              const priv = Number((avaliacao as any)?.area_privativa);
-              const isApto = tn.includes("apart") || tn.includes("sala") || tn.includes("loja");
-              const isTerreno = tn.includes("terreno") || tn.includes("lote");
+              const base = areaBaseDe(avaliacao?.tipo_imovel, avaliacao);
               const vc = Number(resultado?.valor_central);
               const vum = Number(resultado?.valor_unitario_medio);
-              let baseLabel = "construído";
-              let baseArea = total;
-              if (isTerreno) { baseLabel = "terreno"; baseArea = total; }
-              else if (isApto && Number.isFinite(priv) && priv > 0) { baseLabel = "privativo"; baseArea = priv; }
-              const valorBase = Number.isFinite(vum) && vum > 0 ? vum : (baseArea > 0 ? vc / baseArea : 0);
-              const showTotalRef = isApto && Number.isFinite(priv) && priv > 0 && Number.isFinite(total) && total > 0 && total !== priv && vc > 0;
+              const baseLabel = labelValorM2(avaliacao?.tipo_imovel).replace("Valor/m² ", "");
+              const valorBase =
+                Number.isFinite(vum) && vum > 0 ? vum : base.area > 0 ? vc / base.area : 0;
+              const showTotalRef =
+                base.fonte !== "total" &&
+                Number.isFinite(total) &&
+                total > 0 &&
+                total !== base.area &&
+                vc > 0;
               return (
                 <>
                   {valorBase > 0 && (
@@ -491,25 +489,18 @@ function AvaliacaoDetalhe() {
                 <TableHead>Localização</TableHead>
                 <TableHead className="text-right">
                   Área (m²){" "}
-                  {(() => {
-                    const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
-                    if (tn.includes("terreno") || tn.includes("lote")) return <span className="text-xs font-normal text-muted-foreground">terreno</span>;
-                    if (tn.includes("apart") || tn.includes("sala") || tn.includes("loja")) return <span className="text-xs font-normal text-muted-foreground">privativa</span>;
-                    return <span className="text-xs font-normal text-muted-foreground">construída</span>;
-                  })()}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {sufixoAreaBase(avaliacao?.tipo_imovel)}
+                  </span>
                 </TableHead>
                 <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">R$/m²</TableHead>
+                <TableHead className="text-right">{labelValorM2(avaliacao?.tipo_imovel).replace("Valor/m²", "R$/m²")}</TableHead>
+
               </TableRow>
             </TableHeader>
             <TableBody>
               {comparaveis.map((c: any) => {
-                const tn = String(avaliacao?.tipo_imovel ?? "").toLowerCase();
-                const priv = Number(c.area_privativa);
-                const total = Number(c.area);
-                const areaBase = tn.includes("terreno")
-                  ? total
-                  : (Number.isFinite(priv) && priv > 0 ? priv : total);
+                const areaBase = areaBaseDe(avaliacao?.tipo_imovel, c).area;
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.fonte}</TableCell>

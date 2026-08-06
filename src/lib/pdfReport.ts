@@ -2,6 +2,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
+// Regra única de área-base (espelhada em supabase/functions/_shared/area-base.ts)
+import { areaBaseDe, labelValorM2, sufixoAreaBase } from "./areaBase";
 
 // ============================================================
 // A8 Avalia — PDF Premium (portrait A4)
@@ -48,49 +50,8 @@ const fmtBRL = (v: number | null | undefined) =>
     ? "—"
     : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
-// ABNT NBR 14653-2 — área base para R$/m² conforme tipo de imóvel.
-// Apartamento: privativa → construída → total.
-// Casa/Sobrado: construída → privativa → total.
-// Galpão: privativa/útil → construída → total.
-// Terreno: total.
-function areaBaseDe(tipo: any, item: any): { area: number; label: string; fonte: "privativa" | "construida" | "total" | "util" } {
-  const tn = String(tipo ?? "").toLowerCase();
-  const priv = Number(item?.area_privativa);
-  const constr = Number(item?.area_construida);
-  const total = Number(item?.area_total ?? item?.area);
-  if (tn.includes("terreno")) {
-    return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
-  }
-  if (tn.includes("casa") || tn.includes("sobrado")) {
-    if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
-    if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
-    return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
-  }
-  if (tn.includes("galp") || tn.includes("barrac")) {
-    if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
-    if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
-    return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
-  }
-  // Apartamento, sala comercial, loja e demais
-  if (Number.isFinite(priv) && priv > 0) return { area: priv, label: "área privativa", fonte: "privativa" };
-  if (Number.isFinite(constr) && constr > 0) return { area: constr, label: "área construída", fonte: "construida" };
-  return { area: Number.isFinite(total) ? total : 0, label: "área total", fonte: "total" };
-}
-
-function labelValorM2(tipo: any): string {
-  const tn = String(tipo ?? "").toLowerCase();
-  if (tn.includes("terreno") || tn.includes("lote")) return "Valor/m² terreno";
-  if (tn.includes("casa") || tn.includes("sobrado") || tn.includes("galp") || tn.includes("barrac")) return "Valor/m² construído";
-  return "Valor/m² privativo";
-}
-
-// Sufixo curto p/ rotular eixo Y / variável dependente em gráficos e equações.
-function sufixoAreaBase(tipo: any): string {
-  const tn = String(tipo ?? "").toLowerCase();
-  if (tn.includes("terreno") || tn.includes("lote")) return "terreno";
-  if (tn.includes("casa") || tn.includes("sobrado") || tn.includes("galp") || tn.includes("barrac")) return "construído";
-  return "privativo";
-}
+// A regra de área-base, o rótulo de R$/m² e o sufixo de eixo vêm de
+// `src/lib/areaBase.ts` (fonte única, espelhada nas Edge Functions).
 
 // ---------- Regressão linear (mínimos quadrados) sobre comparáveis ----------
 // Pontos: (área_base_i, valor/m²_i). Aplica a equação à área do imóvel avaliando.
