@@ -133,6 +133,50 @@ function AdminTestIA() {
     }
   };
 
+  const testBuscarComparaveis = async () => {
+    setLoading(true);
+    setResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Não autenticado");
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/buscar-comparaveis`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          imovel: {
+            tipo: "Apartamento",
+            localizacao: "Moema, São Paulo",
+            area_total: 100,
+            quartos: 3
+          },
+          comparaveis_atuais: []
+        })
+      });
+
+      const data = await response.json();
+      setResult({
+        status: response.status,
+        ok: response.ok,
+        data
+      });
+
+      if (response.ok) {
+        toast.success("Busca automática testada");
+      } else {
+        toast.error(`Erro ${response.status}: ${data.error || "Erro desconhecido"}`);
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+      setResult({ error: e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-8 space-y-8">
       <div>
@@ -150,6 +194,10 @@ function AdminTestIA() {
         <Button onClick={testExtrairComparavel} disabled={loading} variant="outline">
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Testar Extrair Comparável
+        </Button>
+        <Button onClick={testBuscarComparaveis} disabled={loading} variant="secondary">
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Testar Busca Automática
         </Button>
       </div>
 
