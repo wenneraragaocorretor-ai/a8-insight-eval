@@ -821,7 +821,7 @@ function NovaAvaliacao() {
         </div>
       )}
 
-      <div className={`mb-8 flex items-center justify-between ${mockResult ? 'opacity-20 pointer-events-none' : ''}`}>
+      <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-brand-blue">
             {isEdit ? "Editar Laudo" : "Nova Avaliação"}
