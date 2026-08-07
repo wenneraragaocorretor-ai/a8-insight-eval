@@ -126,7 +126,9 @@ function Dashboard() {
       }
 
 
-      const sucesso = isPayment ? creditosOk : (assinaturaAtivaOk && !!detected);
+      // Sucesso se creditos aumentaram ou assinatura ativa foi confirmada.
+      // O Stripe Webhook processa a atualização, mas o polling aqui dá a resposta imediata.
+      const sucesso = isPayment ? creditosOk : (assinaturaAtivaOk && !!detected && planoMudou);
       if (sucesso) {
         if (isPayment && plano === "expert_extra") {
           setWelcomePlano("Expert (Laudo Avulso)");
@@ -184,7 +186,7 @@ function Dashboard() {
     ? "Administrador (acesso total ilimitado)"
     : status?.plano ? (PLAN_LABEL[status.plano] ?? "—") : "—";
   const planoCode = status?.plano ?? null;
-  const ehBasico = !ehAdmin && (planoCode === "basico" || planoCode === "user");
+  const ehBasico = !ehAdmin && (planoCode === "basico" || planoCode === "user" || !planoCode);
   const ehExpert = !ehAdmin && planoCode === "expert";
   const usadas = status?.avaliacoesMes ?? 0;
   const limite = status?.limiteMes;
@@ -196,7 +198,7 @@ function Dashboard() {
   const limiteAtingido = temPlanoAtivo && (
     ehBasico
       ? creditos <= 0
-      : ehProfissional && limite != null && usadas >= limite
+      : (ehProfissional || ehExpert) && limite != null && usadas >= limite
   );
 
   return (
