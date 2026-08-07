@@ -138,16 +138,7 @@ function AdminTestIA() {
       <div>
         <h1 className="text-3xl font-bold text-brand-blue mb-2">Auditoria Técnica de IA</h1>
         <p className="text-muted-foreground">
-          Execute um teste real das funções gerar-avaliacao e extrair-comparavel usando dados fictícios válidos. Consulte os logs depois de cada execução e informe:
-        </p>
-        <ol className="list-decimal ml-6 mt-4 space-y-1 text-muted-foreground">
-          <li>o status HTTP;</li>
-          <li>se a Anthropic respondeu corretamente;</li>
-          <li>o nome do modelo utilizado;</li>
-          <li>qualquer erro encontrado.</li>
-        </ol>
-        <p className="mt-4 font-semibold text-destructive">
-          Não revele, imprima nem registre o valor de ANTHROPIC_API_KEY.
+          Antes de publicar, confirme que a rota /admin/test-ia está protegida e acessível somente a usuários administradores autenticados. Ela não pode mostrar a ANTHROPIC_API_KEY nem qualquer outro secret na interface, nas respostas ou nos logs. Depois, revise se os testes utilizam dados fictícios e não alteram dados reais.
         </p>
       </div>
 
