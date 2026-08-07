@@ -1622,11 +1622,31 @@ function NovaAvaliacao() {
               <h2 className="text-2xl font-bold text-brand-blue">Tudo pronto!</h2>
               <p className="text-muted-foreground">Nossa IA irá analisar os dados e gerar seu relatório.</p>
             </div>
+            
+            {statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-left">
+                <p className="text-red-800 text-sm font-medium flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Sem créditos disponíveis
+                </p>
+                <p className="text-red-600 text-xs mt-1">
+                  Você precisa adquirir um laudo ou assinar um plano para gerar a avaliação.
+                </p>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-xs text-brand-blue underline mt-2"
+                  onClick={() => navigate({ to: "/planos" })}
+                >
+                  Ver planos e preços
+                </Button>
+              </div>
+            )}
+
             <div className="flex flex-col gap-4 max-w-sm mx-auto">
               <Button
                 onClick={handleProcessar}
                 className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold gap-2"}
-                disabled={isLoading}
+                disabled={isLoading || (statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && !isEdit)}
               >
                 {isLoading ? (
                   <>
