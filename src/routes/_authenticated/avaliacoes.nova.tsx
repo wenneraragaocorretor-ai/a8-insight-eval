@@ -262,6 +262,7 @@ const calcularValorM2 = (valor: number, area: number): number | null => {
 function NovaAvaliacao() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorDetail, setErrorDetail] = useState<{ mensagem: string, stack?: string } | null>(null);
   const navigate = useNavigate();
   const search = Route.useSearch();
   const editId = search.edit;
@@ -745,104 +746,82 @@ function NovaAvaliacao() {
 
   const processandoRef = useRef(false);
 
-  const [mockResult, setMockResult] = useState<any>(null);
+  
 
   const handleProcessar = async () => {
-    console.log("[DIAG 01] CLIQUE DETECTADO");
+    if (processandoRef.current) return;
     setIsLoading(true);
+    setErrorDetail(null);
     processandoRef.current = true;
-    
-    // Teste de mutação de estado e timer
-    const timer = setTimeout(() => {
-      console.log("[DIAG 02] TIMER EXECUTADO");
+
+    try {
+      const idempotencyKey = crypto.randomUUID();
+      const correlationId = crypto.randomUUID();
+      
+      console.log("[LAUDO 01] Iniciando processamento real...");
+      
+      const res = isEdit 
+        ? await regerarIA({ data: { id: editId!, imovel, comparaveis } })
+        : await processarIA({ data: { imovel, comparaveis, idempotencyKey, correlationId } });
+
+      console.log("[LAUDO 10] Processamento concluído com sucesso");
+      toast.success(isEdit ? "Laudo atualizado!" : "Laudo gerado com sucesso!");
+      navigate({ to: "/avaliacoes/$id", params: { id: res.id } });
+    } catch (e: any) {
+      console.error("[LAUDO ERR] Falha no processamento:", e);
+      
+      // Tenta extrair erro detalhado se vier da Edge Function
+      let msg = e.message || "Erro desconhecido";
+      let stack = e.stack;
+      
+      try {
+        if (e.message && e.message.includes("{")) {
+          const detailed = JSON.parse(e.message.substring(e.message.indexOf("{")));
+          if (detailed.erro) {
+            msg = detailed.mensagem;
+            stack = detailed.stack;
+          }
+        }
+      } catch {}
+
+      setErrorDetail({ mensagem: msg, stack });
+      toast.error("Falha ao gerar avaliação. Veja os detalhes abaixo.");
+    } finally {
       setIsLoading(false);
       processandoRef.current = false;
-      setMockResult("MOCK LOCAL FUNCIONOU");
-      toast.success("DIAGNÓSTICO: Clique processado!");
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    }
   };
-
-
 
 
   return (
     <div className="max-w-4xl mx-auto py-8">
-      <div className="bg-red-500 text-white p-4 mb-4 text-center font-bold text-xl rounded-lg border-4 border-yellow-400">
-        DIAGNÓSTICO V3 — {new Date().toLocaleString('pt-BR')} — Local: {typeof window !== 'undefined' ? window.location.pathname : 'SSR'}
-      </div>
-      {mockResult === "MOCK LOCAL FUNCIONOU" && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-10">
-          <div className="bg-white p-20 rounded-2xl shadow-2xl border-8 border-green-500 text-center animate-in zoom-in duration-500">
-             <h1 className="text-6xl font-black text-brand-blue mb-10">MOCK LOCAL FUNCIONOU</h1>
-             <Button size="lg" className="text-2xl py-10 px-20 bg-brand-gold hover:bg-brand-gold/90" onClick={() => setMockResult(null)}>
-                OK, ENTENDI
-             </Button>
+      {errorDetail && (
+        <div className="mb-6 p-6 bg-red-50 border-2 border-red-200 rounded-xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2 text-red-800 mb-2">
+            <AlertTriangle className="h-5 w-5" />
+            <h3 className="font-bold">Erro Detalhado na Geração</h3>
           </div>
-        </div>
-      )}
-      {mockResult && mockResult !== "MOCK LOCAL FUNCIONOU" && (
-
-        <div className="mb-8 p-6 border-4 border-dashed border-brand-gold bg-brand-gold/5 rounded-xl animate-in fade-in zoom-in duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="flex h-3 w-3 rounded-full bg-brand-gold animate-ping" />
-              <h2 className="text-xl font-bold text-brand-blue uppercase tracking-wider">
-                Modo de diagnóstico — Mock local
-              </h2>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setMockResult(null)}>
-              Voltar ao formulário
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground mb-6">
-            Este é uma pré-visualização local. Nada foi salvo no banco de dados e nenhum crédito foi consumido.
-            Os logs [LAUDO 01-07] estão disponíveis no console.
-          </p>
-          
-          <div className="bg-white rounded-lg shadow-2xl p-1 border border-border overflow-hidden">
-             <div className="bg-muted/50 p-2 text-[10px] font-mono text-center border-b">
-                RENDERIZANDO: AvaliacaoDetalhe (Injetado via Mock)
-             </div>
-             {/* Injetamos o componente de resultado aqui para o Teste A */}
-             {(() => {
-                console.log("[LOCAL 07] Pré-visualização renderizada");
-                // Como não podemos importar o componente facilmente aqui devido à estrutura de rotas,
-                // vamos simular a visualização ou redirecionar se o router permitir.
-                // Para o Teste A, vamos renderizar uma versão simplificada do resultado.
-                return (
-                  <div className="p-8 text-center space-y-4">
-                    <Sparkles className="mx-auto h-12 w-12 text-brand-gold" />
-                    <h3 className="text-2xl font-bold text-brand-blue">Laudo Gerado com Sucesso</h3>
-                    <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-8">
-                       <div className="p-4 bg-muted rounded-lg">
-                          <p className="text-xs text-muted-foreground">Mínimo</p>
-                          <p className="text-lg font-bold">R$ 1.275.000</p>
-                       </div>
-                       <div className="p-4 bg-brand-gold/10 border border-brand-gold rounded-lg">
-                          <p className="text-xs text-brand-gold font-bold">VALOR CENTRAL</p>
-                          <p className="text-xl font-black text-brand-blue">R$ 1.500.000</p>
-                       </div>
-                       <div className="p-4 bg-muted rounded-lg">
-                          <p className="text-xs text-muted-foreground">Máximo</p>
-                          <p className="text-lg font-bold">R$ 1.725.000</p>
-                       </div>
-                    </div>
-                    <div className="mt-8 p-4 text-left bg-muted/30 rounded-lg text-sm italic">
-                       "{mockResult.resultado.relatorio_json.resumo_texto}"
-                    </div>
-                    <Button className="mt-4 bg-brand-blue" onClick={() => toast.info("Download desativado no modo mock")}>
-                       <Download className="mr-2 h-4 w-4" /> Simular Download PDF
-                    </Button>
-                  </div>
-                );
-             })()}
-          </div>
+          <p className="text-red-700 font-medium mb-3">{errorDetail.mensagem}</p>
+          {errorDetail.stack && (
+            <details className="mt-2">
+              <summary className="text-xs text-red-600 cursor-pointer hover:underline">Ver stack trace</summary>
+              <pre className="mt-2 p-3 bg-white/50 text-[10px] font-mono text-red-500 overflow-auto max-h-40 rounded border border-red-100">
+                {errorDetail.stack}
+              </pre>
+            </details>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-4 border-red-200 text-red-700 hover:bg-red-100"
+            onClick={() => setErrorDetail(null)}
+          >
+            Fechar aviso
+          </Button>
         </div>
       )}
 
-      <div className={`mb-8 flex items-center justify-between ${mockResult ? 'opacity-20 pointer-events-none' : ''}`}>
+      <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-brand-blue">
             {isEdit ? "Editar Laudo" : "Nova Avaliação"}
