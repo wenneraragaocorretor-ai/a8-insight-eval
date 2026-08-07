@@ -763,8 +763,10 @@ function NovaAvaliacao() {
     try {
       const c = camposDoTipo(imovel.tipo);
       console.log("[LAUDO 02] Validando dados do formulário");
+      const idempotencyKey = crypto.randomUUID();
       const payload = {
         data: {
+          idempotencyKey,
           imovel: {
             ...imovel,
             area_privativa: c.areaPrivativa ? imovel.area_privativa || undefined : undefined,
