@@ -31,7 +31,7 @@ const PW = 210; // page width portrait A4
 const PH = 297; // page height portrait A4
 const M = 25;   // horizontal margin (vertical bands use literals ~12-20mm)
 
-export type PlanoUsuario = "basico" | "profissional" | "expert" | "admin" | string;
+export type PlanoUsuario = "basico" | "profissional" | "expert" | string;
 export type ModeloPdf = 1 | 2 | 3;
 export type CorretorInfo = {
   nome: string;
