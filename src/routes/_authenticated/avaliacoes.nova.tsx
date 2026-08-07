@@ -748,83 +748,19 @@ function NovaAvaliacao() {
   const [mockResult, setMockResult] = useState<any>(null);
 
   const handleProcessar = async () => {
-    const correlationId = crypto.randomUUID();
-    if (processandoRef.current) {
-      console.log("[LAUDO WARN] Já existe um processamento em curso. Ignorando clique duplo.");
-      return;
-    }
+    console.log("[LOCAL 01] CLIQUE");
+    setIsLoading(true);
+    processandoRef.current = true;
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      processandoRef.current = false;
+      setMockResult("MOCK LOCAL FUNCIONOU");
+      console.log("[LOCAL 02] MOCK LOCAL FUNCIONOU");
+    }, 500);
+    return;
+  };
 
-    // --- TESTE A: MODO LOCAL MOCK ---
-    const USE_LOCAL_MOCK = true; 
-
-    if (USE_LOCAL_MOCK) {
-      console.log("[LOCAL 01] Clique recebido", { correlationId });
-      setIsLoading(true);
-      processandoRef.current = true;
-      
-      try {
-        const c = camposDoTipo(imovel.tipo);
-        console.log("[LOCAL 02] Dados validados");
-        
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const rawMock = {
-          valor_minimo: 1275000,
-          valor_central: 1500000,
-          valor_maximo: 1725000,
-          valor_unitario_medio: 15000,
-          area_base_calculo: 100,
-          area_base_tipo: "privativa",
-          area_base_descricao: "Área Privativa",
-          resumo_texto: "Imóvel de alto padrão com excelente localização e acabamento diferenciado.",
-          pontos_positivos: ["Localização privilegiada", "Acabamento em mármore", "Andar alto"],
-          pontos_atencao: ["Valor do condomínio acima da média"],
-          potencial_valorizacao: "Alta, devido ao desenvolvimento da infraestrutura no entorno.",
-          tendencias_mercado: "Estabilidade com viés de alta para imóveis desta tipologia.",
-          perfil_profissao: "Executivos e profissionais liberais.",
-          perfil_renda: "Acima de 20 salários mínimos.",
-          perfil_preferencias: "Buscam conforto, segurança e status.",
-          perfil_interesses: "Gastronomia, viagens e investimentos.",
-          analise_bairro: { seguranca: "Excelente", servicos: "Completos" },
-          perfil_publico: { idade: "35-55 anos", familia: "Casais com filhos" },
-          dicas_precificacao: ["Manter o valor dentro da margem de negociação de 5%."],
-          estrategias_venda: ["Destacar a vista livre e o projeto de iluminação."],
-          dicas_anuncio: ["Utilizar fotos profissionais e tour virtual."],
-          analise_fotos: "As fotos atuais estão boas, mas poderiam ser mais claras.",
-          analise_fotos_individual: ["Foto 1: Ótima iluminação", "Foto 2: Ângulo favorece o espaço"],
-        };
-
-        console.log("[LOCAL 03] Mock criado");
-        
-        const { evaluationResultSchema } = await import("../../lib/schemas");
-        const parsed = evaluationResultSchema.safeParse(rawMock);
-        
-        if (!parsed.success) {
-          console.error("[LAUDO ERR] Falha no Schema validado:", parsed.error);
-          throw new Error("Mock local incompatível com o schema.");
-        }
-        
-        console.log("[LOCAL 04] Schema validado");
-        
-        setMockResult({
-          avaliacao: { ...imovel, id: "mock-id", tipo_imovel: imovel.tipo },
-          resultado: { relatorio_json: parsed.data, valor_central: parsed.data.valor_central },
-          comparaveis: comparaveis.map(c => ({ ...c, valor_anunciado: c.valor })),
-          profile: { nome: "Usuário Teste", plano: "expert" }
-        });
-        
-        console.log("[LOCAL 05] Resultado salvo no estado");
-        toast.success("Modo de diagnóstico — Mock local ativo");
-      } catch (err: any) {
-        console.error("[LAUDO ERR] Falha no Teste A:", err);
-        toast.error("Falha no mock local: " + err.message);
-      } finally {
-        setIsLoading(false);
-        processandoRef.current = false;
-        console.log("[LOCAL 06] Loading encerrado");
-      }
-      return;
-    }
 
     if (!isEdit && expertAtingiuLimite) {
       console.warn("[LAUDO 01.1] Limite atingido");
