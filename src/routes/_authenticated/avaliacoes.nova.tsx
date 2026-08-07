@@ -820,65 +820,6 @@ function NovaAvaliacao() {
           </Button>
         </div>
       )}
-      {mockResult && mockResult !== "MOCK LOCAL FUNCIONOU" && (
-
-        <div className="mb-8 p-6 border-4 border-dashed border-brand-gold bg-brand-gold/5 rounded-xl animate-in fade-in zoom-in duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="flex h-3 w-3 rounded-full bg-brand-gold animate-ping" />
-              <h2 className="text-xl font-bold text-brand-blue uppercase tracking-wider">
-                Modo de diagnóstico — Mock local
-              </h2>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setMockResult(null)}>
-              Voltar ao formulário
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground mb-6">
-            Este é uma pré-visualização local. Nada foi salvo no banco de dados e nenhum crédito foi consumido.
-            Os logs [LAUDO 01-07] estão disponíveis no console.
-          </p>
-          
-          <div className="bg-white rounded-lg shadow-2xl p-1 border border-border overflow-hidden">
-             <div className="bg-muted/50 p-2 text-[10px] font-mono text-center border-b">
-                RENDERIZANDO: AvaliacaoDetalhe (Injetado via Mock)
-             </div>
-             {/* Injetamos o componente de resultado aqui para o Teste A */}
-             {(() => {
-                console.log("[LOCAL 07] Pré-visualização renderizada");
-                // Como não podemos importar o componente facilmente aqui devido à estrutura de rotas,
-                // vamos simular a visualização ou redirecionar se o router permitir.
-                // Para o Teste A, vamos renderizar uma versão simplificada do resultado.
-                return (
-                  <div className="p-8 text-center space-y-4">
-                    <Sparkles className="mx-auto h-12 w-12 text-brand-gold" />
-                    <h3 className="text-2xl font-bold text-brand-blue">Laudo Gerado com Sucesso</h3>
-                    <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-8">
-                       <div className="p-4 bg-muted rounded-lg">
-                          <p className="text-xs text-muted-foreground">Mínimo</p>
-                          <p className="text-lg font-bold">R$ 1.275.000</p>
-                       </div>
-                       <div className="p-4 bg-brand-gold/10 border border-brand-gold rounded-lg">
-                          <p className="text-xs text-brand-gold font-bold">VALOR CENTRAL</p>
-                          <p className="text-xl font-black text-brand-blue">R$ 1.500.000</p>
-                       </div>
-                       <div className="p-4 bg-muted rounded-lg">
-                          <p className="text-xs text-muted-foreground">Máximo</p>
-                          <p className="text-lg font-bold">R$ 1.725.000</p>
-                       </div>
-                    </div>
-                    <div className="mt-8 p-4 text-left bg-muted/30 rounded-lg text-sm italic">
-                       "{mockResult.resultado.relatorio_json.resumo_texto}"
-                    </div>
-                    <Button className="mt-4 bg-brand-blue" onClick={() => toast.info("Download desativado no modo mock")}>
-                       <Download className="mr-2 h-4 w-4" /> Simular Download PDF
-                    </Button>
-                  </div>
-                );
-             })()}
-          </div>
-        </div>
-      )}
 
       <div className={`mb-8 flex items-center justify-between ${mockResult ? 'opacity-20 pointer-events-none' : ''}`}>
         <div>
