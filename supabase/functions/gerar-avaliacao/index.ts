@@ -622,11 +622,35 @@ Devolva EXATAMENTE este JSON (sem texto extra, sem markdown):
 
 
 
+    // Mark as completed in monitoring table
+    await admin.from('ai_generation_requests').update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      model: 'claude-3-5-sonnet-20241022'
+    }).eq('idempotency_key', idempotencyKey)
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('Erro na Edge Function:', error.message)
+    console.error(`[LAUDO ERR] Erro na Edge Function. correlationId=${correlationId}:`, error.message)
+    
+    // Attempt to log failure in monitoring table if correlationId/idempotencyKey exist
+    if (typeof idempotencyKey !== 'undefined' && idempotencyKey) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        const admin = createClient(supabaseUrl, serviceKey)
+        await admin.from('ai_generation_requests').update({
+          status: 'failed',
+          completed_at: new Date().toISOString(),
+          error_message: error.message
+        }).eq('idempotency_key', idempotencyKey)
+      } catch (logErr) {
+        console.error('Failed to log error to ai_generation_requests:', logErr.message)
+      }
+    }
+
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
