@@ -212,9 +212,10 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         throw new Error("Erro na comunicação com o motor de IA: " + edgeError.message);
       }
 
-      if (aiResult.error) {
-        console.error("[LAUDO ERR] Erro retornado pela Edge Function:", aiResult.error);
-        throw new Error(aiResult.error);
+      if (aiResult.error || aiResult.erro) {
+        console.error("[LAUDO ERR] Erro retornado pela Edge Function:", aiResult);
+        // Retorna o objeto de erro completo como string JSON para o frontend capturar
+        throw new Error(JSON.stringify(aiResult));
       }
 
       console.log("[LAUDO 05] Resposta da IA recebida com sucesso");
