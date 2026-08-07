@@ -198,10 +198,13 @@ Deno.serve(async (req) => {
             const { data: blob, error } = await supa.storage.from('avaliacoes-fotos').download(p)
             if (error || !blob) continue
             const buf = new Uint8Array(await blob.arrayBuffer())
-            // base64 encode
-            let bin = ''
-            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i])
-            const base64 = btoa(bin)
+            // base64 encode otimizado para evitar estouro de pilha e economizar CPU
+            let base64 = ''
+            const CHUNK_SIZE = 8192
+            for (let i = 0; i < buf.length; i += CHUNK_SIZE) {
+              const chunk = buf.slice(i, i + CHUNK_SIZE)
+              base64 += btoa(String.fromCharCode.apply(null, Array.from(chunk)))
+            }
             const mediaType = blob.type || (p.toLowerCase().endsWith('.png') ? 'image/png' : p.toLowerCase().endsWith('.webp') ? 'image/webp' : 'image/jpeg')
             fotosImagens.push({ mediaType, base64 })
           } catch (e) {
