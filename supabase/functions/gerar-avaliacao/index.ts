@@ -175,10 +175,10 @@ Deno.serve(async (req) => {
 
 
     const { imovel, comparaveis } = await req.json()
-    const anthropicApiKey = Deno.env.get('CHAVE_API_ANTROPICA')
+    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
 
     if (!anthropicApiKey) {
-      throw new Error('CHAVE_API_ANTROPICA não configurada')
+      throw new Error('ANTHROPIC_API_KEY não configurada')
     }
 
 
