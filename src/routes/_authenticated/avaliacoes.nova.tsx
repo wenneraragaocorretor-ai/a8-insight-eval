@@ -748,24 +748,29 @@ function NovaAvaliacao() {
   const [mockResult, setMockResult] = useState<any>(null);
 
   const handleProcessar = async () => {
-    console.log("[LOCAL 01] CLIQUE");
+    console.log("[DIAG 01] CLIQUE DETECTADO");
     setIsLoading(true);
     processandoRef.current = true;
     
-    setTimeout(() => {
+    // Teste de mutação de estado e timer
+    const timer = setTimeout(() => {
+      console.log("[DIAG 02] TIMER EXECUTADO");
       setIsLoading(false);
       processandoRef.current = false;
       setMockResult("MOCK LOCAL FUNCIONOU");
-      console.log("[LOCAL 02] MOCK LOCAL FUNCIONOU");
-    }, 500);
+      toast.success("DIAGNÓSTICO: Clique processado!");
+    }, 1000);
+
+    return () => clearTimeout(timer);
   };
+
 
 
 
   return (
     <div className="max-w-4xl mx-auto py-8">
       <div className="bg-red-500 text-white p-4 mb-4 text-center font-bold text-xl rounded-lg border-4 border-yellow-400">
-        BUILD MOCK LOCAL V2 — {new Date().toLocaleString('pt-BR')}
+        DIAGNÓSTICO V3 — {new Date().toLocaleString('pt-BR')} — Local: {typeof window !== 'undefined' ? window.location.pathname : 'SSR'}
       </div>
       {mockResult === "MOCK LOCAL FUNCIONOU" && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-10">
