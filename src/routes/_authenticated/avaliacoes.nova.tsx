@@ -738,11 +738,9 @@ function NovaAvaliacao() {
     }
     setIsLoading(true);
     const timeout = setTimeout(() => {
-      if (isLoading) {
-        setIsLoading(false);
-        toast.error("Não foi possível gerar o laudo. Verifique sua conexão e tente novamente.");
-      }
-    }, 60000); // 60s timeout
+      setIsLoading(false);
+      toast.error("O processamento está demorando mais que o esperado. Por favor, tente novamente em instantes.");
+    }, 90000); // 90s timeout para dar margem à IA
 
     try {
       const c = camposDoTipo(imovel.tipo);
@@ -852,9 +850,12 @@ function NovaAvaliacao() {
         navigate({ to: `/avaliacoes/${editId}` });
       } else {
         result = await processarIA(payload);
-        toast.success("Avaliação concluída com sucesso!");
-        if (result && result.id) navigate({ to: `/avaliacoes/${result.id}` });
-        else navigate({ to: "/dashboard" });
+        if (result && result.id) {
+          toast.success("Avaliação concluída com sucesso!");
+          navigate({ to: `/avaliacoes/${result.id}` });
+        } else {
+          throw new Error("A IA processou, mas não retornou um ID de avaliação válido.");
+        }
       }
     } catch (e: any) {
       console.error("[processar_ia] Erro crítico:", {
