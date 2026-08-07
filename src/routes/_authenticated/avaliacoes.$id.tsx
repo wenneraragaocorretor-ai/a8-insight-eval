@@ -24,8 +24,14 @@ import { ExpertChat } from "../../components/ExpertChat";
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
+    if (params.id.startsWith("mock-")) {
+      const stored = sessionStorage.getItem(`mock_laudo_${params.id}`);
+      if (stored) return JSON.parse(stored);
+      throw new Error("Mock laudo não encontrado no cache local");
+    }
     return await getAvaliacaoDetalhe({ data: { id: params.id } });
   },
+
   errorComponent: ({ error }) => {
     console.error("[LAUDO ERR] Erro ao renderizar AvaliacaoDetalhe:", error);
     const isUnauthorized = error.message?.includes("permissão") || error.message?.includes("permissao");
@@ -343,12 +349,14 @@ function AvaliacaoDetalhe() {
               onClick={() => navigate({ to: "/avaliacoes/nova", search: { edit: avaliacao.id } as any })}
               className="gap-2 border-[#0F2D5C] text-[#0F2D5C] hover:bg-[#0F2D5C] hover:text-white"
               disabled={(() => {
+                if (avaliacao.id.startsWith("mock-")) return true; // Bloqueado no Mock
                 const lim = limiteEdicoesPorPlano(plano);
                 return lim !== null && ((avaliacao as any)?.edicoes_count ?? 0) >= lim;
               })()}
             >
-              <Pencil size={16} /> Editar Laudo
+              <Pencil size={16} /> {avaliacao.id.startsWith("mock-") ? "Edição bloqueada (Mock)" : "Editar Laudo"}
             </Button>
+
             <Button 
               onClick={handleDownload} 
               className="gap-2 bg-brand-gold text-primary-foreground"
