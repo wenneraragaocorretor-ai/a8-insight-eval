@@ -731,7 +731,7 @@ function NovaAvaliacao() {
   };
 
   const handleProcessar = async () => {
-    console.log("[LAUDO 01] Início da geração", { userId, step, isEdit });
+    console.log("[LAUDO 01] Início da geração", { step, isEdit });
 
     // Expert que atingiu 20/mês sem créditos: abrir modal em vez de bloquear
     if (!isEdit && expertAtingiuLimite) {
