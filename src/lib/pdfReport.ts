@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 // Regra única de área-base (espelhada em supabase/functions/_shared/area-base.ts)
 import { areaBaseDe, labelValorM2, sufixoAreaBase } from "./areaBase";
+import type { RegressaoLinear } from "./areaBase";
 
 // ============================================================
 // A8 Avalia — PDF Premium (portrait A4)
@@ -303,7 +304,7 @@ function rodape(doc: jsPDF) {
     doc.text("A8", M, PH - 7);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
-    doc.setTextColor(...NAVY);
+    doc.setTextColor(...BLUE);
     doc.text("A8 AVALIA — AVALIAÇÕES COM IA", M + 6, PH - 7);
 
     // Disclaimer central em itálico cinza
