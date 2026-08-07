@@ -31,7 +31,23 @@ const textoObrigatorio = z.preprocess(
   (v) => (typeof v === 'string' ? v.trim() : v),
   z.string().min(1),
 )
+
 const listaTextos = z.array(z.union([z.string(), z.record(z.any())])).min(1)
+
+const analiseBairroSchema = z.object({
+  bairro: z.string(),
+  cidade: z.string(),
+  potencial_valorizacao: z.string(),
+  tendencias_mercado: z.string(),
+  descricao: z.string()
+})
+
+const perfilPublicoSchema = z.object({
+  profissao: z.string(),
+  renda_media: z.string(),
+  preferencias: z.string(),
+  interesses: z.string()
+})
 
 function buildResultadoSchema(qtdFotos: number) {
   return z
@@ -52,8 +68,8 @@ function buildResultadoSchema(qtdFotos: number) {
       perfil_renda: textoObrigatorio,
       perfil_preferencias: textoObrigatorio,
       perfil_interesses: textoObrigatorio,
-      analise_bairro: z.record(z.any()),
-      perfil_publico: z.record(z.any()),
+      analise_bairro: analiseBairroSchema,
+      perfil_publico: perfilPublicoSchema,
       dicas_precificacao: listaTextos,
       estrategias_venda: listaTextos,
       dicas_anuncio: listaTextos,
@@ -274,6 +290,19 @@ Deno.serve(async (req) => {
         analise_fotos: "Fotos analisadas (mock): conservação boa.",
         analise_fotos_individual: (imovel.fotos || []).map((_, i) => `Foto ${i+1}: mock comment`)
       };
+
+      // Validar mock contra o schema para garantir consistência
+      const qtdFotos = Array.isArray(imovel.fotos) ? imovel.fotos.length : 0;
+      const schema = buildResultadoSchema(qtdFotos);
+      try {
+        schema.parse(mockResult);
+        console.log(`[MOCK_VAL_OK] Mock data matches schema for correlationId=${correlationId}`);
+      } catch (err) {
+        console.error(`[MOCK_VAL_ERR] Mock data schema mismatch: ${err.message}`);
+        return new Response(JSON.stringify({ error: "Erro interno na geração mock (schema mismatch)" }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       // Mark as completed in monitoring table
       await admin.from('ai_generation_requests').update({
