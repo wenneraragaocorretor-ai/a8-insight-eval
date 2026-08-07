@@ -1434,6 +1434,15 @@ function NovaAvaliacao() {
                   </Button>
                   <Button
                     variant="ghost"
+                    size="sm"
+                    type="button"
+                    onClick={() => duplicarComparavel(index)}
+                    className="gap-1 text-brand-blue"
+                  >
+                    <Copy size={16} /> Duplicar
+                  </Button>
+                  <Button
+                    variant="ghost"
                     size="icon"
                     onClick={() => removeComparavel(c.id)}
                     className="text-destructive"
