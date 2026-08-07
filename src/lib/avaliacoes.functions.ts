@@ -61,6 +61,7 @@ export const atualizarValorFinalCorretor = createServerFn({ method: "POST" })
 
 
 const evaluationSchema = z.object({
+  idempotencyKey: z.string().uuid().optional(),
   imovel: z.object({
     tipo: z.string(),
     finalidade: z.string(),
@@ -302,7 +303,8 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         p_avaliacao_data: avaliacaoData,
         p_comparaveis_data: comparaveisData,
         p_resultado_data: resultadoData,
-        p_consome_credito: consomeCredito
+        p_consome_credito: consomeCredito,
+        p_idempotency_key: data.idempotencyKey
       });
 
       if (rpcError) {
