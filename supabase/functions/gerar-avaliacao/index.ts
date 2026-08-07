@@ -31,7 +31,23 @@ const textoObrigatorio = z.preprocess(
   (v) => (typeof v === 'string' ? v.trim() : v),
   z.string().min(1),
 )
+
 const listaTextos = z.array(z.union([z.string(), z.record(z.any())])).min(1)
+
+const analiseBairroSchema = z.object({
+  bairro: z.string(),
+  cidade: z.string(),
+  potencial_valorizacao: z.string(),
+  tendencias_mercado: z.string(),
+  descricao: z.string()
+})
+
+const perfilPublicoSchema = z.object({
+  profissao: z.string(),
+  renda_media: z.string(),
+  preferencias: z.string(),
+  interesses: z.string()
+})
 
 function buildResultadoSchema(qtdFotos: number) {
   return z
@@ -52,8 +68,8 @@ function buildResultadoSchema(qtdFotos: number) {
       perfil_renda: textoObrigatorio,
       perfil_preferencias: textoObrigatorio,
       perfil_interesses: textoObrigatorio,
-      analise_bairro: z.record(z.any()),
-      perfil_publico: z.record(z.any()),
+      analise_bairro: analiseBairroSchema,
+      perfil_publico: perfilPublicoSchema,
       dicas_precificacao: listaTextos,
       estrategias_venda: listaTextos,
       dicas_anuncio: listaTextos,
