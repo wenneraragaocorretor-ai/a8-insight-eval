@@ -80,9 +80,22 @@ function buildResultadoSchema(qtdFotos: number) {
 }
 
 
+const AI_GENERATION_ENABLED = Deno.env.get('AI_GENERATION_ENABLED') !== 'false'
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // EMERGENCY SHUTDOWN CHECK
+  if (!AI_GENERATION_ENABLED) {
+    return new Response(JSON.stringify({ 
+      error: 'Geração temporariamente indisponível para manutenção.',
+      code: 'EMERGENCY_SHUTDOWN'
+    }), {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   try {
@@ -174,8 +187,105 @@ Deno.serve(async (req) => {
     }
 
 
-    const { imovel, comparaveis } = await req.json()
+    const { imovel, comparaveis, correlationId, idempotencyKey } = await req.json()
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
+
+    console.log(`[GENERATION_REQUEST] correlationId=${correlationId} idempotencyKey=${idempotencyKey} userId=${userId.substring(0, 8)}... model=claude-3-5-sonnet-20241022`)
+
+    // IDEMPOTENCY CHECK (FASE 2)
+    // We check if this idempotencyKey was already processed successfully
+    const { data: existingRequest, error: checkError } = await admin
+      .from('ai_generation_requests')
+      .select('status, correlation_id, started_at')
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error(`[IDEMPOTENCY_ERR] Error checking request: ${checkError.message}`)
+    }
+
+    if (existingRequest) {
+      if (existingRequest.status === 'completed') {
+        console.log(`[IDEMPOTENCY_HIT] Request ${idempotencyKey} already completed. correlationId=${existingRequest.correlation_id}`)
+        // If completed, we should ideally return the stored result. 
+        // For now, to keep FASE 1 logic simple, we'll return a 200 with a notice if it's a mock turn.
+      } else if (existingRequest.status === 'processing') {
+        console.log(`[IDEMPOTENCY_HIT] Request ${idempotencyKey} is already being processed. started_at=${existingRequest.started_at}`)
+        return new Response(JSON.stringify({ 
+          error: 'Esta geração já está em processamento.',
+          code: 'ALREADY_PROCESSING'
+        }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
+    // Register/Update the request state
+    await admin.from('ai_generation_requests').upsert({
+      user_id: userId,
+      idempotency_key: idempotencyKey,
+      correlation_id: correlationId,
+      status: 'processing',
+      started_at: new Date().toISOString()
+    })
+
+    // MOCK RESPONSE FOR INVESTIGATION (FASE 2)
+    const USE_MOCK = true; // Hardcoded true to stop Anthropic calls immediately
+
+    if (USE_MOCK) {
+      console.log(`[MOCK_GENERATION] Returning mock data for correlationId=${correlationId}`);
+      // Simulate some processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockResult = {
+        valor_minimo: 450000,
+        valor_central: 500000,
+        valor_maximo: 550000,
+        valor_unitario_medio: 5000,
+        area_base_calculo: imovel.area_total || 100,
+        area_base_tipo: "Área Total",
+        area_base_descricao: "Cálculo baseado em Área Total",
+        resumo_texto: "ESTE É UM LAUDO MOCK PARA TESTE TÉCNICO. O imóvel apresenta características compatíveis com a região.",
+        pontos_positivos: ["Localização privilegiada", "Planta bem distribuída"],
+        pontos_atencao: ["Necessita pequena reforma", "Condomínio acima da média"],
+        potencial_valorizacao: "Bairro em constante crescimento e valorização.",
+        tendencias_mercado: "Alta procura por imóveis desta tipologia na região.",
+        perfil_profissao: "Profissionais liberais e executivos.",
+        perfil_renda: "R$ 10.000 a R$ 20.000",
+        perfil_preferencias: "Buscam segurança e proximidade com serviços.",
+        perfil_interesses: "Qualidade de vida, proximidade de parques e escolas.",
+        analise_bairro: {
+          bairro: "Bairro Teste",
+          cidade: "Cidade Teste/UF",
+          potencial_valorizacao: "Bairro em constante crescimento.",
+          tendencias_mercado: "Alta procura local.",
+          descricao: "Regra consolidada com infraestrutura completa."
+        },
+        perfil_publico: {
+          profissao: "Executivos",
+          renda_media: "R$ 15.000",
+          preferencias: "Segurança",
+          interesses: "Lazer"
+        },
+        dicas_precificacao: ["Anunciar no valor central para liquidez"],
+        estrategias_venda: ["Fotos profissionais", "Anúncio em portais"],
+        dicas_anuncio: ["Destaque a varanda gourmet"],
+        analise_fotos: "Fotos analisadas (mock): conservação boa.",
+        analise_fotos_individual: (imovel.fotos || []).map((_, i) => `Foto ${i+1}: mock comment`)
+      };
+
+      // Mark as completed in monitoring table
+      await admin.from('ai_generation_requests').update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        model: 'mock-logic-fase-2'
+      }).eq('idempotency_key', idempotencyKey)
+
+      return new Response(JSON.stringify(mockResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!anthropicApiKey) {
       throw new Error('ANTHROPIC_API_KEY não configurada')
@@ -512,11 +622,35 @@ Devolva EXATAMENTE este JSON (sem texto extra, sem markdown):
 
 
 
+    // Mark as completed in monitoring table
+    await admin.from('ai_generation_requests').update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      model: 'claude-3-5-sonnet-20241022'
+    }).eq('idempotency_key', idempotencyKey)
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('Erro na Edge Function:', error.message)
+    console.error(`[LAUDO ERR] Erro na Edge Function. correlationId=${correlationId}:`, error.message)
+    
+    // Attempt to log failure in monitoring table if correlationId/idempotencyKey exist
+    if (typeof idempotencyKey !== 'undefined' && idempotencyKey) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        const admin = createClient(supabaseUrl, serviceKey)
+        await admin.from('ai_generation_requests').update({
+          status: 'failed',
+          completed_at: new Date().toISOString(),
+          error_message: error.message
+        }).eq('idempotency_key', idempotencyKey)
+      } catch (logErr) {
+        console.error('Failed to log error to ai_generation_requests:', logErr.message)
+      }
+    }
+
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

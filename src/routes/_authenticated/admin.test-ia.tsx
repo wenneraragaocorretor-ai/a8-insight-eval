@@ -15,15 +15,19 @@ function AdminTestIA() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const testGerarAvaliacao = async () => {
+  const testGerarAvaliacao = async (isDuplicate = false) => {
     setLoading(true);
     setResult(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
-      // Dados fictícios para teste
+      const correlationId = crypto.randomUUID();
+      const idempotencyKey = crypto.randomUUID();
+
       const payload = {
+        correlationId,
+        idempotencyKey,
         imovel: {
           tipo: "Apartamento",
           finalidade: "Venda",
@@ -51,24 +55,11 @@ function AdminTestIA() {
             vagas: 1,
             padrao: "Alto",
             conservacao: "Bom"
-          },
-          {
-            fonte: "VivaReal",
-            localizacao: "Moema",
-            area: 110,
-            area_privativa: 95,
-            valor: 1500000,
-            quartos: 3,
-            suites: 2,
-            banheiros: 3,
-            vagas: 2,
-            padrao: "Alto",
-            conservacao: "Ótimo"
           }
         ]
       };
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-avaliacao`, {
+      const sendRequest = () => fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-avaliacao`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,17 +68,31 @@ function AdminTestIA() {
         body: JSON.stringify(payload)
       });
 
-      const data = await response.json();
+      let response;
+      let data2;
+
+      if (isDuplicate) {
+        toast.info("Enviando requisições simultâneas com a mesma chave...");
+        const [r1, r2] = await Promise.all([sendRequest(), sendRequest()]);
+        const d1 = await r1.json();
+        const d2 = await r2.json();
+        response = r1;
+        data2 = { attempt1: { status: r1.status, data: d1 }, attempt2: { status: r2.status, data: d2 } };
+      } else {
+        response = await sendRequest();
+        data2 = await response.json();
+      }
+
       setResult({
         status: response.status,
         ok: response.ok,
-        data
+        data: data2
       });
 
       if (response.ok) {
         toast.success("Teste concluído com sucesso");
       } else {
-        toast.error(`Erro ${response.status}: ${data.error || "Erro desconhecido"}`);
+        toast.error(`Erro ${response.status}: ${data2.error || "Erro desconhecido"}`);
       }
     } catch (e: any) {
       toast.error(e.message);
@@ -186,9 +191,13 @@ function AdminTestIA() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Button onClick={testGerarAvaliacao} disabled={loading} className="bg-brand-blue">
+        <Button onClick={() => testGerarAvaliacao(false)} disabled={loading} className="bg-brand-blue">
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Testar Gerar Avaliação
+          Testar Gerar Avaliação (Mock)
+        </Button>
+        <Button onClick={() => testGerarAvaliacao(true)} disabled={loading} variant="destructive">
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Testar Idempotência (Mock)
         </Button>
         <Button onClick={testExtrairComparavel} disabled={loading} variant="outline">
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
