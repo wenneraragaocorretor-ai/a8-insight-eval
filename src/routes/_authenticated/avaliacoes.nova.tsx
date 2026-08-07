@@ -758,13 +758,13 @@ function NovaAvaliacao() {
     const USE_LOCAL_MOCK = true; 
 
     if (USE_LOCAL_MOCK) {
-      console.log("[LAUDO 01] Clique recebido (Modo Local Mock)", { correlationId });
+      console.log("[LOCAL 01] Clique recebido", { correlationId });
       setIsLoading(true);
       processandoRef.current = true;
       
       try {
         const c = camposDoTipo(imovel.tipo);
-        console.log("[LAUDO 02] Dados validados localmente");
+        console.log("[LOCAL 02] Dados validados");
         
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -794,7 +794,7 @@ function NovaAvaliacao() {
           analise_fotos_individual: ["Foto 1: Ótima iluminação", "Foto 2: Ângulo favorece o espaço"],
         };
 
-        console.log("[LAUDO 03] Mock local criado");
+        console.log("[LOCAL 03] Mock criado");
         
         const { evaluationResultSchema } = await import("../../lib/schemas");
         const parsed = evaluationResultSchema.safeParse(rawMock);
@@ -804,7 +804,7 @@ function NovaAvaliacao() {
           throw new Error("Mock local incompatível com o schema.");
         }
         
-        console.log("[LAUDO 04] Schema validado com sucesso");
+        console.log("[LOCAL 04] Schema validado");
         
         setMockResult({
           avaliacao: { ...imovel, id: "mock-id", tipo_imovel: imovel.tipo },
@@ -813,7 +813,7 @@ function NovaAvaliacao() {
           profile: { nome: "Usuário Teste", plano: "expert" }
         });
         
-        console.log("[LAUDO 05] Estado do resultado atualizado");
+        console.log("[LOCAL 05] Resultado salvo no estado");
         toast.success("Modo de diagnóstico — Mock local ativo");
       } catch (err: any) {
         console.error("[LAUDO ERR] Falha no Teste A:", err);
@@ -821,7 +821,7 @@ function NovaAvaliacao() {
       } finally {
         setIsLoading(false);
         processandoRef.current = false;
-        console.log("[LAUDO 06] Loading encerrado");
+        console.log("[LOCAL 06] Loading encerrado");
       }
       return;
     }
@@ -994,7 +994,7 @@ function NovaAvaliacao() {
              </div>
              {/* Injetamos o componente de resultado aqui para o Teste A */}
              {(() => {
-                console.log("[LAUDO 07] Pré-visualização renderizada");
+                console.log("[LOCAL 07] Pré-visualização renderizada");
                 // Como não podemos importar o componente facilmente aqui devido à estrutura de rotas,
                 // vamos simular a visualização ou redirecionar se o router permitir.
                 // Para o Teste A, vamos renderizar uma versão simplificada do resultado.
