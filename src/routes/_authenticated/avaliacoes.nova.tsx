@@ -737,6 +737,13 @@ function NovaAvaliacao() {
       return;
     }
     setIsLoading(true);
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        setIsLoading(false);
+        toast.error("Não foi possível gerar o laudo. Verifique sua conexão e tente novamente.");
+      }
+    }, 60000); // 60s timeout
+
     try {
       const c = camposDoTipo(imovel.tipo);
       const payload = {
@@ -1600,13 +1607,20 @@ function NovaAvaliacao() {
             <div className="flex flex-col gap-4 max-w-sm mx-auto">
               <Button
                 onClick={handleProcessar}
-                className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold"}
+                className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold gap-2"}
                 disabled={isLoading}
               >
-                {isEdit ? <Pencil size={18} /> : null}
-                {isLoading
-                  ? (isEdit ? "Regenerando..." : "Processando...")
-                  : (isEdit ? "Regenerar Laudo" : "Gerar Avaliação com IA")}
+                {isLoading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    {isEdit ? "Regenerando..." : "Processando..."}
+                  </>
+                ) : (
+                  <>
+                    {isEdit ? <Pencil size={18} /> : <Sparkles size={18} />}
+                    {isEdit ? "Regenerar Laudo" : "Gerar Avaliação com IA"}
+                  </>
+                )}
               </Button>
               <Button variant="ghost" onClick={() => setStep(2)} disabled={isLoading}>Revisar dados</Button>
             </div>
