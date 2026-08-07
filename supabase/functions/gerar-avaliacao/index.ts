@@ -465,21 +465,24 @@ Devolva EXATAMENTE este JSON (sem texto extra, sem markdown):
   "descricao": "Resumo da região cobrindo perfil socioeconômico, infraestrutura, segurança, comércio e serviços (3-5 frases), baseado APENAS na pesquisa. Se sem dados, diga 'Não há dados públicos suficientes para o bairro.'"
 }`
 
-        const bairroResp = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': anthropicApiKey,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-5',
-            max_tokens: 2048,
-            system: bairroSystem,
-            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
-            messages: [{ role: 'user', content: bairroUser }],
+        const bairroResp = await Promise.race([
+          fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': anthropicApiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'claude-3-5-sonnet-20241022',
+              max_tokens: 1024,
+              system: bairroSystem,
+              tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
+              messages: [{ role: 'user', content: bairroUser }],
+            }),
           }),
-        })
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout na busca do bairro')), 25000))
+        ]) as Response
 
         if (bairroResp.ok) {
           const bairroData = await bairroResp.json()
