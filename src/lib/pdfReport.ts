@@ -111,8 +111,12 @@ function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any):
 // Aplica a regressão como valor oficial do resultado (central ±15%).
 // Anexa metadados em `resultado.regressao` para uso nas páginas do PDF.
 function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): RegressaoLinear {
+  console.log("[LAUDO 11.1] Iniciando cálculo de regressão para o PDF");
   const reg = calcularRegressao(avaliacao, comparaveis, resultado);
-  if (!resultado) return reg;
+  if (!resultado) {
+    console.warn("[LAUDO 11.2] Resultado não fornecido para aplicarRegressao");
+    return reg;
+  }
   
   // SEMPRE anexa o objeto de regressão ao resultado, mesmo que ok=false
   resultado.regressao = reg;
