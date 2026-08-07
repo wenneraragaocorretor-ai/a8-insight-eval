@@ -756,9 +756,9 @@ function NovaAvaliacao() {
     setIsLoading(true);
     const timeout = setTimeout(() => {
       setIsLoading(false);
-      console.error("[LAUDO ERR] Timeout de 120s atingido no frontend");
+      console.error("[LAUDO ERR] Timeout de 180s atingido no frontend");
       toast.error("O processamento está demorando mais que o esperado. Por favor, tente novamente em instantes.");
-    }, 120000); // 120s timeout para dar margem à IA
+    }, 180000); // 180s timeout para dar margem à IA
 
     try {
       const c = camposDoTipo(imovel.tipo);
