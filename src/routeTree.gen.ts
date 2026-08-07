@@ -23,6 +23,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as ApiPublicBuscarComparaveisRouteImport } from './routes/api/public/buscar-comparaveis'
 import { Route as AuthenticatedAvaliacoesNovaRouteImport } from './routes/_authenticated/avaliacoes.nova'
 import { Route as AuthenticatedAvaliacoesIdRouteImport } from './routes/_authenticated/avaliacoes.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
@@ -101,6 +102,12 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   path: '/api/public/stripe-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBuscarComparaveisRoute =
+  ApiPublicBuscarComparaveisRouteImport.update({
+    id: '/api/public/buscar-comparaveis',
+    path: '/api/public/buscar-comparaveis',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAvaliacoesNovaRoute =
   AuthenticatedAvaliacoesNovaRouteImport.update({
     id: '/avaliacoes/nova',
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
+  '/api/public/buscar-comparaveis': typeof ApiPublicBuscarComparaveisRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -183,6 +191,7 @@ export interface FileRoutesByTo {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
+  '/api/public/buscar-comparaveis': typeof ApiPublicBuscarComparaveisRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
@@ -207,6 +216,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/_authenticated/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
+  '/api/public/buscar-comparaveis': typeof ApiPublicBuscarComparaveisRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/avaliacoes/$id'
     | '/avaliacoes/nova'
+    | '/api/public/buscar-comparaveis'
     | '/api/public/stripe-webhook'
     | '/admin/'
     | '/dashboard/'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/avaliacoes/$id'
     | '/avaliacoes/nova'
+    | '/api/public/buscar-comparaveis'
     | '/api/public/stripe-webhook'
     | '/admin'
     | '/dashboard'
@@ -275,6 +287,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/avaliacoes/$id'
     | '/_authenticated/avaliacoes/nova'
+    | '/api/public/buscar-comparaveis'
     | '/api/public/stripe-webhook'
     | '/_authenticated/admin/'
     | '/_authenticated/dashboard/'
@@ -289,6 +302,7 @@ export interface RootRouteChildren {
   AfiliadosDashboardRoute: typeof AfiliadosDashboardRoute
   AfiliadosLoginRoute: typeof AfiliadosLoginRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPublicBuscarComparaveisRoute: typeof ApiPublicBuscarComparaveisRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
@@ -390,6 +404,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/stripe-webhook'
       fullPath: '/api/public/stripe-webhook'
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/buscar-comparaveis': {
+      id: '/api/public/buscar-comparaveis'
+      path: '/api/public/buscar-comparaveis'
+      fullPath: '/api/public/buscar-comparaveis'
+      preLoaderRoute: typeof ApiPublicBuscarComparaveisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/avaliacoes/nova': {
@@ -495,6 +516,7 @@ const rootRouteChildren: RootRouteChildren = {
   AfiliadosDashboardRoute: AfiliadosDashboardRoute,
   AfiliadosLoginRoute: AfiliadosLoginRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPublicBuscarComparaveisRoute: ApiPublicBuscarComparaveisRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
