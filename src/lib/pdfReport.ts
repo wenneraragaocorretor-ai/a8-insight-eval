@@ -26,6 +26,7 @@ const WHITE: [number, number, number] = [255, 255, 255];
 const TEXT: [number, number, number] = [44, 44, 42];         // #2C2C2A
 const GRAY: [number, number, number] = [90, 95, 105];
 const GRAY_DIM: [number, number, number] = [140, 145, 155];
+const BLUE: [number, number, number] = [15, 45, 92];         // #0F2D5C
 
 const PW = 210; // page width portrait A4
 const PH = 297; // page height portrait A4
