@@ -1606,7 +1606,7 @@ function NovaAvaliacao() {
 
             <div className="flex flex-col gap-4 max-w-sm mx-auto w-full">
               <Button
-                onClick={handleProcessar}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleProcessar(); }}
                 className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold gap-2"}
                 disabled={isLoading || (statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && !isEdit)}
               >
