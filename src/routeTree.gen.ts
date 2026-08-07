@@ -26,6 +26,7 @@ import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/
 import { Route as AuthenticatedAvaliacoesNovaRouteImport } from './routes/_authenticated/avaliacoes.nova'
 import { Route as AuthenticatedAvaliacoesIdRouteImport } from './routes/_authenticated/avaliacoes.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as AuthenticatedAdminTestIaRouteImport } from './routes/_authenticated/admin.test-ia'
 import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
 import { Route as AuthenticatedAdminBetaTestersRouteImport } from './routes/_authenticated/admin.beta-testers'
 import { Route as AuthenticatedAdminAfiliadosRouteImport } from './routes/_authenticated/admin.afiliados'
@@ -118,6 +119,12 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/usuarios',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminTestIaRoute =
+  AuthenticatedAdminTestIaRouteImport.update({
+    id: '/test-ia',
+    path: '/test-ia',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPlanosRoute =
   AuthenticatedAdminPlanosRouteImport.update({
     id: '/planos',
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/admin/afiliados': typeof AuthenticatedAdminAfiliadosRoute
   '/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
+  '/admin/test-ia': typeof AuthenticatedAdminTestIaRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
@@ -171,6 +179,7 @@ export interface FileRoutesByTo {
   '/admin/afiliados': typeof AuthenticatedAdminAfiliadosRoute
   '/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/admin/planos': typeof AuthenticatedAdminPlanosRoute
+  '/admin/test-ia': typeof AuthenticatedAdminTestIaRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
@@ -194,6 +203,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/afiliados': typeof AuthenticatedAdminAfiliadosRoute
   '/_authenticated/admin/beta-testers': typeof AuthenticatedAdminBetaTestersRoute
   '/_authenticated/admin/planos': typeof AuthenticatedAdminPlanosRoute
+  '/_authenticated/admin/test-ia': typeof AuthenticatedAdminTestIaRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/avaliacoes/$id': typeof AuthenticatedAvaliacoesIdRoute
   '/_authenticated/avaliacoes/nova': typeof AuthenticatedAvaliacoesNovaRoute
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/admin/afiliados'
     | '/admin/beta-testers'
     | '/admin/planos'
+    | '/admin/test-ia'
     | '/admin/usuarios'
     | '/avaliacoes/$id'
     | '/avaliacoes/nova'
@@ -237,6 +248,7 @@ export interface FileRouteTypes {
     | '/admin/afiliados'
     | '/admin/beta-testers'
     | '/admin/planos'
+    | '/admin/test-ia'
     | '/admin/usuarios'
     | '/avaliacoes/$id'
     | '/avaliacoes/nova'
@@ -259,6 +271,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/afiliados'
     | '/_authenticated/admin/beta-testers'
     | '/_authenticated/admin/planos'
+    | '/_authenticated/admin/test-ia'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/avaliacoes/$id'
     | '/_authenticated/avaliacoes/nova'
@@ -400,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/test-ia': {
+      id: '/_authenticated/admin/test-ia'
+      path: '/test-ia'
+      fullPath: '/admin/test-ia'
+      preLoaderRoute: typeof AuthenticatedAdminTestIaRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/planos': {
       id: '/_authenticated/admin/planos'
       path: '/planos'
@@ -428,6 +448,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAfiliadosRoute: typeof AuthenticatedAdminAfiliadosRoute
   AuthenticatedAdminBetaTestersRoute: typeof AuthenticatedAdminBetaTestersRoute
   AuthenticatedAdminPlanosRoute: typeof AuthenticatedAdminPlanosRoute
+  AuthenticatedAdminTestIaRoute: typeof AuthenticatedAdminTestIaRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -436,6 +457,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAfiliadosRoute: AuthenticatedAdminAfiliadosRoute,
   AuthenticatedAdminBetaTestersRoute: AuthenticatedAdminBetaTestersRoute,
   AuthenticatedAdminPlanosRoute: AuthenticatedAdminPlanosRoute,
+  AuthenticatedAdminTestIaRoute: AuthenticatedAdminTestIaRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
