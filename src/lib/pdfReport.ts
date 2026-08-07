@@ -109,7 +109,23 @@ function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any):
   const valorM2 = a + b * areaAvaliada;
   if (!Number.isFinite(valorM2) || valorM2 <= 0) return base;
   const valorTotal = valorM2 * areaAvaliada;
-  return { ok: true, n, a, b, r2, valorM2, valorTotal, areaAvaliada };
+
+  const eq = `y = ${a.toFixed(2)} + (${b.toFixed(4)})x`;
+  const inter = r2 > 0.8 ? "amostra excelente" : r2 > 0.6 ? "amostra boa" : "amostra fraca";
+
+  return {
+    ok: true,
+    n,
+    a,
+    b,
+    r2,
+    valorM2,
+    valorTotal,
+    areaAvaliada,
+    equacao: eq,
+    interpretacao: inter,
+    pontos: pts.map((p, i) => ({ ...p, label: `P${i + 1}` })),
+  };
 }
 
 // Aplica a regressão como valor oficial do resultado (central ±15%).
