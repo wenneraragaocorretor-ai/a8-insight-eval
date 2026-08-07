@@ -60,6 +60,7 @@ const fmtBRL = (v: number | null | undefined) =>
 
 function AvaliacaoDetalhe() {
   const { avaliacao, resultado, comparaveis, profile } = Route.useLoaderData();
+  console.log("[LAUDO 11] Página do laudo carregada", { id: avaliacao?.id, hasResultado: !!resultado });
   const rel: any = (resultado?.relatorio_json as any) || {};
   const navigate = useNavigate();
   const router = useRouter();

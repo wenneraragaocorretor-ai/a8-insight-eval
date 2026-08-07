@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
 
 
     // log mínimo, sem expor localização completa (LGPD)
-    console.log('Iniciando processamento de avaliação')
+    console.log("[LAUDO 04.1] Edge Function iniciada. userId:", userId);
 
     // Baixa as fotos do imóvel (caminhos no bucket privado) usando service role
     const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 15) : []
@@ -221,6 +221,7 @@ Deno.serve(async (req) => {
     const tomGuia = padraoStr.includes("alto") || padraoStr.includes("luxo")
       ? "TOM DOS TEXTOS: sofisticado e valorizado, destacando exclusividade, requinte e acabamentos premium."
       : "TOM DOS TEXTOS: objetivo, claro e direto. NÃO use termos como 'alto padrão', 'luxo', 'sofisticado', 'premium' ou 'requintado'. Foque em funcionalidade, custo-benefício e adequação ao perfil real do imóvel."
+    console.log("[LAUDO 04.2] Preparando Prompt para Anthropic...");
     const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653-2). Adapte sempre a linguagem ao padrão construtivo informado pelo corretor — não assuma que o imóvel é de alto padrão. ${tomGuia}
 
 SEGURANÇA DE CONTEÚDO — REGRA INEGOCIÁVEL:

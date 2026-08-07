@@ -148,7 +148,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
   .inputValidator((data) => evaluationSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    console.log("Iniciando processamento no servidor para o usuário:", userId);
+    console.log("[LAUDO 02.1] Início do processamento no servidor (Server Function):", userId);
 
     try {
       // Admins têm acesso ilimitado e não consomem créditos.
@@ -200,18 +200,22 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       }
 
 
+      console.log("[LAUDO 04] Chamando Edge Function 'gerar-avaliacao'");
       const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
         body: data,
       });
 
       if (edgeError) {
-        console.error("Erro ao chamar Edge Function:", edgeError);
+        console.error("[LAUDO ERR] Erro ao chamar Edge Function:", edgeError);
         throw new Error("Erro na comunicação com o motor de IA: " + edgeError.message);
       }
 
       if (aiResult.error) {
+        console.error("[LAUDO ERR] Erro retornado pela Edge Function:", aiResult.error);
         throw new Error(aiResult.error);
       }
+
+      console.log("[LAUDO 05] Resposta da IA recebida com sucesso");
 
 
       // Prepara os dados para a transação RPC
@@ -293,6 +297,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       };
 
       // Executa a transação via RPC
+      console.log("[LAUDO 08] Solicitando salvamento no banco via RPC");
       const { data: avaliacaoId, error: rpcError } = await supabase.rpc("gravar_avaliacao_com_credito", {
         p_avaliacao_data: avaliacaoData,
         p_comparaveis_data: comparaveisData,
@@ -301,13 +306,14 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       });
 
       if (rpcError) {
-        console.error("Erro na transação RPC:", rpcError);
+        console.error("[LAUDO ERR] Erro na transação RPC (gravar_avaliacao_com_credito):", rpcError);
         throw new Error("Falha ao gravar avaliação e atualizar créditos: " + rpcError.message);
       }
 
+      console.log("[LAUDO 08.1] Laudo salvo com ID:", avaliacaoId);
       return { id: avaliacaoId, ...aiResult };
     } catch (error: any) {
-      console.error("Erro crítico no fluxo de avaliação:", error);
+      console.error("[LAUDO ERR] Erro crítico no fluxo de avaliação:", error);
       throw new Error(error.message || "Falha ao processar avaliação");
     }
   });
