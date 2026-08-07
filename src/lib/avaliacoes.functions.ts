@@ -62,6 +62,7 @@ export const atualizarValorFinalCorretor = createServerFn({ method: "POST" })
 
 const evaluationSchema = z.object({
   idempotencyKey: z.string().uuid().optional(),
+  correlationId: z.string().uuid().optional(),
   imovel: z.object({
     tipo: z.string(),
     finalidade: z.string(),

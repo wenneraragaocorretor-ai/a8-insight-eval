@@ -80,9 +80,22 @@ function buildResultadoSchema(qtdFotos: number) {
 }
 
 
+const AI_GENERATION_ENABLED = Deno.env.get('AI_GENERATION_ENABLED') !== 'false'
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // EMERGENCY SHUTDOWN CHECK
+  if (!AI_GENERATION_ENABLED) {
+    return new Response(JSON.stringify({ 
+      error: 'Geração temporariamente indisponível para manutenção.',
+      code: 'EMERGENCY_SHUTDOWN'
+    }), {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   try {
@@ -174,8 +187,59 @@ Deno.serve(async (req) => {
     }
 
 
-    const { imovel, comparaveis } = await req.json()
+    const { imovel, comparaveis, correlationId, idempotencyKey } = await req.json()
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
+
+    console.log(`[GENERATION_REQUEST] correlationId=${correlationId} idempotencyKey=${idempotencyKey} userId=${userId.substring(0, 8)}... model=claude-3-5-sonnet-20241022`)
+
+    // MOCK RESPONSE FOR INVESTIGATION (FASE 2)
+    const USE_MOCK = true; // Hardcoded true to stop Anthropic calls immediately
+    if (USE_MOCK) {
+      console.log(`[MOCK_GENERATION] Returning mock data for correlationId=${correlationId}`);
+      // Simulate some processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockResult = {
+        valor_minimo: 450000,
+        valor_central: 500000,
+        valor_maximo: 550000,
+        valor_unitario_medio: 5000,
+        area_base_calculo: imovel.area_total || 100,
+        area_base_tipo: "Área Total",
+        area_base_descricao: "Cálculo baseado em Área Total",
+        resumo_texto: "ESTE É UM LAUDO MOCK PARA TESTE TÉCNICO. O imóvel apresenta características compatíveis com a região.",
+        pontos_positivos: ["Localização privilegiada", "Planta bem distribuída"],
+        pontos_atencao: ["Necessita pequena reforma", "Condomínio acima da média"],
+        potencial_valorizacao: "Bairro em constante crescimento e valorização.",
+        tendencias_mercado: "Alta procura por imóveis desta tipologia na região.",
+        perfil_profissao: "Profissionais liberais e executivos.",
+        perfil_renda: "R$ 10.000 a R$ 20.000",
+        perfil_preferencias: "Buscam segurança e proximidade com serviços.",
+        perfil_interesses: "Qualidade de vida, proximidade de parques e escolas.",
+        analise_bairro: {
+          bairro: "Bairro Teste",
+          cidade: "Cidade Teste/UF",
+          potencial_valorizacao: "Bairro em constante crescimento.",
+          tendencias_mercado: "Alta procura local.",
+          descricao: "Regra consolidada com infraestrutura completa."
+        },
+        perfil_publico: {
+          profissao: "Executivos",
+          renda_media: "R$ 15.000",
+          preferencias: "Segurança",
+          interesses: "Lazer"
+        },
+        dicas_precificacao: ["Anunciar no valor central para liquidez"],
+        estrategias_venda: ["Fotos profissionais", "Anúncio em portais"],
+        dicas_anuncio: ["Destaque a varanda gourmet"],
+        analise_fotos: "Fotos analisadas (mock): conservação boa.",
+        analise_fotos_individual: (imovel.fotos || []).map((_, i) => `Foto ${i+1}: mock comment`)
+      };
+
+      return new Response(JSON.stringify(mockResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!anthropicApiKey) {
       throw new Error('ANTHROPIC_API_KEY não configurada')
