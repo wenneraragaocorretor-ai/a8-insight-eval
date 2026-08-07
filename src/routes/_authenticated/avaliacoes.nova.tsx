@@ -754,7 +754,73 @@ function NovaAvaliacao() {
     setErrorDetail(null);
     processandoRef.current = true;
 
+    // DIAGNÓSTICO: MOCK LOCAL ATIVO (USE_LOCAL_MOCK=true)
+    const USE_LOCAL_MOCK = true;
+
     try {
+      if (USE_LOCAL_MOCK) {
+        console.log("[LAUDO 01] MODO DIAGNÓSTICO: Mock Local Iniciado...");
+        
+        // Simula o atraso de 500ms
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Objeto Mock estático baseado no evaluationResultSchema para pular Edge Function, RPC e Banco
+        const mockRes = {
+          id: "mock-" + crypto.randomUUID(),
+          valor_minimo: 450000,
+          valor_central: 500000,
+          valor_maximo: 550000,
+          valor_unitario_medio: 5208,
+          area_base_calculo: 96,
+          area_base_tipo: imovel.tipo,
+          area_base_descricao: `Cálculo simulado para diagnóstico base em ${imovel.tipo}`,
+          resumo_texto: "ESTE É UM LAUDO DE TESTE (MOCK LOCAL). Nenhuma IA real foi consultada e nenhum crédito foi descontado. A finalidade é validar a renderização da interface e o fluxo de dados localmente.",
+          pontos_positivos: ["Localização privilegiada (Simulação)", "Planta otimizada", "Acabamento de alto padrão"],
+          pontos_atencao: ["Necessidade de pequena reforma na fachada", "Condomínio com valor acima da média"],
+          potencial_valorizacao: "O imóvel apresenta boa liquidez devido à região em crescimento.",
+          tendencias_mercado: "O mercado local está aquecido para este tipo de tipologia.",
+          perfil_profissao: "Profissionais liberais e executivos",
+          perfil_renda: "R$ 15.000 a R$ 25.000",
+          perfil_preferencias: "Priorizam segurança e proximidade com centros comerciais",
+          perfil_interesses: "Lifestyle urbano e facilidade de transporte",
+          analise_bairro: {
+            bairro: "Bairro de Teste",
+            cidade: "Cidade Exemplo",
+            potencial_valorizacao: "Alta",
+            tendencias_mercado: "Estável",
+            descricao: "Região com infraestrutura completa."
+          },
+          perfil_publico: {
+            profissao: "Executivos",
+            renda_media: "Média Alta",
+            preferencias: "Segurança",
+            interesses: "Gastronomia"
+          },
+          dicas_precificacao: ["Ajustar valor conforme mobiliário", "Considerar permuta apenas até 20%"],
+          estrategias_venda: ["Fotos profissionais (Mock)", "Anúncio em portais premium"],
+          dicas_anuncio: ["Destaque a vista livre", "Enfatize a ventilação natural"],
+          analise_fotos: "Fotos com excelente iluminação e enquadramento (Simulado).",
+          analise_fotos_individual: (imovel.fotos || []).map(() => "Análise simulada da foto."),
+          equacao_regressao: "y = 4500 + 500x",
+          r2: 0.92,
+          r2_interpretacao: "Excelente"
+        };
+
+        console.log("[LAUDO 10] MODO DIAGNÓSTICO: Mock Concluído");
+        toast.info("Modo de diagnóstico: Laudo local gerado (Sem custo)");
+        
+        // Salva no sessionStorage para que a página de visualização possa ler se o ID for "mock-..."
+        sessionStorage.setItem(`mock_laudo_${mockRes.id}`, JSON.stringify({
+          avaliacao: { ...imovel, id: mockRes.id, user_id: "mock-user", created_at: new Date().toISOString() },
+          resultado: { ...mockRes, avaliacao_id: mockRes.id, relatorio_json: mockRes },
+          comparaveis: comparaveis,
+          profile: { nome: "Corretor (Teste)", plano: plano }
+        }));
+
+        navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
+        return;
+      }
+
       const idempotencyKey = crypto.randomUUID();
       const correlationId = crypto.randomUUID();
       
@@ -770,7 +836,6 @@ function NovaAvaliacao() {
     } catch (e: any) {
       console.error("[LAUDO ERR] Falha no processamento:", e);
       
-      // Tenta extrair erro detalhado se vier da Edge Function
       let msg = e.message || "Erro desconhecido";
       let stack = e.stack;
       
@@ -784,6 +849,11 @@ function NovaAvaliacao() {
         }
       } catch {}
 
+      // REGRA 7: Tratamento de EMERGENCY_SHUTDOWN (AI_GENERATION_ENABLED=false)
+      if (msg.includes("EMERGENCY_SHUTDOWN") || msg.includes("Geração temporariamente indisponível")) {
+        msg = "Geração real desativada para manutenção.";
+      }
+
       setErrorDetail({ mensagem: msg, stack });
       toast.error("Falha ao gerar avaliação. Veja os detalhes abaixo.");
     } finally {
@@ -791,6 +861,7 @@ function NovaAvaliacao() {
       processandoRef.current = false;
     }
   };
+
 
 
   return (
