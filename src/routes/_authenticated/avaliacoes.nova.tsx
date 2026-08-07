@@ -749,38 +749,75 @@ function NovaAvaliacao() {
   const [mockResult, setMockResult] = useState<any>(null);
 
   const handleProcessar = async () => {
-    console.log("[DIAG 01] CLIQUE DETECTADO");
+    if (processandoRef.current) return;
     setIsLoading(true);
+    setErrorDetail(null);
     processandoRef.current = true;
-    
-    // Teste de mutação de estado e timer
-    const timer = setTimeout(() => {
-      console.log("[DIAG 02] TIMER EXECUTADO");
+
+    try {
+      const idempotencyKey = crypto.randomUUID();
+      const correlationId = crypto.randomUUID();
+      
+      console.log("[LAUDO 01] Iniciando processamento real...");
+      
+      const res = isEdit 
+        ? await regerarIA({ data: { id: editId!, imovel, comparaveis } })
+        : await processarIA({ data: { imovel, comparaveis, idempotencyKey, correlationId } });
+
+      console.log("[LAUDO 10] Processamento concluído com sucesso");
+      toast.success(isEdit ? "Laudo atualizado!" : "Laudo gerado com sucesso!");
+      navigate({ to: "/avaliacoes/$id", params: { id: res.id } });
+    } catch (e: any) {
+      console.error("[LAUDO ERR] Falha no processamento:", e);
+      
+      // Tenta extrair erro detalhado se vier da Edge Function
+      let msg = e.message || "Erro desconhecido";
+      let stack = e.stack;
+      
+      try {
+        if (e.message && e.message.includes("{")) {
+          const detailed = JSON.parse(e.message.substring(e.message.indexOf("{")));
+          if (detailed.erro) {
+            msg = detailed.mensagem;
+            stack = detailed.stack;
+          }
+        }
+      } catch {}
+
+      setErrorDetail({ mensagem: msg, stack });
+      toast.error("Falha ao gerar avaliação. Veja os detalhes abaixo.");
+    } finally {
       setIsLoading(false);
       processandoRef.current = false;
-      setMockResult("MOCK LOCAL FUNCIONOU");
-      toast.success("DIAGNÓSTICO: Clique processado!");
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    }
   };
-
-
 
 
   return (
     <div className="max-w-4xl mx-auto py-8">
-      <div className="bg-red-500 text-white p-4 mb-4 text-center font-bold text-xl rounded-lg border-4 border-yellow-400">
-        DIAGNÓSTICO V3 — {new Date().toLocaleString('pt-BR')} — Local: {typeof window !== 'undefined' ? window.location.pathname : 'SSR'}
-      </div>
-      {mockResult === "MOCK LOCAL FUNCIONOU" && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-10">
-          <div className="bg-white p-20 rounded-2xl shadow-2xl border-8 border-green-500 text-center animate-in zoom-in duration-500">
-             <h1 className="text-6xl font-black text-brand-blue mb-10">MOCK LOCAL FUNCIONOU</h1>
-             <Button size="lg" className="text-2xl py-10 px-20 bg-brand-gold hover:bg-brand-gold/90" onClick={() => setMockResult(null)}>
-                OK, ENTENDI
-             </Button>
+      {errorDetail && (
+        <div className="mb-6 p-6 bg-red-50 border-2 border-red-200 rounded-xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2 text-red-800 mb-2">
+            <AlertTriangle className="h-5 w-5" />
+            <h3 className="font-bold">Erro Detalhado na Geração</h3>
           </div>
+          <p className="text-red-700 font-medium mb-3">{errorDetail.mensagem}</p>
+          {errorDetail.stack && (
+            <details className="mt-2">
+              <summary className="text-xs text-red-600 cursor-pointer hover:underline">Ver stack trace</summary>
+              <pre className="mt-2 p-3 bg-white/50 text-[10px] font-mono text-red-500 overflow-auto max-h-40 rounded border border-red-100">
+                {errorDetail.stack}
+              </pre>
+            </details>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-4 border-red-200 text-red-700 hover:bg-red-100"
+            onClick={() => setErrorDetail(null)}
+          >
+            Fechar aviso
+          </Button>
         </div>
       )}
       {mockResult && mockResult !== "MOCK LOCAL FUNCIONOU" && (
