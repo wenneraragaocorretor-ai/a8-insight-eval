@@ -112,8 +112,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1. DADOS RECEBIDOS
     const body = await req.json()
+    // 1. DADOS RECEBIDOS
     console.log("1. Dados recebidos:", JSON.stringify(body))
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
@@ -122,9 +122,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization') ?? ''
     
     if (!authHeader.toLowerCase().startsWith('bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      throw new Error('Unauthorized: missing Bearer token')
     }
 
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -132,9 +130,7 @@ Deno.serve(async (req) => {
     })
     const { data: userData, error: userErr } = await userClient.auth.getUser()
     if (userErr || !userData?.user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      throw new Error('Unauthorized: invalid session')
     }
     const userId = userData.user.id
     const admin = createClient(supabaseUrl, serviceKey)
@@ -182,7 +178,7 @@ Deno.serve(async (req) => {
       : "TOM DOS TEXTOS: objetivo, claro e direto. Foque em funcionalidade, custo-benefício e adequação ao perfil real do imóvel."
 
     const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653-2). Adapte sempre a linguagem ao padrão construtivo informado pelo corretor. ${tomGuia}
-    Retorne APENAS um JSON estruturado (sem comentários, sem markdown).`
+    Retorne APENAS um JSON estruturado seguindo exatamente o schema informado. Não inclua conversas ou marcações markdown.`
 
     const userPrompt = `DADOS DO IMÓVEL AVALIANDO: ${JSON.stringify(imovel)} \n COMPARÁVEIS: ${JSON.stringify(comparaveis)}`
 
@@ -216,32 +212,46 @@ Deno.serve(async (req) => {
     console.log("3. Resposta Claude:", response.status)
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`Erro Claude API (${response.status}): ${errorText}`)
+      throw new Error(`Erro Anthropic API (${response.status}): ${errorText}`)
     }
 
-    const data = await response.json()
+    const aiResponse = await response.json()
+    const rawContent = aiResponse?.content?.[0]?.text ?? ''
     
     // 4. CONTEÚDO RESPOSTA
-    console.log("4. Conteúdo resposta:", JSON.stringify(data.content))
+    console.log("4. Conteúdo resposta:", JSON.stringify(rawContent))
 
     // 5. PARSEANDO JSON
     console.log("5. Parseando JSON...")
-    const rawText = data?.content?.[0]?.text ?? ''
-    const textoLimpo = rawText
+    // Limpeza rigorosa do JSON (remove markdown json tags e textos extras)
+    let jsonText = rawContent;
+    const jsonMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonText = jsonMatch[1].trim();
+    } else {
+      // Se não tem tags de code block, remove qualquer coisa antes do primeiro { e depois do último }
+      const firstBrace = rawContent.indexOf('{');
+      const lastBrace = rawContent.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        jsonText = rawContent.substring(firstBrace, lastBrace + 1);
+      }
+    }
+    
+    // Limpeza secundária solicitada
+    jsonText = jsonText
       .replace(/```json/g, '')
       .replace(/```/g, '')
-      .trim()
-    
+      .trim();
+
     let result: any
     try {
-      result = JSON.parse(textoLimpo)
+      result = JSON.parse(jsonText)
     } catch (parseErr) {
-      throw new Error(`Falha no parse do JSON. Texto retornado: ${rawText.slice(0, 500)}`)
+      throw new Error(`Falha no parse do JSON. Texto extraído: ${jsonText.slice(0, 500)}`)
     }
 
     // 6. SALVANDO NO SUPABASE
     console.log("6. Salvando no Supabase...")
-    // Registrar na tabela de monitoramento
     await admin.from('ai_generation_requests').upsert({
       user_id: userId,
       idempotency_key: idempotencyKey,
@@ -261,13 +271,12 @@ Deno.serve(async (req) => {
     console.error("ERRO COMPLETO:", error)
     return new Response(JSON.stringify({
       erro: true,
+      error: error.message,
       mensagem: error.message,
-      stack: error.stack,
-      detalhes: error.cause
+      stack: error.stack
     }), { 
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-    }
-
+  }
 })
