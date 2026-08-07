@@ -743,30 +743,41 @@ function NovaAvaliacao() {
     });
   };
 
-  const handleProcessar = async () => {
-    console.log("[LAUDO 01] Início da geração", { step, isEdit });
+  const processandoRef = useRef(false);
 
-    // Expert que atingiu 20/mês sem créditos: abrir modal em vez de bloquear
+  const handleProcessar = async () => {
+    if (processandoRef.current) {
+      console.log("[LAUDO WARN] Já existe um processamento em curso. Ignorando clique duplo.");
+      return;
+    }
+
+    const correlationId = crypto.randomUUID();
+    console.log(`[LAUDO 01] Início da geração. correlationId=${correlationId}`, { step, isEdit });
+
     if (!isEdit && expertAtingiuLimite) {
       console.warn("[LAUDO 01.1] Limite atingido");
       setShowLimiteModal(true);
       return;
     }
 
-    setIsLoading(true);
-    const timeout = setTimeout(() => {
-      setIsLoading(false);
-      console.error("[LAUDO ERR] Timeout de 180s atingido no frontend");
-      toast.error("O processamento está demorando mais que o esperado. Por favor, tente novamente em instantes.");
-    }, 180000); // 180s timeout para dar margem à IA
-
     try {
+      processandoRef.current = true;
+      setIsLoading(true);
+      
+      const timeout = setTimeout(() => {
+        setIsLoading(false);
+        processandoRef.current = false;
+        console.error(`[LAUDO ERR] Timeout atingido no frontend. correlationId=${correlationId}`);
+        toast.error("O processamento está demorando mais que o esperado. Por favor, tente novamente em instantes.");
+      }, 180000);
+
       const c = camposDoTipo(imovel.tipo);
-      console.log("[LAUDO 02] Validando dados do formulário");
+      console.log(`[LAUDO 02] Validando dados do formulário. correlationId=${correlationId}`);
       const idempotencyKey = crypto.randomUUID();
       const payload = {
         data: {
           idempotencyKey,
+          correlationId,
           imovel: {
             ...imovel,
             area_privativa: c.areaPrivativa ? imovel.area_privativa || undefined : undefined,
@@ -866,34 +877,33 @@ function NovaAvaliacao() {
 
       let result: any;
       if (isEdit && editId) {
-        console.log("[LAUDO 03] Atualizando avaliação existente:", editId);
-        result = await regerarIA({ data: { id: editId, ...(payload.data as any) } });
-        console.log("[LAUDO 09] Status atualizado (Edit)");
+        console.log(`[LAUDO 03] Atualizando avaliação existente: ${editId}. correlationId=${correlationId}`);
+        result = await regerarIA({ data: { id: editId, ...payload.data } });
+        console.log(`[LAUDO 09] Status atualizado (Edit). correlationId=${correlationId}`);
         toast.success("Laudo regenerado com sucesso!");
-        console.log("[LAUDO 10] Redirecionamento iniciado");
-        navigate({ to: `/avaliacoes/${editId}` });
+        setTimeout(() => navigate({ to: `/avaliacoes/${editId}` }), 500);
       } else {
-        console.log("[LAUDO 04] Chamando processamento de IA/Backend");
+        console.log(`[LAUDO 04] Chamando processamento de IA/Backend. correlationId=${correlationId}`);
         result = await processarIA(payload);
         if (result && result.id) {
-          console.log("[LAUDO 09] Status atualizado (Novo)", { id: result.id });
+          console.log(`[LAUDO 09] Status atualizado (Novo). correlationId=${correlationId}`, { id: result.id });
           toast.success("Avaliação concluída com sucesso!");
-          console.log("[LAUDO 10] Redirecionamento iniciado");
-          navigate({ to: `/avaliacoes/${result.id}` });
+          setTimeout(() => navigate({ to: `/avaliacoes/${result.id}` }), 500);
         } else {
           throw new Error("A IA processou, mas não retornou um ID de avaliação válido.");
         }
       }
+      clearTimeout(timeout);
     } catch (e: any) {
-      console.error("[LAUDO ERR] Falha no fluxo:", {
+      console.error(`[LAUDO ERR] Falha no fluxo. correlationId=${correlationId}:`, {
         message: e.message,
         stack: e.stack,
         timestamp: new Date().toISOString()
       });
       toast.error(e?.message || "Não foi possível gerar o laudo. Verifique sua conexão e tente novamente.");
     } finally {
-      clearTimeout(timeout);
       setIsLoading(false);
+      processandoRef.current = false;
     }
   };
 

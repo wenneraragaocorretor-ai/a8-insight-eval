@@ -202,7 +202,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       }
 
 
-      console.log("[LAUDO 04] Chamando Edge Function 'gerar-avaliacao'");
+      console.log(`[LAUDO 04] Chamando Edge Function 'gerar-avaliacao'. correlationId=${data.correlationId}`);
       const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
         body: data,
       });
