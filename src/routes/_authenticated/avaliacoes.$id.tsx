@@ -338,8 +338,20 @@ function AvaliacaoDetalhe() {
             >
               <Pencil size={16} /> Editar Laudo
             </Button>
-            <Button onClick={handleDownload} className="gap-2 bg-brand-gold text-primary-foreground">
-              <Download size={16} /> Baixar PDF
+            <Button 
+              onClick={handleDownload} 
+              className="gap-2 bg-brand-gold text-primary-foreground"
+              disabled={generatingPdf}
+            >
+              {generatingPdf ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Gerando PDF...
+                </>
+              ) : (
+                <>
+                  <Download size={16} /> Baixar PDF
+                </>
+              )}
             </Button>
           </div>
           {(() => {
