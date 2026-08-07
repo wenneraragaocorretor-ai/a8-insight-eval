@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../../components/ui/dialog";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle, Loader2 } from "lucide-react";
 import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 
@@ -856,10 +856,15 @@ function NovaAvaliacao() {
         if (result && result.id) navigate({ to: `/avaliacoes/${result.id}` });
         else navigate({ to: "/dashboard" });
       }
-    } catch (error: any) {
-      console.error("Erro:", error);
-      toast.error(error.message || "Erro ao processar avaliação.");
+    } catch (e: any) {
+      console.error("[processar_ia] Erro crítico:", {
+        message: e.message,
+        stack: e.stack,
+        timestamp: new Date().toISOString()
+      });
+      toast.error(e?.message || "Não foi possível gerar o laudo. Verifique sua conexão e tente novamente.");
     } finally {
+      clearTimeout(timeout);
       setIsLoading(false);
     }
   };
