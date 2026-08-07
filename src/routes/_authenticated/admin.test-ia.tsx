@@ -140,11 +140,10 @@ function AdminTestIA() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/buscar-comparaveis`, {
+      const response = await fetch("/api/public/buscar-comparaveis", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           imovel: {
