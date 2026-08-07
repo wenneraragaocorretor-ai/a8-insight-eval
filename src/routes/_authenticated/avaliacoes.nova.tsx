@@ -746,7 +746,7 @@ function NovaAvaliacao() {
 
   const processandoRef = useRef(false);
 
-  const [mockResult, setMockResult] = useState<any>(null);
+  
 
   const handleProcessar = async () => {
     if (processandoRef.current) return;
