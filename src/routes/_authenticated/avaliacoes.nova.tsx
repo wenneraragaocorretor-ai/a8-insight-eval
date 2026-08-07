@@ -1693,7 +1693,7 @@ function NovaAvaliacao() {
               </div>
             )}
 
-            <div className="flex flex-col gap-4 max-w-sm mx-auto">
+            <div className="flex flex-col gap-4 max-w-sm mx-auto w-full">
               <Button
                 onClick={handleProcessar}
                 className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold gap-2"}
@@ -1711,7 +1711,28 @@ function NovaAvaliacao() {
                   </>
                 )}
               </Button>
-              <Button variant="ghost" onClick={() => setStep(2)} disabled={isLoading}>Revisar dados</Button>
+              
+              {isLoading && (
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsLoading(false);
+                      processandoRef.current = false;
+                      toast.info("Operação cancelada pelo usuário.");
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground animate-pulse">
+                    Esta etapa pode levar até 20 segundos...
+                  </p>
+                </div>
+              )}
+
+              {!isLoading && (
+                <Button variant="ghost" onClick={() => setStep(2)}>Revisar dados</Button>
+              )}
             </div>
           </CardContent>
         </Card>
