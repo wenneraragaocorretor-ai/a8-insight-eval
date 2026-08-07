@@ -192,8 +192,47 @@ Deno.serve(async (req) => {
 
     console.log(`[GENERATION_REQUEST] correlationId=${correlationId} idempotencyKey=${idempotencyKey} userId=${userId.substring(0, 8)}... model=claude-3-5-sonnet-20241022`)
 
+    // IDEMPOTENCY CHECK (FASE 2)
+    // We check if this idempotencyKey was already processed successfully
+    const { data: existingRequest, error: checkError } = await admin
+      .from('ai_generation_requests')
+      .select('status, correlation_id, started_at')
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error(`[IDEMPOTENCY_ERR] Error checking request: ${checkError.message}`)
+    }
+
+    if (existingRequest) {
+      if (existingRequest.status === 'completed') {
+        console.log(`[IDEMPOTENCY_HIT] Request ${idempotencyKey} already completed. correlationId=${existingRequest.correlation_id}`)
+        // If completed, we should ideally return the stored result. 
+        // For now, to keep FASE 1 logic simple, we'll return a 200 with a notice if it's a mock turn.
+      } else if (existingRequest.status === 'processing') {
+        console.log(`[IDEMPOTENCY_HIT] Request ${idempotencyKey} is already being processed. started_at=${existingRequest.started_at}`)
+        return new Response(JSON.stringify({ 
+          error: 'Esta geração já está em processamento.',
+          code: 'ALREADY_PROCESSING'
+        }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
+    // Register/Update the request state
+    await admin.from('ai_generation_requests').upsert({
+      user_id: userId,
+      idempotency_key: idempotencyKey,
+      correlation_id: correlationId,
+      status: 'processing',
+      started_at: new Date().toISOString()
+    })
+
     // MOCK RESPONSE FOR INVESTIGATION (FASE 2)
     const USE_MOCK = true; // Hardcoded true to stop Anthropic calls immediately
+
     if (USE_MOCK) {
       console.log(`[MOCK_GENERATION] Returning mock data for correlationId=${correlationId}`);
       // Simulate some processing time
@@ -235,6 +274,13 @@ Deno.serve(async (req) => {
         analise_fotos: "Fotos analisadas (mock): conservação boa.",
         analise_fotos_individual: (imovel.fotos || []).map((_, i) => `Foto ${i+1}: mock comment`)
       };
+
+      // Mark as completed in monitoring table
+      await admin.from('ai_generation_requests').update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        model: 'mock-logic-fase-2'
+      }).eq('idempotency_key', idempotencyKey)
 
       return new Response(JSON.stringify(mockResult), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
