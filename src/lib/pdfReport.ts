@@ -76,9 +76,28 @@ function calcularRegressao(avaliacao: any, comparaveis: any[]): RegressaoLinear 
       return ab > 0 && v > 0 ? { x: ab, y: v / ab } : null;
     })
     .filter((p): p is { x: number; y: number } => p !== null);
+  const areaAvaliada = areaBaseDe(tipo, avaliacao).area;
+  const pts = (comparaveis || [])
+    .map((c) => {
+      const ab = areaBaseDe(tipo ?? c?.tipo, c).area;
+      const v = Number(c?.valor_anunciado);
+      return ab > 0 && v > 0 ? { x: ab, y: v / ab } : null;
+    })
+    .filter((p): p is { x: number; y: number } => p !== null);
   const n = pts.length;
   const base: RegressaoLinear = { ok: false, n, a: 0, b: 0, r2: 0, valorM2: 0, valorTotal: 0, areaAvaliada };
-  if (n < 2 || areaAvaliada <= 0) return base;
+  if (n < 2) {
+    // Se não há comparáveis suficientes para regressão, tenta o valor central técnico do resultado
+    // (que pode ter vindo de média simples ou outro método).
+    const valorUnitario = Number(resultado?.valor_unitario_medio) || 0;
+    const valorTotal = Number(resultado?.valor_central) || 0;
+    return { 
+      ...base, 
+      valorM2: valorUnitario > 0 ? valorUnitario : areaAvaliada > 0 ? valorTotal / areaAvaliada : 0, 
+      valorTotal 
+    };
+  }
+  if (areaAvaliada <= 0) return base;
   const sx = pts.reduce((s, p) => s + p.x, 0);
   const sy = pts.reduce((s, p) => s + p.y, 0);
   const sxy = pts.reduce((s, p) => s + p.x * p.y, 0);
