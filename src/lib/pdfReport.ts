@@ -2780,6 +2780,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
+  // Já garantimos a regressão no gerarPdfAvaliacao, mas chamamos aqui para manter a consistência do objeto resultado durante a montagem das páginas
   aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
   paginaArbitrio(doc, resultado, corretor);
