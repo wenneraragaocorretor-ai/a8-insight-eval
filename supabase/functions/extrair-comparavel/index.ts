@@ -259,7 +259,13 @@ serve(async (req) => {
     if (!claudeResp.ok) {
       const errTxt = await claudeResp.text();
       console.error("Claude API error:", claudeResp.status, errTxt);
-      return new Response(JSON.stringify({ error: "Erro na IA: " + claudeResp.status }), {
+      
+      let msg = `Erro na IA: ${claudeResp.status}`;
+      if (claudeResp.status === 401) msg = "ANTHROPIC_API_KEY inválida ou não autorizada (401).";
+      if (claudeResp.status === 402) msg = "Créditos insuficientes na Anthropic (402).";
+      if (claudeResp.status === 429) msg = "Limite de requisições na Anthropic (429).";
+
+      return new Response(JSON.stringify({ error: msg }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
