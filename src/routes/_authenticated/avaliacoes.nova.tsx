@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../../components/ui/dialog";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle, Loader2, Copy } from "lucide-react";
 import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 
