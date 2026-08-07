@@ -2819,6 +2819,9 @@ export async function gerarPdfAvaliacao(
     throw new Error("Faça upgrade para acessar este relatório");
   }
 
+  // Garante que a regressão foi aplicada ao objeto resultado antes de gerar o PDF
+  aplicarRegressao(resultado, avaliacao, comparaveis);
+
   // QR Code (apenas Expert / Modelo 3) — verificação por telefone/email do corretor
   let qrDataUrl: string | null = null;
   if (modelo === 3) {
