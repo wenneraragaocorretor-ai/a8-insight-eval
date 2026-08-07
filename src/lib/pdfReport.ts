@@ -304,7 +304,7 @@ function rodape(doc: jsPDF) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(...NAVY);
-    doc.text("AVALIA — AVALIAÇÕES IMOBILIÁRIAS COM IA", M + 6, PH - 7);
+    doc.text("A8 AVALIA — AVALIAÇÕES COM IA", M + 6, PH - 7);
 
     // Disclaimer central em itálico cinza
     doc.setFont("helvetica", "italic");
