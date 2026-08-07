@@ -730,6 +730,16 @@ function NovaAvaliacao() {
     });
   };
 
+  const duplicarComparavel = (index: number) => {
+    safe(() => {
+      const original = comparaveis[index];
+      if (!original) return;
+      const novoId = Math.max(...comparaveis.map(c => c.id)) + 1;
+      setComparaveis(prev => [...prev, { ...original, id: novoId }]);
+      toast.success("Comparável duplicado");
+    });
+  };
+
   const handleProcessar = async () => {
     console.log("[LAUDO 01] Início da geração", { step, isEdit });
 
