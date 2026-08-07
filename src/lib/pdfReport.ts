@@ -1725,7 +1725,7 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
 
     textoMultilinha(
       doc,
-      `Interpretação do R²: > 0,80 amostra excelente · 0,60–0,80 amostra boa · < 0,60 amostra fraca. n = ${reg.n} comparáveis.`,
+      `Equação: ${reg.equacao || ""} · R²: ${reg.r2.toFixed(4)} (${reg.interpretacao || ""}). n = ${reg.n} comparáveis.`,
       M, boxY + boxH + 6, usable,
       { size: 9, color: GRAY, lineHeight: 4.6 },
     );
