@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 // Regra única de área-base (espelhada em supabase/functions/_shared/area-base.ts)
 import { areaBaseDe, labelValorM2, sufixoAreaBase } from "./areaBase";
-import type { RegressaoLinear } from "./areaBase";
+
 
 // ============================================================
 // A8 Avalia — PDF Premium (portrait A4)
