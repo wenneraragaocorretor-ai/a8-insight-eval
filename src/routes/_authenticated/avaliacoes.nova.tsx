@@ -754,23 +754,54 @@ function NovaAvaliacao() {
     const correlationId = crypto.randomUUID();
     console.log(`[LAUDO 01] Início da geração. correlationId=${correlationId}`, { step, isEdit });
 
+    // --- TESTE A: MODO LOCAL MOCK ---
+    // Ative esta flag para isolar o frontend
+    const USE_LOCAL_MOCK = false; 
+
+    if (USE_LOCAL_MOCK) {
+      console.log("[LAUDO TEST A] Executando MODO LOCAL MOCK");
+      setIsLoading(true);
+      processandoRef.current = true;
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockResult = {
+        id: "mock-local-" + Date.now(),
+        valor_central: 1500000,
+        valor_minimo: 1275000,
+        valor_maximo: 1725000,
+        valor_unitario_medio: 15000,
+      };
+
+      console.log("[LAUDO TEST A] Sucesso local. Navegando para mock...");
+      setIsLoading(false);
+      processandoRef.current = false;
+      
+      // Simula navegação ou exibe localmente
+      toast.success("Teste Local concluído com sucesso!");
+      return;
+    }
+
     if (!isEdit && expertAtingiuLimite) {
       console.warn("[LAUDO 01.1] Limite atingido");
       setShowLimiteModal(true);
       return;
     }
 
+    // Configuração de Timeout e AbortController (Teste C)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      console.error(`[LAUDO ERR] Timeout de 20s atingido no frontend. correlationId=${correlationId}`);
+      toast.error("Tempo esgotado. Verifique sua conexão ou tente novamente.");
+      setIsLoading(false);
+      processandoRef.current = false;
+    }, 20000);
+
     try {
       processandoRef.current = true;
       setIsLoading(true);
       
-      const timeout = setTimeout(() => {
-        setIsLoading(false);
-        processandoRef.current = false;
-        console.error(`[LAUDO ERR] Timeout atingido no frontend. correlationId=${correlationId}`);
-        toast.error("O processamento está demorando mais que o esperado. Por favor, tente novamente em instantes.");
-      }, 180000);
-
       const c = camposDoTipo(imovel.tipo);
       console.log(`[LAUDO 02] Validando dados do formulário. correlationId=${correlationId}`);
       const idempotencyKey = crypto.randomUUID();
@@ -799,7 +830,7 @@ function NovaAvaliacao() {
                 principal: temPrincipal ? f.principal : i === 0,
               }));
             })(),
-            // Ficha Técnica Detalhada — Profissional e Expert
+            // Ficha Técnica Detalhada
             idade_real: temFichaCompleta ? imovel.idade_real || undefined : undefined,
             idade_aparente: temFichaCompleta ? imovel.idade_aparente || undefined : undefined,
             posicao_solar: temFichaCompleta ? imovel.posicao_solar || undefined : undefined,
@@ -808,10 +839,7 @@ function NovaAvaliacao() {
             infraestrutura_lazer: temFichaCompleta
               ? [
                   ...imovel.infraestrutura_lazer,
-                  ...imovel.lazer_outros
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter((s) => s.length > 0),
+                  ...imovel.lazer_outros.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
                 ]
               : [],
             vagas_cobertas: temFichaCompleta ? imovel.vagas_cobertas || undefined : undefined,
@@ -820,10 +848,7 @@ function NovaAvaliacao() {
             tipo_acabamento: temFichaCompleta
               ? [
                   ...imovel.tipo_acabamento,
-                  ...imovel.acabamento_outros
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter((s) => s.length > 0),
+                  ...imovel.acabamento_outros.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
                 ]
               : [],
             numero_pavimentos:
@@ -832,27 +857,17 @@ function NovaAvaliacao() {
                 : undefined,
             ambientes_sociais: [
               ...imovel.ambientes_sociais,
-              ...imovel.ambientes_sociais_outros
-                .split(",")
-                .map((s) => s.trim())
-                .filter((s) => s.length > 0),
+              ...imovel.ambientes_sociais_outros.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
             ],
             ambientes_servico: [
               ...imovel.ambientes_servico,
-              ...imovel.ambientes_servico_outros
-                .split(",")
-                .map((s) => s.trim())
-                .filter((s) => s.length > 0),
+              ...imovel.ambientes_servico_outros.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
             ],
             ambientes_outros: [
               ...imovel.ambientes_outros,
-              ...imovel.ambientes_outros_livres
-                .split(",")
-                .map((s) => s.trim())
-                .filter((s) => s.length > 0),
+              ...imovel.ambientes_outros_livres.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
             ],
           },
-
           comparaveis: comparaveis.map(({ id, ...c2 }) => ({
             fonte: c2.fonte,
             localizacao: c2.localizacao,
@@ -890,11 +905,12 @@ function NovaAvaliacao() {
           toast.success("Avaliação concluída com sucesso!");
           setTimeout(() => navigate({ to: `/avaliacoes/${result.id}` }), 500);
         } else {
+          console.error(`[LAUDO ERR] Resposta sem ID. correlationId=${correlationId}`, result);
           throw new Error("A IA processou, mas não retornou um ID de avaliação válido.");
         }
       }
-      clearTimeout(timeout);
     } catch (e: any) {
+      if (e.name === "AbortError") return;
       console.error(`[LAUDO ERR] Falha no fluxo. correlationId=${correlationId}:`, {
         message: e.message,
         stack: e.stack,
@@ -902,6 +918,7 @@ function NovaAvaliacao() {
       });
       toast.error(e?.message || "Não foi possível gerar o laudo. Verifique sua conexão e tente novamente.");
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
       processandoRef.current = false;
     }
