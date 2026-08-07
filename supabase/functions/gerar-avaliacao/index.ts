@@ -379,9 +379,20 @@ Comparável #${i + 1} (${c.fonte}):
 
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('Erro na API da Anthropic:', error)
-      throw new Error('Falha na comunicação com a IA')
+      const errorText = await response.text();
+      console.error('Erro na API da Anthropic:', response.status, errorText);
+      
+      if (response.status === 401) {
+        throw new Error('ANTHROPIC_API_KEY inválida ou não autorizada (401). Verifique os Segredos no painel.');
+      }
+      if (response.status === 402) {
+        throw new Error('Créditos insuficientes na conta da Anthropic (402).');
+      }
+      if (response.status === 429) {
+        throw new Error('Limite de requisições atingido na Anthropic (429). Tente novamente em alguns instantes.');
+      }
+      
+      throw new Error(`Falha na comunicação com a IA (Status ${response.status})`);
     }
 
     const data = await response.json()
