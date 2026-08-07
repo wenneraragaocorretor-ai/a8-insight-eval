@@ -111,7 +111,7 @@ function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any):
 // Aplica a regressão como valor oficial do resultado (central ±15%).
 // Anexa metadados em `resultado.regressao` para uso nas páginas do PDF.
 function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): RegressaoLinear {
-  const reg = calcularRegressao(avaliacao, comparaveis);
+  const reg = calcularRegressao(avaliacao, comparaveis, resultado);
   if (!resultado) return reg;
   resultado.regressao = reg;
   if (reg.ok) {
