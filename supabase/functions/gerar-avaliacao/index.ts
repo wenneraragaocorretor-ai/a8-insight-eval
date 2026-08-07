@@ -291,6 +291,19 @@ Deno.serve(async (req) => {
         analise_fotos_individual: (imovel.fotos || []).map((_, i) => `Foto ${i+1}: mock comment`)
       };
 
+      // Validar mock contra o schema para garantir consistência
+      const qtdFotos = Array.isArray(imovel.fotos) ? imovel.fotos.length : 0;
+      const schema = buildResultadoSchema(qtdFotos);
+      try {
+        schema.parse(mockResult);
+        console.log(`[MOCK_VAL_OK] Mock data matches schema for correlationId=${correlationId}`);
+      } catch (err) {
+        console.error(`[MOCK_VAL_ERR] Mock data schema mismatch: ${err.message}`);
+        return new Response(JSON.stringify({ error: "Erro interno na geração mock (schema mismatch)" }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       // Mark as completed in monitoring table
       await admin.from('ai_generation_requests').update({
         status: 'completed',
