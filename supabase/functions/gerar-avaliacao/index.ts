@@ -379,6 +379,7 @@ Comparável #${i + 1} (${c.fonte}):
     })
 
 
+    console.log("[LAUDO 04.3] Requisição enviada para Anthropic");
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Erro na API da Anthropic:', response.status, errorText);
@@ -407,8 +408,9 @@ Comparável #${i + 1} (${c.fonte}):
     let result: any
     try {
       result = JSON.parse(jsonText)
+      console.log("[LAUDO 06] Resposta normalizada (JSON parseado)");
     } catch (parseErr) {
-      console.error('JSON inválido da IA. Trecho:', jsonText.slice(0, 300), parseErr)
+      console.error('[LAUDO ERR] JSON inválido da IA. Trecho:', jsonText.slice(0, 300), parseErr)
       throw new Error('A IA retornou resposta incompleta. Tente novamente ou reduza o número de fotos.')
     }
 
@@ -432,6 +434,7 @@ Comparável #${i + 1} (${c.fonte}):
       )
     }
     result = parsed.data
+    console.log("[LAUDO 07] JSON validado (Zod)");
 
 
 
