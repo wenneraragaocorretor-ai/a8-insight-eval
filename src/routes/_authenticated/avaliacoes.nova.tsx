@@ -745,40 +745,84 @@ function NovaAvaliacao() {
 
   const processandoRef = useRef(false);
 
+  const [mockResult, setMockResult] = useState<any>(null);
+
   const handleProcessar = async () => {
+    const correlationId = crypto.randomUUID();
     if (processandoRef.current) {
       console.log("[LAUDO WARN] Já existe um processamento em curso. Ignorando clique duplo.");
       return;
     }
 
-    const correlationId = crypto.randomUUID();
-    console.log(`[LAUDO 01] Início da geração. correlationId=${correlationId}`, { step, isEdit });
-
     // --- TESTE A: MODO LOCAL MOCK ---
-    // Ative esta flag para isolar o frontend
-    const USE_LOCAL_MOCK = false; 
+    const USE_LOCAL_MOCK = true; 
 
     if (USE_LOCAL_MOCK) {
-      console.log("[LAUDO TEST A] Executando MODO LOCAL MOCK");
+      console.log("[LAUDO 01] Clique recebido (Modo Local Mock)", { correlationId });
       setIsLoading(true);
       processandoRef.current = true;
       
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockResult = {
-        id: "mock-local-" + Date.now(),
-        valor_central: 1500000,
-        valor_minimo: 1275000,
-        valor_maximo: 1725000,
-        valor_unitario_medio: 15000,
-      };
+      try {
+        const c = camposDoTipo(imovel.tipo);
+        console.log("[LAUDO 02] Dados validados localmente");
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const rawMock = {
+          valor_minimo: 1275000,
+          valor_central: 1500000,
+          valor_maximo: 1725000,
+          valor_unitario_medio: 15000,
+          area_base_calculo: 100,
+          area_base_tipo: "privativa",
+          area_base_descricao: "Área Privativa",
+          resumo_texto: "Imóvel de alto padrão com excelente localização e acabamento diferenciado.",
+          pontos_positivos: ["Localização privilegiada", "Acabamento em mármore", "Andar alto"],
+          pontos_atencao: ["Valor do condomínio acima da média"],
+          potencial_valorizacao: "Alta, devido ao desenvolvimento da infraestrutura no entorno.",
+          tendencias_mercado: "Estabilidade com viés de alta para imóveis desta tipologia.",
+          perfil_profissao: "Executivos e profissionais liberais.",
+          perfil_renda: "Acima de 20 salários mínimos.",
+          perfil_preferencias: "Buscam conforto, segurança e status.",
+          perfil_interesses: "Gastronomia, viagens e investimentos.",
+          analise_bairro: { seguranca: "Excelente", servicos: "Completos" },
+          perfil_publico: { idade: "35-55 anos", familia: "Casais com filhos" },
+          dicas_precificacao: ["Manter o valor dentro da margem de negociação de 5%."],
+          estrategias_venda: ["Destacar a vista livre e o projeto de iluminação."],
+          dicas_anuncio: ["Utilizar fotos profissionais e tour virtual."],
+          analise_fotos: "As fotos atuais estão boas, mas poderiam ser mais claras.",
+          analise_fotos_individual: ["Foto 1: Ótima iluminação", "Foto 2: Ângulo favorece o espaço"],
+        };
 
-      console.log("[LAUDO TEST A] Sucesso local. Navegando para mock...");
-      setIsLoading(false);
-      processandoRef.current = false;
-      
-      // Simula navegação ou exibe localmente
-      toast.success("Teste Local concluído com sucesso!");
+        console.log("[LAUDO 03] Mock local criado");
+        
+        const { evaluationResultSchema } = await import("../../lib/schemas");
+        const parsed = evaluationResultSchema.safeParse(rawMock);
+        
+        if (!parsed.success) {
+          console.error("[LAUDO ERR] Falha no Schema validado:", parsed.error);
+          throw new Error("Mock local incompatível com o schema.");
+        }
+        
+        console.log("[LAUDO 04] Schema validado com sucesso");
+        
+        setMockResult({
+          avaliacao: { ...imovel, id: "mock-id", tipo_imovel: imovel.tipo },
+          resultado: { relatorio_json: parsed.data, valor_central: parsed.data.valor_central },
+          comparaveis: comparaveis.map(c => ({ ...c, valor_anunciado: c.valor })),
+          profile: { nome: "Usuário Teste", plano: "expert" }
+        });
+        
+        console.log("[LAUDO 05] Estado do resultado atualizado");
+        toast.success("Modo de diagnóstico — Mock local ativo");
+      } catch (err: any) {
+        console.error("[LAUDO ERR] Falha no Teste A:", err);
+        toast.error("Falha no mock local: " + err.message);
+      } finally {
+        setIsLoading(false);
+        processandoRef.current = false;
+        console.log("[LAUDO 06] Loading encerrado");
+      }
       return;
     }
 
@@ -926,7 +970,66 @@ function NovaAvaliacao() {
 
   return (
     <div className="max-w-4xl mx-auto py-8">
-      <div className="mb-8 flex items-center justify-between">
+      {mockResult && (
+        <div className="mb-8 p-6 border-4 border-dashed border-brand-gold bg-brand-gold/5 rounded-xl animate-in fade-in zoom-in duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-3 w-3 rounded-full bg-brand-gold animate-ping" />
+              <h2 className="text-xl font-bold text-brand-blue uppercase tracking-wider">
+                Modo de diagnóstico — Mock local
+              </h2>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setMockResult(null)}>
+              Voltar ao formulário
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mb-6">
+            Este é uma pré-visualização local. Nada foi salvo no banco de dados e nenhum crédito foi consumido.
+            Os logs [LAUDO 01-07] estão disponíveis no console.
+          </p>
+          
+          <div className="bg-white rounded-lg shadow-2xl p-1 border border-border overflow-hidden">
+             <div className="bg-muted/50 p-2 text-[10px] font-mono text-center border-b">
+                RENDERIZANDO: AvaliacaoDetalhe (Injetado via Mock)
+             </div>
+             {/* Injetamos o componente de resultado aqui para o Teste A */}
+             {(() => {
+                console.log("[LAUDO 07] Pré-visualização renderizada");
+                // Como não podemos importar o componente facilmente aqui devido à estrutura de rotas,
+                // vamos simular a visualização ou redirecionar se o router permitir.
+                // Para o Teste A, vamos renderizar uma versão simplificada do resultado.
+                return (
+                  <div className="p-8 text-center space-y-4">
+                    <Sparkles className="mx-auto h-12 w-12 text-brand-gold" />
+                    <h3 className="text-2xl font-bold text-brand-blue">Laudo Gerado com Sucesso</h3>
+                    <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-8">
+                       <div className="p-4 bg-muted rounded-lg">
+                          <p className="text-xs text-muted-foreground">Mínimo</p>
+                          <p className="text-lg font-bold">R$ 1.275.000</p>
+                       </div>
+                       <div className="p-4 bg-brand-gold/10 border border-brand-gold rounded-lg">
+                          <p className="text-xs text-brand-gold font-bold">VALOR CENTRAL</p>
+                          <p className="text-xl font-black text-brand-blue">R$ 1.500.000</p>
+                       </div>
+                       <div className="p-4 bg-muted rounded-lg">
+                          <p className="text-xs text-muted-foreground">Máximo</p>
+                          <p className="text-lg font-bold">R$ 1.725.000</p>
+                       </div>
+                    </div>
+                    <div className="mt-8 p-4 text-left bg-muted/30 rounded-lg text-sm italic">
+                       "{mockResult.resultado.relatorio_json.resumo_texto}"
+                    </div>
+                    <Button className="mt-4 bg-brand-blue" onClick={() => toast.info("Download desativado no modo mock")}>
+                       <Download className="mr-2 h-4 w-4" /> Simular Download PDF
+                    </Button>
+                  </div>
+                );
+             })()}
+          </div>
+        </div>
+      )}
+
+      <div className={`mb-8 flex items-center justify-between ${mockResult ? 'opacity-20 pointer-events-none' : ''}`}>
         <div>
           <h1 className="text-3xl font-bold text-brand-blue">
             {isEdit ? "Editar Laudo" : "Nova Avaliação"}
