@@ -262,6 +262,7 @@ const calcularValorM2 = (valor: number, area: number): number | null => {
 function NovaAvaliacao() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorDetail, setErrorDetail] = useState<{ mensagem: string, stack?: string } | null>(null);
   const navigate = useNavigate();
   const search = Route.useSearch();
   const editId = search.edit;
