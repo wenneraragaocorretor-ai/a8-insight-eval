@@ -750,10 +750,16 @@ function NovaAvaliacao() {
   const handleProcessar = async () => {
     console.log("[LOCAL 01] CLIQUE");
     setIsLoading(true);
-    } catch (e) {
-      console.error(e);
-    }
+    processandoRef.current = true;
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      processandoRef.current = false;
+      setMockResult("MOCK LOCAL FUNCIONOU");
+      console.log("[LOCAL 02] MOCK LOCAL FUNCIONOU");
+    }, 500);
   };
+
 
 
   return (
