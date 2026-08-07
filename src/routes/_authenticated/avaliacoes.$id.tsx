@@ -24,8 +24,14 @@ import { ExpertChat } from "../../components/ExpertChat";
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
+    if (params.id.startsWith("mock-")) {
+      const stored = sessionStorage.getItem(`mock_laudo_${params.id}`);
+      if (stored) return JSON.parse(stored);
+      throw new Error("Mock laudo não encontrado no cache local");
+    }
     return await getAvaliacaoDetalhe({ data: { id: params.id } });
   },
+
   errorComponent: ({ error }) => {
     console.error("[LAUDO ERR] Erro ao renderizar AvaliacaoDetalhe:", error);
     const isUnauthorized = error.message?.includes("permissão") || error.message?.includes("permissao");
