@@ -346,7 +346,10 @@ function NovaAvaliacao() {
     (async () => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData?.user?.id;
-      if (!uid) return;
+      if (!uid) {
+        console.warn("[LAUDO 00] Usuário não autenticado");
+        return;
+      }
       const { data } = await supabase.from("profiles").select("plano").eq("id", uid).maybeSingle();
       if (data?.plano) setPlanoReal(data.plano);
       await recarregarStatus();
