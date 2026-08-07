@@ -50,6 +50,57 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_generation_requests: {
+        Row: {
+          completed_at: string | null
+          correlation_id: string
+          created_at: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          provider: string | null
+          started_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          correlation_id: string
+          created_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          provider?: string | null
+          started_at?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          correlation_id?: string
+          created_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          provider?: string | null
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       avaliacoes: {
         Row: {
           ambientes_outros: Json | null
