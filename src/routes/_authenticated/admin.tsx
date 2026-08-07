@@ -21,6 +21,7 @@ const NAV = [
   { to: "/admin/planos", label: "Redefinir plano", icon: CreditCard, exact: false },
   { to: "/admin/beta-testers", label: "Beta Testers", icon: Sparkles, exact: false },
   { to: "/admin/afiliados", label: "Afiliados", icon: Handshake, exact: false },
+  { to: "/admin/test-ia", label: "Testar IA", icon: Sparkles, exact: false },
 ];
 
 const SOON = [
