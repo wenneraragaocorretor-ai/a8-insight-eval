@@ -748,229 +748,37 @@ function NovaAvaliacao() {
   const [mockResult, setMockResult] = useState<any>(null);
 
   const handleProcessar = async () => {
-    const correlationId = crypto.randomUUID();
-    if (processandoRef.current) {
-      console.log("[LAUDO WARN] Já existe um processamento em curso. Ignorando clique duplo.");
-      return;
-    }
-
-    // --- TESTE A: MODO LOCAL MOCK ---
-    const USE_LOCAL_MOCK = true; 
-
-    if (USE_LOCAL_MOCK) {
-      console.log("[LOCAL 01] Clique recebido", { correlationId });
-      setIsLoading(true);
-      processandoRef.current = true;
-      
-      try {
-        const c = camposDoTipo(imovel.tipo);
-        console.log("[LOCAL 02] Dados validados");
-        
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const rawMock = {
-          valor_minimo: 1275000,
-          valor_central: 1500000,
-          valor_maximo: 1725000,
-          valor_unitario_medio: 15000,
-          area_base_calculo: 100,
-          area_base_tipo: "privativa",
-          area_base_descricao: "Área Privativa",
-          resumo_texto: "Imóvel de alto padrão com excelente localização e acabamento diferenciado.",
-          pontos_positivos: ["Localização privilegiada", "Acabamento em mármore", "Andar alto"],
-          pontos_atencao: ["Valor do condomínio acima da média"],
-          potencial_valorizacao: "Alta, devido ao desenvolvimento da infraestrutura no entorno.",
-          tendencias_mercado: "Estabilidade com viés de alta para imóveis desta tipologia.",
-          perfil_profissao: "Executivos e profissionais liberais.",
-          perfil_renda: "Acima de 20 salários mínimos.",
-          perfil_preferencias: "Buscam conforto, segurança e status.",
-          perfil_interesses: "Gastronomia, viagens e investimentos.",
-          analise_bairro: { seguranca: "Excelente", servicos: "Completos" },
-          perfil_publico: { idade: "35-55 anos", familia: "Casais com filhos" },
-          dicas_precificacao: ["Manter o valor dentro da margem de negociação de 5%."],
-          estrategias_venda: ["Destacar a vista livre e o projeto de iluminação."],
-          dicas_anuncio: ["Utilizar fotos profissionais e tour virtual."],
-          analise_fotos: "As fotos atuais estão boas, mas poderiam ser mais claras.",
-          analise_fotos_individual: ["Foto 1: Ótima iluminação", "Foto 2: Ângulo favorece o espaço"],
-        };
-
-        console.log("[LOCAL 03] Mock criado");
-        
-        const { evaluationResultSchema } = await import("../../lib/schemas");
-        const parsed = evaluationResultSchema.safeParse(rawMock);
-        
-        if (!parsed.success) {
-          console.error("[LAUDO ERR] Falha no Schema validado:", parsed.error);
-          throw new Error("Mock local incompatível com o schema.");
-        }
-        
-        console.log("[LOCAL 04] Schema validado");
-        
-        setMockResult({
-          avaliacao: { ...imovel, id: "mock-id", tipo_imovel: imovel.tipo },
-          resultado: { relatorio_json: parsed.data, valor_central: parsed.data.valor_central },
-          comparaveis: comparaveis.map(c => ({ ...c, valor_anunciado: c.valor })),
-          profile: { nome: "Usuário Teste", plano: "expert" }
-        });
-        
-        console.log("[LOCAL 05] Resultado salvo no estado");
-        toast.success("Modo de diagnóstico — Mock local ativo");
-      } catch (err: any) {
-        console.error("[LAUDO ERR] Falha no Teste A:", err);
-        toast.error("Falha no mock local: " + err.message);
-      } finally {
-        setIsLoading(false);
-        processandoRef.current = false;
-        console.log("[LOCAL 06] Loading encerrado");
-      }
-      return;
-    }
-
-    if (!isEdit && expertAtingiuLimite) {
-      console.warn("[LAUDO 01.1] Limite atingido");
-      setShowLimiteModal(true);
-      return;
-    }
-
-    // Configuração de Timeout e AbortController (Teste C)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-      console.error(`[LAUDO ERR] Timeout de 20s atingido no frontend. correlationId=${correlationId}`);
-      toast.error("Tempo esgotado. Verifique sua conexão ou tente novamente.");
+    console.log("[LOCAL 01] CLIQUE");
+    setIsLoading(true);
+    processandoRef.current = true;
+    
+    setTimeout(() => {
       setIsLoading(false);
       processandoRef.current = false;
-    }, 20000);
-
-    try {
-      processandoRef.current = true;
-      setIsLoading(true);
-      
-      const c = camposDoTipo(imovel.tipo);
-      console.log(`[LAUDO 02] Validando dados do formulário. correlationId=${correlationId}`);
-      const idempotencyKey = crypto.randomUUID();
-      const payload = {
-        data: {
-          idempotencyKey,
-          correlationId,
-          imovel: {
-            ...imovel,
-            area_privativa: c.areaPrivativa ? imovel.area_privativa || undefined : undefined,
-            area_construida: c.areaConstruida ? imovel.area_construida || undefined : undefined,
-            quartos: c.quartos ? imovel.quartos : 0,
-            suites: c.suites ? imovel.suites || undefined : undefined,
-            banheiros: c.banheiros ? imovel.banheiros : 0,
-            vagas: c.vagas ? imovel.vagas : 0,
-            andar: c.andar ? imovel.andar || undefined : undefined,
-            conservacao: c.conservacao ? imovel.conservacao : "Bom",
-            caracteristicas: c.caracteristicas ? imovel.caracteristicas : [],
-            fotos: fotos.filter((f) => f.path && !f.uploading).map((f) => f.path),
-            fotos_meta: (() => {
-              const validas = fotos.filter((f) => f.path && !f.uploading);
-              const temPrincipal = validas.some((f) => f.principal);
-              return validas.map((f, i) => ({
-                path: f.path,
-                legenda: f.legenda || "",
-                principal: temPrincipal ? f.principal : i === 0,
-              }));
-            })(),
-            // Ficha Técnica Detalhada
-            idade_real: temFichaCompleta ? imovel.idade_real || undefined : undefined,
-            idade_aparente: temFichaCompleta ? imovel.idade_aparente || undefined : undefined,
-            posicao_solar: temFichaCompleta ? imovel.posicao_solar || undefined : undefined,
-            topografia: temFichaCompleta ? imovel.topografia || undefined : undefined,
-            zoneamento: temFichaCompleta ? imovel.zoneamento || undefined : undefined,
-            infraestrutura_lazer: temFichaCompleta
-              ? [
-                  ...imovel.infraestrutura_lazer,
-                  ...imovel.lazer_outros.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
-                ]
-              : [],
-            vagas_cobertas: temFichaCompleta ? imovel.vagas_cobertas || undefined : undefined,
-            vagas_descobertas: temFichaCompleta ? imovel.vagas_descobertas || undefined : undefined,
-            total_andares: temFichaCompleta ? imovel.total_andares || undefined : undefined,
-            tipo_acabamento: temFichaCompleta
-              ? [
-                  ...imovel.tipo_acabamento,
-                  ...imovel.acabamento_outros.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
-                ]
-              : [],
-            numero_pavimentos:
-              temFichaCompleta && (imovel.tipo === "Casa" || imovel.tipo === "Sobrado")
-                ? imovel.numero_pavimentos || undefined
-                : undefined,
-            ambientes_sociais: [
-              ...imovel.ambientes_sociais,
-              ...imovel.ambientes_sociais_outros.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
-            ],
-            ambientes_servico: [
-              ...imovel.ambientes_servico,
-              ...imovel.ambientes_servico_outros.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
-            ],
-            ambientes_outros: [
-              ...imovel.ambientes_outros,
-              ...imovel.ambientes_outros_livres.split(",").map((s) => s.trim()).filter((s) => s.length > 0),
-            ],
-          },
-          comparaveis: comparaveis.map(({ id, ...c2 }) => ({
-            fonte: c2.fonte,
-            localizacao: c2.localizacao,
-            area: c2.area,
-            area_privativa: c.areaPrivativa ? c2.area_privativa || undefined : undefined,
-            area_construida: c.areaConstruida ? c2.area_construida || undefined : undefined,
-            quartos: c.quartos ? c2.quartos || undefined : undefined,
-            suites: c.suites ? c2.suites || undefined : undefined,
-            banheiros: c.banheiros ? c2.banheiros || undefined : undefined,
-            vagas: c.vagas ? c2.vagas || undefined : undefined,
-            padrao: c2.padrao,
-            conservacao: c.conservacao ? c2.conservacao : undefined,
-            posicao: c2.posicao,
-            andar: c.andar ? c2.andar || undefined : undefined,
-            idade: c2.idade || undefined,
-            condominio: c2.condominio || undefined,
-            caracteristicas: c.caracteristicas ? c2.caracteristicas : [],
-            valor: c2.valor,
-          })),
-        },
-      };
-
-      let result: any;
-      if (isEdit && editId) {
-        console.log(`[LAUDO 03] Atualizando avaliação existente: ${editId}. correlationId=${correlationId}`);
-        result = await regerarIA({ data: { id: editId, ...payload.data } });
-        console.log(`[LAUDO 09] Status atualizado (Edit). correlationId=${correlationId}`);
-        toast.success("Laudo regenerado com sucesso!");
-        setTimeout(() => navigate({ to: `/avaliacoes/${editId}` }), 500);
-      } else {
-        console.log(`[LAUDO 04] Chamando processamento de IA/Backend. correlationId=${correlationId}`);
-        result = await processarIA(payload);
-        if (result && result.id) {
-          console.log(`[LAUDO 09] Status atualizado (Novo). correlationId=${correlationId}`, { id: result.id });
-          toast.success("Avaliação concluída com sucesso!");
-          setTimeout(() => navigate({ to: `/avaliacoes/${result.id}` }), 500);
-        } else {
-          console.error(`[LAUDO ERR] Resposta sem ID. correlationId=${correlationId}`, result);
-          throw new Error("A IA processou, mas não retornou um ID de avaliação válido.");
-        }
-      }
-    } catch (e: any) {
-      if (e.name === "AbortError") return;
-      console.error(`[LAUDO ERR] Falha no fluxo. correlationId=${correlationId}:`, {
-        message: e.message,
-        stack: e.stack,
-        timestamp: new Date().toISOString()
-      });
-      toast.error(e?.message || "Não foi possível gerar o laudo. Verifique sua conexão e tente novamente.");
-    } finally {
-      clearTimeout(timeoutId);
-      setIsLoading(false);
-      processandoRef.current = false;
-    }
+      setMockResult("MOCK LOCAL FUNCIONOU");
+      console.log("[LOCAL 02] MOCK LOCAL FUNCIONOU");
+    }, 500);
   };
+
+
 
   return (
     <div className="max-w-4xl mx-auto py-8">
-      {mockResult && (
+      <div className="bg-red-500 text-white p-4 mb-4 text-center font-bold text-xl rounded-lg border-4 border-yellow-400">
+        BUILD MOCK LOCAL V2 — {new Date().toLocaleString('pt-BR')}
+      </div>
+      {mockResult === "MOCK LOCAL FUNCIONOU" && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-10">
+          <div className="bg-white p-20 rounded-2xl shadow-2xl border-8 border-green-500 text-center animate-in zoom-in duration-500">
+             <h1 className="text-6xl font-black text-brand-blue mb-10">MOCK LOCAL FUNCIONOU</h1>
+             <Button size="lg" className="text-2xl py-10 px-20 bg-brand-gold hover:bg-brand-gold/90" onClick={() => setMockResult(null)}>
+                OK, ENTENDI
+             </Button>
+          </div>
+        </div>
+      )}
+      {mockResult && mockResult !== "MOCK LOCAL FUNCIONOU" && (
+
         <div className="mb-8 p-6 border-4 border-dashed border-brand-gold bg-brand-gold/5 rounded-xl animate-in fade-in zoom-in duration-300">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -1798,7 +1606,7 @@ function NovaAvaliacao() {
 
             <div className="flex flex-col gap-4 max-w-sm mx-auto w-full">
               <Button
-                onClick={handleProcessar}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleProcessar(); }}
                 className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold gap-2"}
                 disabled={isLoading || (statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && !isEdit)}
               >
