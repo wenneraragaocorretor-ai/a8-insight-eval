@@ -198,10 +198,13 @@ Deno.serve(async (req) => {
             const { data: blob, error } = await supa.storage.from('avaliacoes-fotos').download(p)
             if (error || !blob) continue
             const buf = new Uint8Array(await blob.arrayBuffer())
-            // base64 encode
-            let bin = ''
-            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i])
-            const base64 = btoa(bin)
+            // base64 encode otimizado para evitar estouro de pilha e economizar CPU
+            let base64 = ''
+            const CHUNK_SIZE = 8192
+            for (let i = 0; i < buf.length; i += CHUNK_SIZE) {
+              const chunk = buf.slice(i, i + CHUNK_SIZE)
+              base64 += btoa(String.fromCharCode.apply(null, Array.from(chunk)))
+            }
             const mediaType = blob.type || (p.toLowerCase().endsWith('.png') ? 'image/png' : p.toLowerCase().endsWith('.webp') ? 'image/webp' : 'image/jpeg')
             fotosImagens.push({ mediaType, base64 })
           } catch (e) {
@@ -462,21 +465,24 @@ Devolva EXATAMENTE este JSON (sem texto extra, sem markdown):
   "descricao": "Resumo da região cobrindo perfil socioeconômico, infraestrutura, segurança, comércio e serviços (3-5 frases), baseado APENAS na pesquisa. Se sem dados, diga 'Não há dados públicos suficientes para o bairro.'"
 }`
 
-        const bairroResp = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': anthropicApiKey,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-5',
-            max_tokens: 2048,
-            system: bairroSystem,
-            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
-            messages: [{ role: 'user', content: bairroUser }],
+        const bairroResp = await Promise.race([
+          fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': anthropicApiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'claude-3-5-sonnet-20241022',
+              max_tokens: 1024,
+              system: bairroSystem,
+              tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
+              messages: [{ role: 'user', content: bairroUser }],
+            }),
           }),
-        })
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout na busca do bairro')), 25000))
+        ]) as Response
 
         if (bairroResp.ok) {
           const bairroData = await bairroResp.json()
