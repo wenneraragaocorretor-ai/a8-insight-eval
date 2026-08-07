@@ -740,7 +740,7 @@ function NovaAvaliacao() {
     const timeout = setTimeout(() => {
       setIsLoading(false);
       toast.error("O processamento está demorando mais que o esperado. Por favor, tente novamente em instantes.");
-    }, 90000); // 90s timeout para dar margem à IA
+    }, 120000); // 120s timeout para dar margem à IA
 
     try {
       const c = camposDoTipo(imovel.tipo);
