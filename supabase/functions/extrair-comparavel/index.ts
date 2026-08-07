@@ -229,7 +229,7 @@ serve(async (req) => {
     const htmlLimpo = limparHtml(html);
     const dominio = finalUrl.hostname.replace(/^www\./, "");
 
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") ?? Deno.env.get("CHAVE_API_ANTROPICA") ?? "";
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
     if (!anthropicKey) {
       return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY não configurada" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
