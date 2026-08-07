@@ -800,7 +800,7 @@ function NovaAvaliacao() {
           estrategias_venda: ["Fotos profissionais (Mock)", "Anúncio em portais premium"],
           dicas_anuncio: ["Destaque a vista livre", "Enfatize a ventilação natural"],
           analise_fotos: "Fotos com excelente iluminação e enquadramento (Simulado).",
-          analise_fotos_individual: (imovel.fotos || []).map(() => "Análise simulada da foto."),
+          analise_fotos_individual: fotos.map(() => "Análise simulada da foto."),
           equacao_regressao: "y = 4500 + 500x",
           r2: 0.92,
           r2_interpretacao: "Excelente"
@@ -811,8 +811,9 @@ function NovaAvaliacao() {
         
         // Salva no sessionStorage para que a página de visualização possa ler se o ID for "mock-..."
         sessionStorage.setItem(`mock_laudo_${mockRes.id}`, JSON.stringify({
-          avaliacao: { ...imovel, id: mockRes.id, user_id: "mock-user", created_at: new Date().toISOString() },
+          avaliacao: { ...imovel, id: mockRes.id, user_id: "mock-user", created_at: new Date().toISOString(), fotos: fotos.map(f => f.path) },
           resultado: { ...mockRes, avaliacao_id: mockRes.id, relatorio_json: mockRes },
+
           comparaveis: comparaveis,
           profile: { nome: "Corretor (Teste)", plano: plano }
         }));
