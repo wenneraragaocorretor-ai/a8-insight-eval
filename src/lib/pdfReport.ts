@@ -113,13 +113,17 @@ function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any):
 function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): RegressaoLinear {
   const reg = calcularRegressao(avaliacao, comparaveis, resultado);
   if (!resultado) return reg;
+  
+  // SEMPRE anexa o objeto de regressão ao resultado, mesmo que ok=false
   resultado.regressao = reg;
+  
   if (reg.ok) {
     const tech = Math.round(reg.valorTotal);
     const min = Math.round(reg.valorTotal * 0.85);
     const max = Math.round(reg.valorTotal * 1.15);
     const override = Number(resultado.valor_final_corretor);
     const useOverride = Number.isFinite(override) && override >= min && override <= max;
+    
     resultado.valor_central = useOverride ? Math.round(override) : tech;
     resultado.valor_central_tecnico = tech;
     resultado.valor_minimo = min;
@@ -130,6 +134,12 @@ function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): R
         : Math.round(reg.valorM2);
     resultado.metodo_calculo = "regressao_linear";
     resultado.versao_metodologia = resultado.versao_metodologia || 2;
+  } else {
+    // Se a regressão falhou, garante que os valores base existam para o PDF não quebrar
+    resultado.valor_central = resultado.valor_central || 0;
+    resultado.valor_minimo = resultado.valor_minimo || Math.round(Number(resultado.valor_central) * 0.85);
+    resultado.valor_maximo = resultado.valor_maximo || Math.round(Number(resultado.valor_central) * 1.15);
+    resultado.valor_unitario_medio = resultado.valor_unitario_medio || 0;
   }
   return reg;
 }
@@ -1375,9 +1385,9 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   // Pílulas de contato (telefone/whatsapp, email, cidade)
   const localCidade = [corretor.cidade, corretor.estado].filter(Boolean).join(" / ");
   const items = [
-    corretor.telefone ? `WhatsApp  ${corretor.telefone}` : null,
-    corretor.email ? `E-mail  ${corretor.email}` : null,
-    localCidade ? `Local  ${localCidade}` : null,
+    (corretor.telefone && String(corretor.telefone).trim()) ? `WhatsApp  ${corretor.telefone}` : null,
+    (corretor.email && String(corretor.email).trim()) ? `E-mail  ${corretor.email}` : null,
+    (localCidade && String(localCidade).trim()) ? `Local  ${localCidade}` : null,
   ].filter(Boolean) as string[];
 
   if (items.length) {
@@ -1632,7 +1642,7 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
 
   // ----- Regressão Linear (mínimos quadrados) -----
   const reg: RegressaoLinear | undefined = resultado?.regressao;
-  if (reg?.ok) {
+  if (reg && reg.ok) {
     const boxY = cursorY + 8;
     const boxH = 60;
     doc.setFillColor(...NAVY);
@@ -2680,7 +2690,7 @@ function paginaMarketing(
 
   // Valor real (valor_central da avaliação)
   const valor = Number(resultado?.valor_central) || 0;
-  const valorTxt = valor > 0 ? fmtBRL(valor) : "Sob consulta";
+  const valorTxt = valor > 0 ? fmtBRL(valor) : "—";
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(...GOLD);
