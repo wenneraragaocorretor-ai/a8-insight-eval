@@ -970,7 +970,21 @@ function NovaAvaliacao() {
 
   return (
     <div className="max-w-4xl mx-auto py-8">
-      {mockResult && (
+      <div className="bg-red-500 text-white p-4 mb-4 text-center font-bold text-xl rounded-lg border-4 border-yellow-400">
+        BUILD MOCK LOCAL V2 — {new Date().toLocaleString('pt-BR')}
+      </div>
+      {mockResult === "MOCK LOCAL FUNCIONOU" && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-10">
+          <div className="bg-white p-20 rounded-2xl shadow-2xl border-8 border-green-500 text-center animate-in zoom-in duration-500">
+             <h1 className="text-6xl font-black text-brand-blue mb-10">MOCK LOCAL FUNCIONOU</h1>
+             <Button size="lg" className="text-2xl py-10 px-20 bg-brand-gold hover:bg-brand-gold/90" onClick={() => setMockResult(null)}>
+                OK, ENTENDI
+             </Button>
+          </div>
+        </div>
+      )}
+      {mockResult && mockResult !== "MOCK LOCAL FUNCIONOU" && (
+
         <div className="mb-8 p-6 border-4 border-dashed border-brand-gold bg-brand-gold/5 rounded-xl animate-in fade-in zoom-in duration-300">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
