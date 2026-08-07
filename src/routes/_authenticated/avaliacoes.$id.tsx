@@ -15,7 +15,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil, Save, RotateCcw, Loader2 } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil, Save, RotateCcw, Loader2, AlertTriangle } from "lucide-react";
 import { limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 import { ExpertChat } from "../../components/ExpertChat";
 
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
     return await getAvaliacaoDetalhe({ data: { id: params.id } });
   },
   errorComponent: ({ error }) => {
+    console.error("[LAUDO ERR] Erro ao renderizar AvaliacaoDetalhe:", error);
     const isUnauthorized = error.message?.includes("permissão") || error.message?.includes("permissao");
     return (
       <div className="p-8 text-center">
@@ -38,11 +39,20 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
           </>
         ) : (
           <>
-            <h2 className="text-xl font-bold text-destructive">Erro ao carregar avaliação</h2>
-            <p className="text-muted-foreground mt-2">{error.message}</p>
+            <AlertTriangle className="mx-auto h-10 w-10 text-destructive mb-3" />
+            <h2 className="text-xl font-bold text-destructive">Erro ao carregar laudo</h2>
+            <p className="text-muted-foreground mt-2">
+              Não foi possível carregar os dados desta avaliação. Pode ser que o processo de geração tenha falhado ou o registro tenha sido removido.
+            </p>
+            <div className="mt-4 p-3 bg-red-50 text-red-700 text-xs rounded border border-red-100 max-w-md mx-auto">
+              Detalhe técnico: {error.message}
+            </div>
           </>
         )}
-        <Link to="/dashboard"><Button className="mt-4">Voltar ao Dashboard</Button></Link>
+        <div className="mt-6 flex gap-3 justify-center">
+          <Link to="/dashboard"><Button variant="outline">Ir para Dashboard</Button></Link>
+          <Link to="/avaliacoes/nova"><Button>Tentar Nova Avaliação</Button></Link>
+        </div>
       </div>
     );
   },
@@ -60,6 +70,7 @@ const fmtBRL = (v: number | null | undefined) =>
 
 function AvaliacaoDetalhe() {
   const { avaliacao, resultado, comparaveis, profile } = Route.useLoaderData();
+  console.log("[LAUDO 11] Página do laudo carregada", { id: avaliacao?.id, hasResultado: !!resultado });
   const rel: any = (resultado?.relatorio_json as any) || {};
   const navigate = useNavigate();
   const router = useRouter();

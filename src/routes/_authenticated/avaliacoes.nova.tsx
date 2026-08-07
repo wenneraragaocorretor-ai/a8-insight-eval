@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../../components/ui/dialog";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle, Loader2, Copy } from "lucide-react";
 import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
 
 
@@ -346,7 +346,10 @@ function NovaAvaliacao() {
     (async () => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData?.user?.id;
-      if (!uid) return;
+      if (!uid) {
+        console.warn("[LAUDO 00] Usuário não autenticado");
+        return;
+      }
       const { data } = await supabase.from("profiles").select("plano").eq("id", uid).maybeSingle();
       if (data?.plano) setPlanoReal(data.plano);
       await recarregarStatus();
@@ -730,20 +733,36 @@ function NovaAvaliacao() {
     });
   };
 
+  const duplicarComparavel = (index: number) => {
+    safe(() => {
+      const original = comparaveis[index];
+      if (!original) return;
+      const novoId = Math.max(...comparaveis.map(c => c.id)) + 1;
+      setComparaveis(prev => [...prev, { ...original, id: novoId }]);
+      toast.success("Comparável duplicado");
+    });
+  };
+
   const handleProcessar = async () => {
+    console.log("[LAUDO 01] Início da geração", { step, isEdit });
+
     // Expert que atingiu 20/mês sem créditos: abrir modal em vez de bloquear
     if (!isEdit && expertAtingiuLimite) {
+      console.warn("[LAUDO 01.1] Limite atingido");
       setShowLimiteModal(true);
       return;
     }
+
     setIsLoading(true);
     const timeout = setTimeout(() => {
       setIsLoading(false);
+      console.error("[LAUDO ERR] Timeout de 120s atingido no frontend");
       toast.error("O processamento está demorando mais que o esperado. Por favor, tente novamente em instantes.");
     }, 120000); // 120s timeout para dar margem à IA
 
     try {
       const c = camposDoTipo(imovel.tipo);
+      console.log("[LAUDO 02] Validando dados do formulário");
       const payload = {
         data: {
           imovel: {
@@ -845,20 +864,26 @@ function NovaAvaliacao() {
 
       let result: any;
       if (isEdit && editId) {
+        console.log("[LAUDO 03] Atualizando avaliação existente:", editId);
         result = await regerarIA({ data: { id: editId, ...(payload.data as any) } });
+        console.log("[LAUDO 09] Status atualizado (Edit)");
         toast.success("Laudo regenerado com sucesso!");
+        console.log("[LAUDO 10] Redirecionamento iniciado");
         navigate({ to: `/avaliacoes/${editId}` });
       } else {
+        console.log("[LAUDO 04] Chamando processamento de IA/Backend");
         result = await processarIA(payload);
         if (result && result.id) {
+          console.log("[LAUDO 09] Status atualizado (Novo)", { id: result.id });
           toast.success("Avaliação concluída com sucesso!");
+          console.log("[LAUDO 10] Redirecionamento iniciado");
           navigate({ to: `/avaliacoes/${result.id}` });
         } else {
           throw new Error("A IA processou, mas não retornou um ID de avaliação válido.");
         }
       }
     } catch (e: any) {
-      console.error("[processar_ia] Erro crítico:", {
+      console.error("[LAUDO ERR] Falha no fluxo:", {
         message: e.message,
         stack: e.stack,
         timestamp: new Date().toISOString()
@@ -1412,6 +1437,15 @@ function NovaAvaliacao() {
                   </Button>
                   <Button
                     variant="ghost"
+                    size="sm"
+                    type="button"
+                    onClick={() => duplicarComparavel(index)}
+                    className="gap-1 text-brand-blue"
+                  >
+                    <Copy size={16} /> Duplicar
+                  </Button>
+                  <Button
+                    variant="ghost"
                     size="icon"
                     onClick={() => removeComparavel(c.id)}
                     className="text-destructive"
@@ -1610,11 +1644,31 @@ function NovaAvaliacao() {
               <h2 className="text-2xl font-bold text-brand-blue">Tudo pronto!</h2>
               <p className="text-muted-foreground">Nossa IA irá analisar os dados e gerar seu relatório.</p>
             </div>
+            
+            {statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-left">
+                <p className="text-red-800 text-sm font-medium flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Sem créditos disponíveis
+                </p>
+                <p className="text-red-600 text-xs mt-1">
+                  Você precisa adquirir um laudo ou assinar um plano para gerar a avaliação.
+                </p>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-xs text-brand-blue underline mt-2"
+                  onClick={() => navigate({ to: "/planos" })}
+                >
+                  Ver planos e preços
+                </Button>
+              </div>
+            )}
+
             <div className="flex flex-col gap-4 max-w-sm mx-auto">
               <Button
                 onClick={handleProcessar}
                 className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold gap-2"}
-                disabled={isLoading}
+                disabled={isLoading || (statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && !isEdit)}
               >
                 {isLoading ? (
                   <>

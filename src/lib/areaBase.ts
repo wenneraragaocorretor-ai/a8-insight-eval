@@ -26,6 +26,19 @@ export type AreaBase = {
   label: string;
 };
 
+export type RegressaoLinear = {
+  ok: boolean;
+  a: number;
+  b: number;
+  r2: number;
+  valorTotal: number;
+  valorM2: number;
+  areaAvaliada: number;
+  equacao: string;
+  pontos: Array<{ x: number; y: number; label: string }>;
+  interpretacao: string;
+};
+
 const num = (v: unknown): number => {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? n : 0;

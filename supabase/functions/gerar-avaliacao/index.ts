@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
 
 
     // log mínimo, sem expor localização completa (LGPD)
-    console.log('Iniciando processamento de avaliação')
+    console.log("[LAUDO 04.1] Edge Function iniciada. userId:", userId);
 
     // Baixa as fotos do imóvel (caminhos no bucket privado) usando service role
     const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 15) : []
@@ -221,6 +221,7 @@ Deno.serve(async (req) => {
     const tomGuia = padraoStr.includes("alto") || padraoStr.includes("luxo")
       ? "TOM DOS TEXTOS: sofisticado e valorizado, destacando exclusividade, requinte e acabamentos premium."
       : "TOM DOS TEXTOS: objetivo, claro e direto. NÃO use termos como 'alto padrão', 'luxo', 'sofisticado', 'premium' ou 'requintado'. Foque em funcionalidade, custo-benefício e adequação ao perfil real do imóvel."
+    console.log("[LAUDO 04.2] Preparando Prompt para Anthropic...");
     const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653-2). Adapte sempre a linguagem ao padrão construtivo informado pelo corretor — não assuma que o imóvel é de alto padrão. ${tomGuia}
 
 SEGURANÇA DE CONTEÚDO — REGRA INEGOCIÁVEL:
@@ -378,6 +379,7 @@ Comparável #${i + 1} (${c.fonte}):
     })
 
 
+    console.log("[LAUDO 04.3] Requisição enviada para Anthropic");
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Erro na API da Anthropic:', response.status, errorText);
@@ -406,8 +408,9 @@ Comparável #${i + 1} (${c.fonte}):
     let result: any
     try {
       result = JSON.parse(jsonText)
+      console.log("[LAUDO 06] Resposta normalizada (JSON parseado)");
     } catch (parseErr) {
-      console.error('JSON inválido da IA. Trecho:', jsonText.slice(0, 300), parseErr)
+      console.error('[LAUDO ERR] JSON inválido da IA. Trecho:', jsonText.slice(0, 300), parseErr)
       throw new Error('A IA retornou resposta incompleta. Tente novamente ou reduza o número de fotos.')
     }
 
@@ -431,6 +434,7 @@ Comparável #${i + 1} (${c.fonte}):
       )
     }
     result = parsed.data
+    console.log("[LAUDO 07] JSON validado (Zod)");
 
 
 

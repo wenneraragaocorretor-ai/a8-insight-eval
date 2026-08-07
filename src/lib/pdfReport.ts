@@ -5,6 +5,7 @@ import { COVER_BG_BASE64 } from "../assets/cover-bg";
 // Regra única de área-base (espelhada em supabase/functions/_shared/area-base.ts)
 import { areaBaseDe, labelValorM2, sufixoAreaBase } from "./areaBase";
 
+
 // ============================================================
 // A8 Avalia — PDF Premium (portrait A4)
 // 210mm x 297mm | Fundo branco | Dourado #C8A951 | Azul #0F2D5C
@@ -30,7 +31,7 @@ const PW = 210; // page width portrait A4
 const PH = 297; // page height portrait A4
 const M = 25;   // horizontal margin (vertical bands use literals ~12-20mm)
 
-export type PlanoUsuario = "basico" | "profissional" | "expert" | "user" | "pro" | string;
+export type PlanoUsuario = "basico" | "profissional" | "expert" | string;
 export type ModeloPdf = 1 | 2 | 3;
 export type CorretorInfo = {
   nome: string;
@@ -64,6 +65,9 @@ export type RegressaoLinear = {
   valorM2: number;    // y estimado em x = areaAvaliada
   valorTotal: number; // valorM2 * areaAvaliada
   areaAvaliada: number;
+  equacao?: string;
+  pontos?: Array<{ x: number; y: number; label: string }>;
+  interpretacao?: string;
 };
 
 function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any): RegressaoLinear {
@@ -105,14 +109,34 @@ function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any):
   const valorM2 = a + b * areaAvaliada;
   if (!Number.isFinite(valorM2) || valorM2 <= 0) return base;
   const valorTotal = valorM2 * areaAvaliada;
-  return { ok: true, n, a, b, r2, valorM2, valorTotal, areaAvaliada };
+
+  const eq = `y = ${a.toFixed(2)} + (${b.toFixed(4)})x`;
+  const inter = r2 > 0.8 ? "amostra excelente" : r2 > 0.6 ? "amostra boa" : "amostra fraca";
+
+  return {
+    ok: true,
+    n,
+    a,
+    b,
+    r2,
+    valorM2,
+    valorTotal,
+    areaAvaliada,
+    equacao: eq,
+    interpretacao: inter,
+    pontos: pts.map((p, i) => ({ ...p, label: `P${i + 1}` })),
+  };
 }
 
 // Aplica a regressão como valor oficial do resultado (central ±15%).
 // Anexa metadados em `resultado.regressao` para uso nas páginas do PDF.
 function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): RegressaoLinear {
+  console.log("[LAUDO 11.1] Iniciando cálculo de regressão para o PDF");
   const reg = calcularRegressao(avaliacao, comparaveis, resultado);
-  if (!resultado) return reg;
+  if (!resultado) {
+    console.warn("[LAUDO 11.2] Resultado não fornecido para aplicarRegressao");
+    return reg;
+  }
   
   // SEMPRE anexa o objeto de regressão ao resultado, mesmo que ok=false
   resultado.regressao = reg;
@@ -299,8 +323,8 @@ function rodape(doc: jsPDF) {
     doc.text("A8", M, PH - 7);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
-    doc.setTextColor(...NAVY);
-    doc.text("AVALIA — AVALIAÇÕES IMOBILIÁRIAS COM IA", M + 6, PH - 7);
+    doc.setTextColor(...BLUE);
+    doc.text("A8 AVALIA — AVALIAÇÕES COM IA", M + 6, PH - 7);
 
     // Disclaimer central em itálico cinza
     doc.setFont("helvetica", "italic");
@@ -1701,7 +1725,7 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
 
     textoMultilinha(
       doc,
-      `Interpretação do R²: > 0,80 amostra excelente · 0,60–0,80 amostra boa · < 0,60 amostra fraca. n = ${reg.n} comparáveis.`,
+      `Equação: ${reg.equacao || ""} · R²: ${reg.r2.toFixed(4)} (${reg.interpretacao || ""}). n = ${reg.n} comparáveis.`,
       M, boxY + boxH + 6, usable,
       { size: 9, color: GRAY, lineHeight: 4.6 },
     );
