@@ -66,7 +66,7 @@ export type RegressaoLinear = {
   areaAvaliada: number;
 };
 
-function calcularRegressao(avaliacao: any, comparaveis: any[]): RegressaoLinear {
+function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any): RegressaoLinear {
   const tipo = avaliacao?.tipo_imovel;
   const areaAvaliada = areaBaseDe(tipo, avaliacao).area;
   const pts = (comparaveis || [])
@@ -78,7 +78,18 @@ function calcularRegressao(avaliacao: any, comparaveis: any[]): RegressaoLinear 
     .filter((p): p is { x: number; y: number } => p !== null);
   const n = pts.length;
   const base: RegressaoLinear = { ok: false, n, a: 0, b: 0, r2: 0, valorM2: 0, valorTotal: 0, areaAvaliada };
-  if (n < 2 || areaAvaliada <= 0) return base;
+  
+  if (n < 2) {
+    // Se não há comparáveis suficientes para regressão, tenta o valor central técnico do resultado
+    const valorUnitario = Number(resultado?.valor_unitario_medio) || 0;
+    const valorTotal = Number(resultado?.valor_central) || 0;
+    return { 
+      ...base, 
+      valorM2: valorUnitario > 0 ? valorUnitario : areaAvaliada > 0 ? valorTotal / areaAvaliada : 0, 
+      valorTotal 
+    };
+  }
+  if (areaAvaliada <= 0) return base;
   const sx = pts.reduce((s, p) => s + p.x, 0);
   const sy = pts.reduce((s, p) => s + p.y, 0);
   const sxy = pts.reduce((s, p) => s + p.x * p.y, 0);
@@ -100,7 +111,7 @@ function calcularRegressao(avaliacao: any, comparaveis: any[]): RegressaoLinear 
 // Aplica a regressão como valor oficial do resultado (central ±15%).
 // Anexa metadados em `resultado.regressao` para uso nas páginas do PDF.
 function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): RegressaoLinear {
-  const reg = calcularRegressao(avaliacao, comparaveis);
+  const reg = calcularRegressao(avaliacao, comparaveis, resultado);
   if (!resultado) return reg;
   resultado.regressao = reg;
   if (reg.ok) {
@@ -2769,6 +2780,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
+  // Já garantimos a regressão no gerarPdfAvaliacao, mas chamamos aqui para manter a consistência do objeto resultado durante a montagem das páginas
   aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
   paginaArbitrio(doc, resultado, corretor);
@@ -2806,6 +2818,9 @@ export async function gerarPdfAvaliacao(
   if (!podeGerarModelo(plano, modelo)) {
     throw new Error("Faça upgrade para acessar este relatório");
   }
+
+  // Garante que a regressão foi aplicada ao objeto resultado antes de gerar o PDF
+  aplicarRegressao(resultado, avaliacao, comparaveis);
 
   // QR Code (apenas Expert / Modelo 3) — verificação por telefone/email do corretor
   let qrDataUrl: string | null = null;

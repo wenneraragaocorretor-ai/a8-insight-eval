@@ -15,7 +15,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil, Save, RotateCcw } from "lucide-react";
+import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil, Save, RotateCcw, Loader2 } from "lucide-react";
 import { limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 import { ExpertChat } from "../../components/ExpertChat";
 
@@ -148,7 +148,10 @@ function AvaliacaoDetalhe() {
     }
   };
 
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
   const handleDownload = async () => {
+    if (generatingPdf) return;
     if (!disponiveis.includes(modelo)) {
       toast.error("Faça upgrade para acessar este relatório", {
         action: { label: "Ver planos", onClick: () => navigate({ to: "/planos" }) },
@@ -168,85 +171,99 @@ function AvaliacaoDetalhe() {
       );
       return;
     }
-    // Carrega fotos do imóvel (paths privados → dataURL) para embutir no PDF
-    const fotosPaths: string[] = Array.isArray((avaliacao as any)?.fotos) ? (avaliacao as any).fotos : [];
-    const fotosMeta: Array<{ path: string; legenda?: string; principal?: boolean; comentario_ia?: string }> =
-      Array.isArray((avaliacao as any)?.fotos_meta) ? (avaliacao as any).fotos_meta : [];
-    const fotosDataUrls: string[] = [];
-    const fotosDetalhadas: Array<{ dataUrl: string; legenda: string; principal: boolean; comentario_ia: string }> = [];
-    for (const p of fotosPaths.slice(0, 15)) {
-      try {
-        const { data: blob, error } = await supabase.storage.from("avaliacoes-fotos").download(p);
-        if (error || !blob) continue;
-        const dataUrl: string = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-        fotosDataUrls.push(dataUrl);
-        const meta = fotosMeta.find((m) => m.path === p);
-        fotosDetalhadas.push({
-          dataUrl,
-          legenda: meta?.legenda ?? "",
-          principal: !!meta?.principal,
-          comentario_ia: meta?.comentario_ia ?? "",
-        });
-      } catch (e) {
-        console.error("Falha ao carregar foto para o PDF:", e);
-      }
-    }
-    // Carrega o logo do corretor (bucket privado "logos")
-    let logoDataUrl: string | null = null;
-    const logoPath = (profile as any)?.logo_url;
-    if (logoPath) {
-      try {
-        const { data: blob } = await supabase.storage.from("logos").download(logoPath);
-        if (blob) {
-          logoDataUrl = await new Promise((resolve, reject) => {
+
+    setGeneratingPdf(true);
+    const toastId = toast.loading("Gerando PDF...");
+
+    try {
+      // Carrega fotos do imóvel (paths privados → dataURL) para embutir no PDF
+      const fotosPaths: string[] = Array.isArray((avaliacao as any)?.fotos) ? (avaliacao as any).fotos : [];
+      const fotosMeta: Array<{ path: string; legenda?: string; principal?: boolean; comentario_ia?: string }> =
+        Array.isArray((avaliacao as any)?.fotos_meta) ? (avaliacao as any).fotos_meta : [];
+      const fotosDataUrls: string[] = [];
+      const fotosDetalhadas: Array<{ dataUrl: string; legenda: string; principal: boolean; comentario_ia: string }> = [];
+      
+      for (const p of fotosPaths.slice(0, 15)) {
+        try {
+          const { data: blob, error } = await supabase.storage.from("avaliacoes-fotos").download(p);
+          if (error || !blob) continue;
+          const dataUrl: string = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(String(reader.result));
             reader.onerror = () => reject(reader.error);
             reader.readAsDataURL(blob);
           });
+          fotosDataUrls.push(dataUrl);
+          const meta = fotosMeta.find((m) => m.path === p);
+          fotosDetalhadas.push({
+            dataUrl,
+            legenda: meta?.legenda ?? "",
+            principal: !!meta?.principal,
+            comentario_ia: meta?.comentario_ia ?? "",
+          });
+        } catch (e) {
+          console.error("Falha ao carregar foto para o PDF:", e);
         }
-      } catch (e) {
-        console.error("Falha ao carregar logo:", e);
       }
-    }
-    // Mapa removido — laudo Expert agora exibe apenas o endereço em texto.
 
-    // Marketing (Plano Expert / Modelo 3) — gera silenciosamente se ainda não houver
-    let marketingForPdf: MarketingResultado | null = marketing;
-    if (modelo === 3 && !marketingForPdf) {
-      try {
-        marketingForPdf = await fetchMarketing({ data: { id: avaliacao.id } });
-        setMarketing(marketingForPdf);
-      } catch (e) {
-        console.error("Falha ao gerar marketing:", e);
+      // Carrega o logo do corretor (bucket privado "logos")
+      let logoDataUrl: string | null = null;
+      const logoPath = (profile as any)?.logo_url;
+      if (logoPath) {
+        try {
+          const { data: blob } = await supabase.storage.from("logos").download(logoPath);
+          if (blob) {
+            logoDataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result));
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(blob);
+            });
+          }
+        } catch (e) {
+          console.error("Falha ao carregar logo:", e);
+        }
       }
-    }
-    const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
-    await gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
-      modelo,
-      plano,
-      fotosDataUrls,
-      fotosDetalhadas,
+
+      // Marketing (Plano Expert / Modelo 3) — gera silenciosamente se ainda não houver
+      let marketingForPdf: MarketingResultado | null = marketing;
+      if (modelo === 3 && !marketingForPdf) {
+        try {
+          marketingForPdf = await fetchMarketing({ data: { id: avaliacao.id } });
+          setMarketing(marketingForPdf);
+        } catch (e) {
+          console.error("Falha ao gerar marketing:", e);
+        }
+      }
+
+      const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
+      await gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
+        modelo,
+        plano,
+        fotosDataUrls,
+        fotosDetalhadas,
+        marketing: marketingForPdf,
+        corretor: {
+          nome: profile?.nome ?? "Corretor",
+          creci: profile?.creci ?? null,
+          cnai: (profile as any)?.cnai ?? null,
+          outro_registro: (profile as any)?.outro_registro ?? null,
+          telefone: profile?.telefone ?? null,
+          cidade: profile?.cidade ?? null,
+          estado: profile?.estado ?? null,
+          email: (profile as any)?.email ?? null,
+          nome_imobiliaria: (profile as any)?.nome_imobiliaria ?? null,
+          logo_data_url: logoDataUrl,
+        },
+      });
       
-      marketing: marketingForPdf,
-      corretor: {
-        nome: profile?.nome ?? "Corretor",
-        creci: profile?.creci ?? null,
-        cnai: (profile as any)?.cnai ?? null,
-        outro_registro: (profile as any)?.outro_registro ?? null,
-        telefone: profile?.telefone ?? null,
-        cidade: profile?.cidade ?? null,
-        estado: profile?.estado ?? null,
-        email: (profile as any)?.email ?? null,
-        nome_imobiliaria: (profile as any)?.nome_imobiliaria ?? null,
-        logo_data_url: logoDataUrl,
-      },
-    });
+      toast.success("PDF baixado com sucesso!", { id: toastId });
+    } catch (e: any) {
+      console.error("Erro ao gerar PDF:", e);
+      toast.error(`Falha ao gerar PDF: ${e.message || "Erro desconhecido"}`, { id: toastId });
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
 
@@ -321,8 +338,20 @@ function AvaliacaoDetalhe() {
             >
               <Pencil size={16} /> Editar Laudo
             </Button>
-            <Button onClick={handleDownload} className="gap-2 bg-brand-gold text-primary-foreground">
-              <Download size={16} /> Baixar PDF
+            <Button 
+              onClick={handleDownload} 
+              className="gap-2 bg-brand-gold text-primary-foreground"
+              disabled={generatingPdf}
+            >
+              {generatingPdf ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Gerando PDF...
+                </>
+              ) : (
+                <>
+                  <Download size={16} /> Baixar PDF
+                </>
+              )}
             </Button>
           </div>
           {(() => {
