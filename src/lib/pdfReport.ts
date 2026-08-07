@@ -65,6 +65,9 @@ export type RegressaoLinear = {
   valorM2: number;    // y estimado em x = areaAvaliada
   valorTotal: number; // valorM2 * areaAvaliada
   areaAvaliada: number;
+  equacao?: string;
+  pontos?: Array<{ x: number; y: number; label: string }>;
+  interpretacao?: string;
 };
 
 function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any): RegressaoLinear {
