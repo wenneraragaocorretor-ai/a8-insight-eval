@@ -1,3 +1,4 @@
+// A IA CONTINUA SEM GERAR A AVALIACAO. O QUE PODE ESTA ACONTECENDO, O QUE ESTA IMPEDINDO
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 
 
