@@ -25,7 +25,7 @@ import { ExpertChat } from "../../components/ExpertChat";
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
     if (params.id.startsWith("mock-")) {
-      const stored = sessionStorage.getItem(`mock_laudo_${params.id}`);
+      const stored = typeof window !== 'undefined' ? sessionStorage.getItem(`mock_laudo_${params.id}`) : null;
       if (stored) return JSON.parse(stored);
       throw new Error("Mock laudo não encontrado no cache local");
     }

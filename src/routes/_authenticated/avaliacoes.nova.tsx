@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { processarAvaliacaoIA, regerarAvaliacao, getAvaliacaoDetalhe, limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 import { getStatusAssinatura, criarCheckoutSession } from "../../lib/stripe.functions";
@@ -755,10 +755,14 @@ function NovaAvaliacao() {
     processandoRef.current = true;
 
     // DIAGNÓSTICO: MOCK LOCAL ATIVO (USE_LOCAL_MOCK=true)
-    const USE_LOCAL_MOCK = true;
+    const USE_LOCAL_MOCK = useMemo(() => {
+      // Prioriza localStorage se definido (para debug), senão usa true por padrão neste build
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('USE_LOCAL_MOCK') : null;
+      return saved === null ? true : saved === 'true';
+    }, []);
 
     try {
-      if (USE_LOCAL_MOCK) {
+      if (USE_LOCAL_MOCK === true) {
         console.log("[LAUDO 01] MODO DIAGNÓSTICO: Mock Local Iniciado...");
         
         // Simula o atraso de 500ms
@@ -1671,10 +1675,12 @@ function NovaAvaliacao() {
                 disabled={isLoading || (statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && !isEdit)}
               >
                 {isLoading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    {isEdit ? "Regenerando..." : "Processando..."}
-                  </>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <Loader2 size={18} className="animate-spin" />
+                      {isEdit ? "Regenerando..." : "Processando..."}
+                    </div>
+                  </div>
                 ) : (
                   <>
                     {isEdit ? <Pencil size={18} /> : <Sparkles size={18} />}
@@ -1712,6 +1718,14 @@ function NovaAvaliacao() {
       <p className="mt-8 text-xs text-center text-muted-foreground italic">
         "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional habilitado (CNAI/IBAPE)"
       </p>
+
+      {typeof window !== 'undefined' && localStorage.getItem('USE_LOCAL_MOCK') === 'true' && (
+        <div className="fixed bottom-4 right-4 z-[9999]">
+          <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg animate-pulse">
+            MOCK LOCAL V4 ATIVO
+          </div>
+        </div>
+      )}
 
       <Dialog open={showLimiteModal} onOpenChange={setShowLimiteModal}>
         <DialogContent className="sm:max-w-md">
