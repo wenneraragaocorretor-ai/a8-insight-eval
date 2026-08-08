@@ -1894,10 +1894,10 @@ function NovaAvaliacao() {
         "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional habilitado (CNAI/IBAPE)"
       </p>
 
-      {typeof window !== 'undefined' && localStorage.getItem('USE_LOCAL_MOCK') === 'true' && (
+      {typeof window !== 'undefined' && localStorage.getItem('DEBUG_MODE') === 'true' && (
         <div className="fixed bottom-4 right-4 z-[9999]">
-          <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg animate-pulse">
-            MOCK LOCAL V4 ATIVO
+          <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg">
+            MODO DIAGNÓSTICO ATIVO
           </div>
         </div>
       )}
