@@ -1459,15 +1459,11 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
 
   // Disclaimer técnico (CNAI/IBAPE)
   doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setTextColor(220, 220, 230);
   doc.text(
-    "Esta avaliação é mercadológica e não substitui laudo técnico",
-    PW / 2, PH - 22, { align: "center" },
-  );
-  doc.text(
-    "aprovado por profissional habilitado (CNAI/IBAPE).",
-    PW / 2, PH - 17, { align: "center" },
+    "Esta avaliação é mercadológica e não substitui laudo técnico assinado por profissional habilitado (CNAI/IBAPE).",
+    PW / 2, PH - 15, { align: "center" },
   );
 
   // Faixa dourada inferior
@@ -1661,6 +1657,12 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
     M, cursorY, usable,
     { size: 11, color: TEXT, lineHeight: 5.2 },
   ) ?? cursorY + 10;
+
+  // Disclaimer legal para Modelos 1 e 2
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+  doc.text("Nota: Este estudo utiliza tratamento por fatores de homogeneização e regressão linear simplificada conforme NBR 14653-2.", M, cursorY + 5);
 
   // ----- Regressão Linear (mínimos quadrados) -----
   const reg: RegressaoLinear | undefined = resultado?.regressao;
@@ -2885,6 +2887,13 @@ export async function gerarPdfAvaliacao(
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
 
   const nome = `A8-Avaliacao-${refNum}.pdf`;
+  doc.setProperties({
+    title: `A8 Avalia — Referência ${refNum}`,
+    subject: "Avaliação Imobiliária",
+    author: corretor.nome,
+    creator: "A8 Avalia",
+    keywords: "avaliação, imóvel, mercado",
+  });
   doc.save(nome);
 }
 
