@@ -837,7 +837,9 @@ function NovaAvaliacao() {
       if (USE_LOCAL_MOCK === true) {
         console.log("[LAUDO 01] MODO DIAGNÓSTICO: Mock Local Iniciado...");
         
-        // Limite de segurança contra travamentos: 15 segundos no modo mock
+        // Deterministico: Definimos o timeout e limpamos no unmount se necessário
+        // No entanto, como handleProcessar é uma função asíncrona fechada,
+        // o timeoutId serve apenas para interromper o estado se algo travar.
         timeoutId = setTimeout(() => {
           if (processandoRef.current) {
             console.error("[LAUDO ERR] Timeout de segurança atingido no Mock");
@@ -846,6 +848,7 @@ function NovaAvaliacao() {
             setErrorDetail({ mensagem: "O processamento local excedeu o tempo limite de segurança (15s)." });
           }
         }, 15000);
+
 
         console.log("[LAUDO 02] Simulando processamento...");
         await new Promise(resolve => setTimeout(resolve, 1000));
