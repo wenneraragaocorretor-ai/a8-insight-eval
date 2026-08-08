@@ -837,7 +837,9 @@ function NovaAvaliacao() {
       if (USE_LOCAL_MOCK === true) {
         console.log("[LAUDO 01] MODO DIAGNÓSTICO: Mock Local Iniciado...");
         
-        // Limite de segurança contra travamentos: 15 segundos no modo mock
+        // Deterministico: Definimos o timeout e limpamos no unmount se necessário
+        // No entanto, como handleProcessar é uma função asíncrona fechada,
+        // o timeoutId serve apenas para interromper o estado se algo travar.
         timeoutId = setTimeout(() => {
           if (processandoRef.current) {
             console.error("[LAUDO ERR] Timeout de segurança atingido no Mock");
@@ -846,6 +848,7 @@ function NovaAvaliacao() {
             setErrorDetail({ mensagem: "O processamento local excedeu o tempo limite de segurança (15s)." });
           }
         }, 15000);
+
 
         console.log("[LAUDO 02] Simulando processamento...");
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -929,10 +932,17 @@ function NovaAvaliacao() {
         // se a navegação for lenta ou interceptada.
         setIsLoading(false);
         processandoRef.current = false;
-        console.log("[LAUDO 10.1] Executando navegação...");
+        console.log("[LAUDO 10.1] Finalizando processamento mock e navegando...");
+        setIsLoading(false);
+        processandoRef.current = false;
+        
+        // Sequência determinística sem atrasos arbitrários se possível, 
+        // mas o micro-delay garante que o loop de eventos processe o estado da UI (isLoading=false) 
+        // antes de mudar de rota, evitando percepção de travamento.
         setTimeout(() => {
           navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
-        }, 100);
+        }, 50);
+
         return;
 
 
