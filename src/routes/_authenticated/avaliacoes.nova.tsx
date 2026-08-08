@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { processarAvaliacaoIA, regerarAvaliacao, getAvaliacaoDetalhe, limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 import { getStatusAssinatura, criarCheckoutSession } from "../../lib/stripe.functions";
@@ -755,7 +755,11 @@ function NovaAvaliacao() {
     processandoRef.current = true;
 
     // DIAGNÓSTICO: MOCK LOCAL ATIVO (USE_LOCAL_MOCK=true)
-    const USE_LOCAL_MOCK = true;
+    const USE_LOCAL_MOCK = useMemo(() => {
+      // Prioriza localStorage se definido (para debug), senão usa true por padrão neste build
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('USE_LOCAL_MOCK') : null;
+      return saved === null ? true : saved === 'true';
+    }, []);
 
     try {
       if (USE_LOCAL_MOCK) {
