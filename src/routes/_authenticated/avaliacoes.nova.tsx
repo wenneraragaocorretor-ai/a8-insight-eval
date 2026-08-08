@@ -826,7 +826,7 @@ function NovaAvaliacao() {
     setErrorDetail(null);
     processandoRef.current = true;
 
-    // DIAGNÓSTICO: MOCK LOCAL ATIVO (USE_LOCAL_MOCK=true)
+    // DIAGNÓSTICO ATIVO (USE_LOCAL_MOCK=true)
     const savedMock = typeof window !== 'undefined' ? localStorage.getItem('USE_LOCAL_MOCK') : null;
     const USE_LOCAL_MOCK = savedMock === null ? true : savedMock === 'true';
 
@@ -835,7 +835,7 @@ function NovaAvaliacao() {
 
     try {
       if (USE_LOCAL_MOCK === true) {
-        console.log("[LAUDO 01] MODO DIAGNÓSTICO: Mock Local Iniciado...");
+        console.log("[LAUDO 01] MODO DIAGNÓSTICO: Iniciado...");
         
         // Deterministico: Definimos o timeout e limpamos no unmount se necessário
         // No entanto, como handleProcessar é uma função asíncrona fechada,
@@ -932,7 +932,7 @@ function NovaAvaliacao() {
         // se a navegação for lenta ou interceptada.
         setIsLoading(false);
         processandoRef.current = false;
-        console.log("[LAUDO 10.1] Finalizando processamento mock e navegando...");
+        console.log("[LAUDO 10.1] Finalizando processamento e navegando...");
         setIsLoading(false);
         processandoRef.current = false;
         
