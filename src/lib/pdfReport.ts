@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import "jspdf-autotable";
 import QRCode from "qrcode";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 // Regra única de área-base (espelhada em supabase/functions/_shared/area-base.ts)
