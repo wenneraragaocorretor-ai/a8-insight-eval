@@ -912,7 +912,9 @@ function NovaAvaliacao() {
           },
           comparaveis: comparaveis.map(c => ({ ...c, valor_anunciado: c.valor })),
           profile: { 
-            nome: "Corretor", 
+            nome: "Corretor de Testes", 
+            creci: "12345-F",
+            email: "teste@a8avalia.com.br",
             plano: plano 
           }
         });

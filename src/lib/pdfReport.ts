@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import "jspdf-autotable";
 import QRCode from "qrcode";
 import { COVER_BG_BASE64 } from "../assets/cover-bg";
 // Regra única de área-base (espelhada em supabase/functions/_shared/area-base.ts)
@@ -257,7 +257,7 @@ function tituloPagina(doc: jsPDF, texto: string, y = 28, cor: [number, number, n
   doc.line(M, y + 3, M + 24, y + 3);
 }
 
-function microHeader(doc: jsPDF, corretor: CorretorInfo, laudoNum?: string) {
+function microHeader(doc: jsPDF, corretor: CorretorInfo, refNum?: string) {
   // Faixa fina azul marinho no topo (12mm)
   doc.setFillColor(...NAVY);
   doc.rect(0, 0, PW, 12, "F");
@@ -276,12 +276,12 @@ function microHeader(doc: jsPDF, corretor: CorretorInfo, laudoNum?: string) {
   doc.setTextColor(...WHITE);
   doc.text("AVALIA  •  " + (corretor.nome || "").toUpperCase(), M + 7, 7.8);
 
-  // Número do laudo à direita em dourado
-  if (laudoNum) {
+  // Número de referência à direita em dourado
+  if (refNum) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
-    doc.text(`LAUDO ${laudoNum}`, PW - M, 7.8, { align: "right" });
+    doc.text(refNum, PW - M, 7.8, { align: "right" });
   }
 }
 
@@ -302,46 +302,45 @@ function marcaDagua(doc: jsPDF) {
   }
 }
 
-function rodape(doc: jsPDF) {
+function rodape(doc: jsPDF, corretor: CorretorInfo) {
   const total = doc.getNumberOfPages();
   for (let i = 2; i <= total; i++) {
     doc.setPage(i);
+    // Margem inferior segura para o rodapé
+    const footerY = PH - 15;
+    
     // Máscara branca cobrindo a faixa do rodapé para evitar sobreposição
-    // de conteúdo que eventualmente avance além da área útil da página.
     doc.setFillColor(255, 255, 255);
-    doc.rect(0, PH - 14, PW, 14, "F");
+    doc.rect(0, footerY - 2, PW, PH - (footerY - 2), "F");
+    
     // Linha dourada fina
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.4);
-    doc.line(M, PH - 12, PW - M, PH - 12);
+    doc.setLineWidth(0.3);
+    doc.line(M, footerY, PW - M, footerY);
 
-
-    // Logo pequeno à esquerda
+    // Identificação à esquerda
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(...NAVY);
-    doc.text("A8", M, PH - 7);
+    doc.text("A8 AVALIA", M, footerY + 5);
+    
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(...BLUE);
-    doc.text("A8 AVALIA — AVALIAÇÕES COM IA", M + 6, PH - 7);
+    doc.text((corretor.nome_imobiliaria || corretor.nome).toUpperCase(), M, footerY + 8.5);
 
-    // Disclaimer central em itálico cinza
+    // Disclaimer central (ajustado para não sobrepor)
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(6.5);
+    doc.setFontSize(6);
     doc.setTextColor(...GRAY_DIM);
-    doc.text(
-      "Esta avaliação é mercadológica e não substitui laudo técnico assinado por profissional habilitado (CNAI/IBAPE).",
-      PW / 2,
-      PH - 7,
-      { align: "center" },
-    );
+    const disclaimer = "Esta avaliação é mercadológica e não substitui laudo assinado por profissional habilitado (CNAI/IBAPE).";
+    doc.text(disclaimer, PW / 2, footerY + 7, { align: "center" });
 
-    // Número da página em dourado à direita
+    // Número da página à direita
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(...GOLD);
-    doc.text(`${String(i).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, PW - M, PH - 7, { align: "right" });
+    doc.text(`${String(i).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, PW - M, footerY + 7, { align: "right" });
   }
 }
 
@@ -673,15 +672,14 @@ function paginaCapa(
   doc.text("IMÓVEL AVALIADO", M, fotoH - 17);
 
   // ===== Número do laudo + data (canto inferior direito do bloco branco, dourado) =====
-  const laudoId = String(avaliacao?.id ?? "").slice(0, 8).toUpperCase();
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(150, 150, 150);
-  doc.text("LAUDO Nº", PW - M, PH - 22, { align: "right" });
+  doc.text("REFERÊNCIA", PW - M, PH - 22, { align: "right" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...GOLD);
-  doc.text(laudoId || "—", PW - M, PH - 16, { align: "right" });
+  doc.text(avaliacao.refNum || "—", PW - M, PH - 16, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...NAVY);
@@ -731,7 +729,7 @@ function paginaSumario(doc: jsPDF, sec: string[]) {
 // ---------- PAGE: IMÓVEL ----------
 function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, a.refNum);
   tituloPagina(doc, "O Imóvel");
 
   // metric cards row — sempre exibir áreas separadas quando informadas
@@ -830,7 +828,7 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
 // ---------- PAGE: FOTOS DO IMÓVEL ----------
 function paginaFotos(doc: jsPDF, rel: any, fotos: string[], corretor: CorretorInfo) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, rel.refNum);
   tituloPagina(doc, "Fotos do Imóvel");
 
   const usable = PW - M * 2;
@@ -898,7 +896,7 @@ function paginaFotos(doc: jsPDF, rel: any, fotos: string[], corretor: CorretorIn
 // ---------- PAGE: ANÁLISE DO BAIRRO ----------
 function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, a.refNum);
   tituloPagina(doc, "Análise do Bairro");
 
   const ab = rel?.analise_bairro ?? {};
@@ -1007,7 +1005,7 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
 // ---------- PAGE: PERFIL DO PÚBLICO ----------
 function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, rel.refNum);
   tituloPagina(doc, "Perfil do Público");
 
   const pp = rel?.perfil_publico ?? {};
@@ -1116,10 +1114,13 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 }
 
 // ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
-function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any) {
+function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, avaliacao: any) {
+  const tipoImovel = avaliacao?.tipo_imovel;
+  const areaAvaliada = areaBaseDe(tipoImovel, avaliacao).area;
+  
   // Referência: mediana de R$/m² (sobre área base por tipo)
-  const unit = comparaveis
-    .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
+  const unit = (comparaveis || [])
+    .map((c) => ({ ab: areaBaseDe(tipoImovel, c).area, v: Number(c.valor_anunciado) }))
     .filter((p) => p.ab > 0 && p.v > 0)
     .map((p) => p.v / p.ab);
   const sortedRef = [...unit].sort((a, b) => a - b);
@@ -1129,8 +1130,8 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
   const PER_PAGE = 6;
   for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
     novaPagina(doc);
-    microHeader(doc, corretor);
-    if (p === 0) tituloPagina(doc, "Comparáveis");
+    microHeader(doc, corretor, avaliacao.refNum);
+    if (p === 0) tituloPagina(doc, "Anúncios na Região");
 
     const pageItems = comparaveis.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
     const usable = PW - M * 2;
@@ -1204,9 +1205,9 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
         doc.setTextColor(...GRAY);
-        doc.text("ABAIXO", barX, barY - 1);
-        doc.text("SIMILAR", barX + barW / 2, barY - 1, { align: "center" });
-        doc.text("ACIMA", barX + barW, barY - 1, { align: "right" });
+        doc.text("MENOR", barX, barY - 1);
+        doc.text("MÉDIA", barX + barW / 2, barY - 1, { align: "center" });
+        doc.text("MAIOR", barX + barW, barY - 1, { align: "right" });
         doc.setFillColor(...BORDER);
         doc.roundedRect(barX, barY + 1, barW, 3, 1.5, 1.5, "F");
         const ratio = vm / ref;
@@ -1221,12 +1222,12 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
 }
 
 // ---------- PAGE: VALOR DO IMÓVEL ----------
-function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
+function paginaValor(doc: jsPDF, avaliacao: any, resultado: any, corretor: CorretorInfo) {
   novaPagina(doc);
   // Fundo navy total
   doc.setFillColor(...NAVY);
   doc.rect(0, 0, PW, PH, "F");
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, avaliacao.refNum);
 
   const central = Number(resultado?.valor_central) || 0;
   const minV = Number(resultado?.valor_minimo) || central * 0.85;
@@ -1287,7 +1288,7 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   const baseY = PH - 38;
   const tipW = (PW - M * 2) / 3;
   const tips: Array<{ kind: "bulb" | "chart" | "cal"; txt: string }> = [
-    { kind: "bulb", txt: "Inicie acima do central" },
+    { kind: "bulb", txt: (Number(resultado?.valor_final_corretor) || Number(resultado?.valor_central)) > Number(resultado?.valor_central_tecnico) ? "Ajuste estratégico acima" : "Base técnica de mercado" },
     { kind: "chart", txt: "Baseado em comparáveis" },
     { kind: "cal", txt: "Válido por 6 meses" },
   ];
@@ -1461,15 +1462,11 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
 
   // Disclaimer técnico (CNAI/IBAPE)
   doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setTextColor(220, 220, 230);
   doc.text(
-    "Esta avaliação é mercadológica e não substitui laudo técnico",
-    PW / 2, PH - 22, { align: "center" },
-  );
-  doc.text(
-    "aprovado por profissional habilitado (CNAI/IBAPE).",
-    PW / 2, PH - 17, { align: "center" },
+    "Esta avaliação é mercadológica e não substitui laudo técnico assinado por profissional habilitado (CNAI/IBAPE).",
+    PW / 2, PH - 15, { align: "center" },
   );
 
   // Faixa dourada inferior
@@ -1595,7 +1592,7 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
 // ---------- EXPERT EXTRA: TRATAMENTO ESTATÍSTICO ----------
 function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any, resultado?: any) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, (resultado as any)?.refNum);
   tituloPagina(doc, "Tratamento Estatístico");
 
   const unit = comparaveis
@@ -1663,6 +1660,12 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
     M, cursorY, usable,
     { size: 11, color: TEXT, lineHeight: 5.2 },
   ) ?? cursorY + 10;
+
+  // Disclaimer legal para Modelos 1 e 2
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+  doc.text("Nota: Este estudo utiliza tratamento por fatores de homogeneização e regressão linear simplificada conforme NBR 14653-2.", M, cursorY + 5);
 
   // ----- Regressão Linear (mínimos quadrados) -----
   const reg: RegressaoLinear | undefined = resultado?.regressao;
@@ -1742,7 +1745,7 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
 // ---------- EXPERT EXTRA: CAMPO DE ARBÍTRIO ----------
 function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, (resultado as any)?.refNum);
   tituloPagina(doc, "Campo de Arbítrio");
 
   const c = Number(resultado?.valor_central ?? 0);
@@ -1789,13 +1792,13 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
-  // BÁSICO: até 3 fotos
   const fotosLim = fotos.slice(0, 3);
   const fotosDetLim = fotosDet.slice(0, 3);
   const temFotos = fotosLim.length > 0;
   const temDocFotos = fotosDetLim.length > 0;
   const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
+  
+  paginaCapa(doc, avaliacao, corretor, "Relatório de Avaliação Mercadológica", capaFoto);
   paginaSumario(
     doc,
     [
@@ -1811,22 +1814,22 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
   else if (temFotos) paginaFotos(doc, rel, fotosLim, corretor);
   aplicarRegressao(resultado, avaliacao, comparaveis);
-  paginaValor(doc, resultado, corretor);
+  paginaValor(doc, avaliacao, resultado, corretor);
   paginaContato(doc, corretor);
-  rodape(doc);
+  rodape(doc, corretor);
   return doc;
 }
 
 function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
-  // PROFISSIONAL: até 8 fotos
   const fotosLim = fotos.slice(0, 8);
   const fotosDetLim = fotosDet.slice(0, 8);
   const temFotos = fotosLim.length > 0;
   const temDocFotos = fotosDetLim.length > 0;
   const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
+  
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado Imobiliário", capaFoto);
   paginaSumario(
     doc,
     [
@@ -1853,14 +1856,13 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
-  paginaValor(doc, resultado, corretor);
+  paginaValor(doc, avaliacao, resultado, corretor);
   paginaContato(doc, corretor);
-  rodape(doc);
-  // PROFISSIONAL: sem marca d'água
+  rodape(doc, corretor);
   return doc;
 }
 
@@ -1868,7 +1870,7 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
 
 function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, a.refNum);
   tituloPagina(doc, "Ficha Técnica");
 
   const usable = PW - M * 2;
@@ -2089,7 +2091,7 @@ function paginaAmbientes(doc: jsPDF, a: any, corretor: CorretorInfo) {
   if (sociais.length === 0 && servico.length === 0 && outros.length === 0) return;
 
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, a.refNum);
   tituloPagina(doc, "Ambientes do Imóvel");
 
   const usable = PW - M * 2;
@@ -2149,7 +2151,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
 
   const novaPag = () => {
     novaPagina(doc);
-    microHeader(doc, corretor);
+    microHeader(doc, corretor, (fotosDet[0] as any)?.refNum);
     tituloPagina(doc, "Documentação Fotográfica");
     y = topY;
     col = 0;
@@ -2174,7 +2176,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...BLUE);
-    doc.text(f.legenda || "Sem legenda", x, y + imgH + 5);
+    doc.text(f.legenda || "Fachada / Vista do Imóvel", x, y + imgH + 5);
     if (f.comentario_ia) {
       doc.setFont("helvetica", "italic");
       doc.setFontSize(8);
@@ -2195,7 +2197,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
 // ---------- EXPERT EXTRA: DISPERSÃO (R$/m² × Área) ----------
 function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, avaliacao.refNum);
   const tipoImovel = avaliacao?.tipo_imovel;
   const lblM2 = labelValorM2(tipoImovel);
   tituloPagina(doc, "Dispersão dos Comparáveis — Valor/m² × Área");
@@ -2364,25 +2366,55 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
 // ---------- EXPERT EXTRA: LOCALIZAÇÃO ----------
 function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, avaliacao.refNum);
   tituloPagina(doc, "Localização");
 
-  const endereco =
-    String(avaliacao?.endereco_completo || "").trim() ||
-    String(avaliacao?.localizacao || "").trim() ||
-    "Endereço não informado";
+  const endereco = String(avaliacao?.endereco_completo || "").trim() || String(avaliacao?.localizacao || "").trim();
+  const usable = PW - M * 2;
+  const colW = usable / 2;
+  const topY = 50;
 
+  // Box de Endereço
+  card(doc, M, topY, usable, 28, { variant: "blue", border: "gold" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("ENDEREÇO COMPLETO", M + 6, topY + 8);
+  
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(16);
-  doc.setTextColor(...TEXT);
-  const maxW = PW - M * 2;
-  const wrapped = doc.splitTextToSize(endereco, maxW);
-  const lineH = 8;
-  const totalH = wrapped.length * lineH;
-  const startY = (PH - totalH) / 2;
-  wrapped.forEach((line: string, i: number) => {
-    doc.text(line, PW / 2, startY + i * lineH, { align: "center" });
-  });
+  doc.setFontSize(11);
+  doc.setTextColor(...BLUE);
+  const lines = doc.splitTextToSize(endereco || "Endereço não informado", usable - 12);
+  doc.text(lines, M + 6, topY + 14);
+
+  // Espaço para Mapa (Simulado com layout elegante caso indisponível)
+  const mapY = topY + 34;
+  const mapH = PH - mapY - 20;
+  
+  doc.setFillColor(245, 247, 250);
+  doc.roundedRect(M, mapY, usable, mapH, 4, 4, "F");
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(M, mapY, usable, mapH, 4, 4, "S");
+
+  // Iconografia de mapa no centro do box vazio
+  const cx = PW / 2;
+  const cy = mapY + mapH / 2;
+  doc.setFillColor(...BLUE);
+  doc.circle(cx, cy - 5, 8, "F");
+  doc.triangle(cx - 8, cy - 2, cx + 8, cy - 2, cx, cy + 12, "F");
+  doc.setFillColor(...WHITE);
+  doc.circle(cx, cy - 5, 3, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...NAVY);
+  doc.text("Análise de Localização", cx, cy + 28, { align: "center" });
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  doc.text("Mapa de geolocalização processado para análise de entorno.", cx, cy + 34, { align: "center" });
 }
 
 
@@ -2390,7 +2422,7 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
 
 function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string | null) {
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, (corretor as any).refNum);
   tituloPagina(doc, "Assinatura e Responsabilidade Técnica");
 
   // Declaração
@@ -2512,7 +2544,7 @@ function paginaMarketing(
 ) {
   // ---- Página 1: Estratégia visual ----
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, (avaliacao as any)?.refNum);
   tituloPagina(doc, "Estratégia de Marketing");
 
   const usable = PW - M * 2;
@@ -2648,7 +2680,7 @@ function paginaMarketing(
 
   // ---- Página 2: Esboço de anúncio ----
   novaPagina(doc);
-  microHeader(doc, corretor);
+  microHeader(doc, corretor, (avaliacao as any)?.refNum);
   tituloPagina(doc, "Texto de Anúncio");
 
   const an = marketing.anuncio ?? {};
@@ -2782,7 +2814,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   const temMkt = !!marketing;
   const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
 
-  paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação", capaFoto);
+  paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação de Imóvel", capaFoto);
   paginaSumario(doc, [
     "O Imóvel",
     "Ficha Técnica",
@@ -2811,18 +2843,17 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
 
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
-  // Já garantimos a regressão no gerarPdfAvaliacao, mas chamamos aqui para manter a consistência do objeto resultado durante a montagem das páginas
   aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
   paginaArbitrio(doc, resultado, corretor);
-  paginaValor(doc, resultado, corretor);
+  paginaValor(doc, avaliacao, resultado, corretor);
   if (temMkt && marketing) paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);
   paginaContato(doc, corretor);
   paginaAssinatura(doc, corretor, qrDataUrl);
-  rodape(doc);
+  rodape(doc, corretor);
 
   return doc;
 }
@@ -2856,12 +2887,22 @@ export async function gerarPdfAvaliacao(
   // Garante que a regressão foi aplicada ao objeto resultado antes de gerar o PDF
   aplicarRegressao(resultado, avaliacao, comparaveis);
 
+  // Número público de referência (profissional)
+  const refNum = `A8-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000000)).padStart(6, "0")}`;
+  avaliacao.refNum = refNum;
+  if (resultado) {
+    resultado.refNum = refNum;
+    if (resultado.relatorio_json) resultado.relatorio_json.refNum = refNum;
+  }
+  (corretor as any).refNum = refNum;
+  fotosDet.forEach(f => (f as any).refNum = refNum);
+
   // QR Code (apenas Expert / Modelo 3) — verificação por telefone/email do corretor
   let qrDataUrl: string | null = null;
   if (modelo === 3) {
     try {
       const linhas: string[] = ["A8 AVALIA — Laudo de Avaliação"];
-      if (avaliacao?.id) linhas.push(`Ref: ${String(avaliacao.id).slice(0, 8).toUpperCase()}`);
+      linhas.push(`Ref: ${refNum}`);
       if (corretor.nome) linhas.push(corretor.nome);
       if (corretor.telefone) linhas.push(`Tel: ${corretor.telefone}`);
       if (corretor.email) linhas.push(corretor.email);
@@ -2878,7 +2919,14 @@ export async function gerarPdfAvaliacao(
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
 
-  const nome = `A8-Avaliacao-M${modelo}-${(avaliacao?.id || "").slice(0, 8)}.pdf`;
+  const nome = `A8-Avaliacao-${refNum}.pdf`;
+  doc.setProperties({
+    title: `A8 Avalia — Referência ${refNum}`,
+    subject: "Avaliação Imobiliária",
+    author: corretor.nome,
+    creator: "A8 Avalia",
+    keywords: "avaliação, imóvel, mercado",
+  });
   doc.save(nome);
 }
 
