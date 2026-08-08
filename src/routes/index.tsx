@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-// DIAGNÓSTICO: Esta página está sendo renderizada.
+// POSSO REALIZAR TESTES PARA VER SE JA ESTA RODANDO NORMALMENTE
 
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
