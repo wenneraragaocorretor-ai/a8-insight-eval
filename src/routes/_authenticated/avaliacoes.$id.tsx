@@ -25,18 +25,18 @@ import { ExpertChat } from "../../components/ExpertChat";
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
     if (params.id.startsWith("mock-")) {
-      console.log("[LAUDO 11] Tentando carregar Mock ID:", params.id);
+      console.log("[LAUDO 11] Carregando ID de diagnóstico:", params.id);
       if (typeof window === 'undefined') {
         console.log("[LAUDO 11] SSR detectado, retornando objeto vazio temporário");
         return { avaliacao: { id: params.id }, resultado: {}, comparaveis: [], profile: {} };
       }
       const stored = sessionStorage.getItem(`mock_laudo_${params.id}`);
       if (stored) {
-        console.log("[LAUDO 11.1] Mock encontrado no sessionStorage");
+        console.log("[LAUDO 11.1] Dados encontrados no cache");
         return JSON.parse(stored);
       }
       console.error("[LAUDO 11.ERR] Mock não encontrado");
-      throw new Error("Mock laudo não encontrado no cache local");
+      throw new Error("Dados da avaliação não encontrados no cache local");
     }
 
     return await getAvaliacaoDetalhe({ data: { id: params.id } });
@@ -376,12 +376,12 @@ function AvaliacaoDetalhe() {
               onClick={() => navigate({ to: "/avaliacoes/nova", search: { edit: avaliacao.id } as any })}
               className="gap-2 border-[#0F2D5C] text-[#0F2D5C] hover:bg-[#0F2D5C] hover:text-white"
               disabled={(() => {
-                if (avaliacao.id.startsWith("mock-")) return true; // Bloqueado no Mock
+                if (avaliacao.id.startsWith("mock-")) return true; // Bloqueado (Diagnóstico)
                 const lim = limiteEdicoesPorPlano(plano);
                 return lim !== null && ((avaliacao as any)?.edicoes_count ?? 0) >= lim;
               })()}
             >
-              <Pencil size={16} /> {avaliacao.id.startsWith("mock-") ? "Edição bloqueada (Mock)" : "Editar Laudo"}
+              <Pencil size={16} /> {avaliacao.id.startsWith("mock-") ? "Edição bloqueada (Modo de Diagnóstico)" : "Editar Laudo"}
             </Button>
 
             <Button 
