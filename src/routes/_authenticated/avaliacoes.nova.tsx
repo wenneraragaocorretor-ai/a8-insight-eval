@@ -850,8 +850,8 @@ function NovaAvaliacao() {
         }, 15000);
 
 
-        console.log("[LAUDO 02] Simulando processamento...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log("[LAUDO 02] Gerando objeto de diagnóstico...");
+        await new Promise(resolve => setTimeout(resolve, 800));
 
 
         const mockRes = {

@@ -193,11 +193,11 @@ function AdminTestIA() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Button onClick={() => testGerarAvaliacao(false)} disabled={loading} className="bg-brand-blue">
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Testar Gerar Avaliação (Mock)
+          Testar Gerar Avaliação (Diagnóstico)
         </Button>
         <Button onClick={() => testGerarAvaliacao(true)} disabled={loading} variant="destructive">
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Testar Idempotência (Mock)
+          Testar Idempotência (Diagnóstico)
         </Button>
         <Button onClick={testExtrairComparavel} disabled={loading} variant="outline">
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

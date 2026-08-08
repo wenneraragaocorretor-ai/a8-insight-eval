@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
         console.log("[LAUDO 11.1] Dados encontrados no cache");
         return JSON.parse(stored);
       }
-      console.error("[LAUDO 11.ERR] Mock não encontrado");
+      console.error("[LAUDO 11.ERR] Dados de diagnóstico não encontrados");
       throw new Error("Dados da avaliação não encontrados no cache local");
     }
 
