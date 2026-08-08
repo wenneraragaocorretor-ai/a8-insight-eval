@@ -1116,10 +1116,10 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 // ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
 function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, avaliacao: any) {
   const tipoImovel = avaliacao?.tipo_imovel;
-  const areaAvaliada = areaBaseDe(tipoImovel, avaliacao).area;
+  
   // Referência: mediana de R$/m² (sobre área base por tipo)
-  const unit = comparaveis
-    .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
+  const unit = (comparaveis || [])
+    .map((c) => ({ ab: areaBaseDe(tipoImovel, c).area, v: Number(c.valor_anunciado) }))
     .filter((p) => p.ab > 0 && p.v > 0)
     .map((p) => p.v / p.ab);
   const sortedRef = [...unit].sort((a, b) => a - b);
