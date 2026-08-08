@@ -930,8 +930,11 @@ function NovaAvaliacao() {
         setIsLoading(false);
         processandoRef.current = false;
         console.log("[LAUDO 10.1] Executando navegação...");
-        navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
+        setTimeout(() => {
+          navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
+        }, 100);
         return;
+
 
       }
 
