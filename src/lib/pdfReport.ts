@@ -302,46 +302,45 @@ function marcaDagua(doc: jsPDF) {
   }
 }
 
-function rodape(doc: jsPDF) {
+function rodape(doc: jsPDF, corretor: CorretorInfo) {
   const total = doc.getNumberOfPages();
   for (let i = 2; i <= total; i++) {
     doc.setPage(i);
+    // Margem inferior segura para o rodapé
+    const footerY = PH - 15;
+    
     // Máscara branca cobrindo a faixa do rodapé para evitar sobreposição
-    // de conteúdo que eventualmente avance além da área útil da página.
     doc.setFillColor(255, 255, 255);
-    doc.rect(0, PH - 14, PW, 14, "F");
+    doc.rect(0, footerY - 2, PW, PH - (footerY - 2), "F");
+    
     // Linha dourada fina
     doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.4);
-    doc.line(M, PH - 12, PW - M, PH - 12);
+    doc.setLineWidth(0.3);
+    doc.line(M, footerY, PW - M, footerY);
 
-
-    // Logo pequeno à esquerda
+    // Identificação à esquerda
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(...NAVY);
-    doc.text("A8", M, PH - 7);
+    doc.text("A8 AVALIA", M, footerY + 5);
+    
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(...BLUE);
-    doc.text("A8 AVALIA — AVALIAÇÕES COM IA", M + 6, PH - 7);
+    doc.text((corretor.nome_imobiliaria || corretor.nome).toUpperCase(), M, footerY + 8.5);
 
-    // Disclaimer central em itálico cinza
+    // Disclaimer central (ajustado para não sobrepor)
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(6.5);
+    doc.setFontSize(6);
     doc.setTextColor(...GRAY_DIM);
-    doc.text(
-      "Esta avaliação é mercadológica e não substitui laudo técnico assinado por profissional habilitado (CNAI/IBAPE).",
-      PW / 2,
-      PH - 7,
-      { align: "center" },
-    );
+    const disclaimer = "Esta avaliação é mercadológica e não substitui laudo assinado por profissional habilitado (CNAI/IBAPE).";
+    doc.text(disclaimer, PW / 2, footerY + 7, { align: "center" });
 
-    // Número da página em dourado à direita
+    // Número da página à direita
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(...GOLD);
-    doc.text(`${String(i).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, PW - M, PH - 7, { align: "right" });
+    doc.text(`${String(i).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, PW - M, footerY + 7, { align: "right" });
   }
 }
 
@@ -1221,7 +1220,7 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
 }
 
 // ---------- PAGE: VALOR DO IMÓVEL ----------
-function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
+function paginaValor(doc: jsPDF, avaliacao: any, resultado: any, corretor: CorretorInfo) {
   novaPagina(doc);
   // Fundo navy total
   doc.setFillColor(...NAVY);
@@ -1287,7 +1286,7 @@ function paginaValor(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   const baseY = PH - 38;
   const tipW = (PW - M * 2) / 3;
   const tips: Array<{ kind: "bulb" | "chart" | "cal"; txt: string }> = [
-    { kind: "bulb", txt: "Inicie acima do central" },
+    { kind: "bulb", txt: (Number(resultado?.valor_final_corretor) || Number(resultado?.valor_central)) > Number(resultado?.valor_central_tecnico) ? "Ajuste estratégico acima" : "Base técnica de mercado" },
     { kind: "chart", txt: "Baseado em comparáveis" },
     { kind: "cal", txt: "Válido por 6 meses" },
   ];
@@ -1789,13 +1788,13 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
-  // BÁSICO: até 3 fotos
   const fotosLim = fotos.slice(0, 3);
   const fotosDetLim = fotosDet.slice(0, 3);
   const temFotos = fotosLim.length > 0;
   const temDocFotos = fotosDetLim.length > 0;
   const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
+  
+  paginaCapa(doc, avaliacao, corretor, "Relatório de Avaliação Mercadológica", capaFoto);
   paginaSumario(
     doc,
     [
@@ -1811,22 +1810,22 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
   else if (temFotos) paginaFotos(doc, rel, fotosLim, corretor);
   aplicarRegressao(resultado, avaliacao, comparaveis);
-  paginaValor(doc, resultado, corretor);
+  paginaValor(doc, avaliacao, resultado, corretor);
   paginaContato(doc, corretor);
-  rodape(doc);
+  rodape(doc, corretor);
   return doc;
 }
 
 function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
-  // PROFISSIONAL: até 8 fotos
   const fotosLim = fotos.slice(0, 8);
   const fotosDetLim = fotosDet.slice(0, 8);
   const temFotos = fotosLim.length > 0;
   const temDocFotos = fotosDetLim.length > 0;
   const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
-  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado", capaFoto);
+  
+  paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado Imobiliário", capaFoto);
   paginaSumario(
     doc,
     [
@@ -1857,10 +1856,9 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
-  paginaValor(doc, resultado, corretor);
+  paginaValor(doc, avaliacao, resultado, corretor);
   paginaContato(doc, corretor);
-  rodape(doc);
-  // PROFISSIONAL: sem marca d'água
+  rodape(doc, corretor);
   return doc;
 }
 
@@ -2174,7 +2172,7 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...BLUE);
-    doc.text(f.legenda || "Sem legenda", x, y + imgH + 5);
+    doc.text(f.legenda || "Fachada / Vista do Imóvel", x, y + imgH + 5);
     if (f.comentario_ia) {
       doc.setFont("helvetica", "italic");
       doc.setFontSize(8);
@@ -2782,7 +2780,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   const temMkt = !!marketing;
   const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
 
-  paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação", capaFoto);
+  paginaCapa(doc, avaliacao, corretor, "Laudo de Avaliação de Imóvel", capaFoto);
   paginaSumario(doc, [
     "O Imóvel",
     "Ficha Técnica",
@@ -2814,15 +2812,14 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
-  // Já garantimos a regressão no gerarPdfAvaliacao, mas chamamos aqui para manter a consistência do objeto resultado durante a montagem das páginas
   aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
   paginaArbitrio(doc, resultado, corretor);
-  paginaValor(doc, resultado, corretor);
+  paginaValor(doc, avaliacao, resultado, corretor);
   if (temMkt && marketing) paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);
   paginaContato(doc, corretor);
   paginaAssinatura(doc, corretor, qrDataUrl);
-  rodape(doc);
+  rodape(doc, corretor);
 
   return doc;
 }
@@ -2878,7 +2875,8 @@ export async function gerarPdfAvaliacao(
       ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
       : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
 
-  const nome = `A8-Avaliacao-M${modelo}-${(avaliacao?.id || "").slice(0, 8)}.pdf`;
+  const refNum = `A8-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000000)).padStart(6, "0")}`;
+  const nome = `A8-Avaliacao-${refNum}.pdf`;
   doc.save(nome);
 }
 

@@ -219,6 +219,14 @@ function AvaliacaoDetalhe() {
       return;
     }
 
+    if (!profile?.nome || !profile?.creci) {
+      toast.error("Dados do perfil incompletos", {
+        description: "Complete seu Nome e CRECI no Perfil para habilitar a exportação do PDF.",
+        action: { label: "Ir para Perfil", onClick: () => navigate({ to: "/perfil" }) },
+      });
+      return;
+    }
+
     setGeneratingPdf(true);
     const toastId = toast.loading("Gerando PDF...");
 
@@ -291,15 +299,15 @@ function AvaliacaoDetalhe() {
         fotosDetalhadas,
         marketing: marketingForPdf,
         corretor: {
-          nome: profile?.nome ?? "Corretor",
-          creci: profile?.creci ?? null,
-          cnai: (profile as any)?.cnai ?? null,
-          outro_registro: (profile as any)?.outro_registro ?? null,
-          telefone: profile?.telefone ?? null,
-          cidade: profile?.cidade ?? null,
-          estado: profile?.estado ?? null,
-          email: (profile as any)?.email ?? null,
-          nome_imobiliaria: (profile as any)?.nome_imobiliaria ?? null,
+          nome: profile?.nome || "",
+          creci: profile?.creci || null,
+          cnai: (profile as any)?.cnai || null,
+          outro_registro: (profile as any)?.outro_registro || null,
+          telefone: profile?.telefone || null,
+          cidade: profile?.cidade || null,
+          estado: profile?.estado || null,
+          email: profile?.email || null,
+          nome_imobiliaria: (profile as any)?.nome_imobiliaria || null,
           logo_data_url: logoDataUrl,
         },
       });
