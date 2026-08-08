@@ -85,9 +85,26 @@ const fmtBRL = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function AvaliacaoDetalhe() {
-  const { avaliacao, resultado, comparaveis, profile } = Route.useLoaderData();
+  const data = Route.useLoaderData();
+  const { avaliacao, resultado, comparaveis, profile } = data || {};
   console.log("[LAUDO 11] Página do laudo carregada", { id: avaliacao?.id, hasResultado: !!resultado });
+  
+  if (avaliacao?.id?.startsWith("mock-") && (!resultado || Object.keys(resultado).length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-gold" />
+        <p className="text-muted-foreground">Finalizando carregamento do diagnóstico...</p>
+        <script dangerouslySetInnerHTML={{ __html: `
+          if (typeof window !== 'undefined' && !window.location.search.includes('retry')) {
+            setTimeout(() => window.location.reload(), 500);
+          }
+        `}} />
+      </div>
+    );
+  }
+
   const rel: any = (resultado?.relatorio_json as any) || {};
+
   const navigate = useNavigate();
   const router = useRouter();
 
