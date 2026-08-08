@@ -263,6 +263,7 @@ function NovaAvaliacao() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errorDetail, setErrorDetail] = useState<{ mensagem: string, stack?: string } | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const search = Route.useSearch();
   const editId = search.edit;
@@ -451,14 +452,14 @@ function NovaAvaliacao() {
         const n = Number(String(v).replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
         return Number.isFinite(n) ? n : 0;
       };
-      // Mapeamento de áreas: área_total no campo "Área Total", e usa área_construída
-      // como fallback de área privativa (para Casa/Sobrado/Galpão é a base de cálculo).
+      // Mapeamento de áreas
       const areaTotal = num(d.area_total);
       const areaPriv = num(d.area_privativa) || num(d.area_construida);
-      updateComp(index, {
+      
+      const novosDados: Partial<Comparavel> = {
         fonte: d.fonte ? String(d.fonte) : extrairDominio(url),
         localizacao: d.localizacao ? String(d.localizacao) : "",
-        area: areaTotal || areaPriv, // garante algo no campo obrigatório
+        area: areaTotal || areaPriv,
         area_privativa: areaPriv,
         valor: num(d.valor),
         quartos: num(d.quartos),
@@ -471,8 +472,21 @@ function NovaAvaliacao() {
         caracteristicas: Array.isArray(d.caracteristicas)
           ? d.caracteristicas.filter((c: any) => CARACTERISTICAS_COMPARAVEL.includes(String(c)))
           : [],
-      });
-      toast.success("Dados importados com sucesso! Revise e confirme.");
+      };
+
+      updateComp(index, novosDados);
+
+      // Feedback de campos não encontrados
+      const faltantes = [];
+      if (!novosDados.localizacao) faltantes.push("Localização");
+      if (!novosDados.area || novosDados.area <= 0) faltantes.push("Área");
+      if (!novosDados.valor || novosDados.valor <= 0) faltantes.push("Valor");
+
+      if (faltantes.length > 0) {
+        toast.warning(`Importado, mas complete: ${faltantes.join(", ")}`);
+      } else {
+        toast.success("Dados importados com sucesso! Revise e confirme.");
+      }
       setImportUrlAberto((s) => ({ ...s, [id]: false }));
     } catch (e: any) {
       console.error("[importarComparavelPorUrl]", e);
@@ -745,6 +759,63 @@ function NovaAvaliacao() {
   };
 
   const processandoRef = useRef(false);
+
+  const validarStep2 = () => {
+    const errors: Record<string, string> = {};
+    let firstErrorId: string | null = null;
+
+    const validos = comparaveis.filter(c => {
+      // Um comparável é considerado "iniciado" se tiver qualquer dado principal
+      const iniciado = c.localizacao.trim() !== "" || 
+                       c.area > 0 || 
+                       c.valor > 0 || 
+                       c.fonte.trim() !== "";
+      
+      if (!iniciado) return false;
+
+      // Validação rigorosa para cards iniciados
+      let cardValido = true;
+      if (!c.localizacao.trim()) {
+        const key = `comp-${c.id}-localizacao`;
+        errors[key] = "Informe a localização";
+        cardValido = false;
+        if (!firstErrorId) firstErrorId = key;
+      }
+      if (c.area <= 0) {
+        const key = `comp-${c.id}-area`;
+        errors[key] = "Área deve ser maior que zero";
+        cardValido = false;
+        if (!firstErrorId) firstErrorId = key;
+      }
+      if (c.valor < 10000) {
+        const key = `comp-${c.id}-valor`;
+        errors[key] = "Valor deve ser no mínimo R$ 10.000";
+        cardValido = false;
+        if (!firstErrorId) firstErrorId = key;
+      }
+
+      return cardValido;
+    });
+
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      toast.error("Revise os comparáveis destacados para continuar");
+      if (firstErrorId) {
+        const el = document.getElementsByName(firstErrorId)[0] || document.getElementById(firstErrorId);
+        el?.focus();
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return false;
+    }
+
+    if (validos.length < 3) {
+      toast.error("Adicione pelo menos 3 comparáveis completos");
+      return false;
+    }
+
+    return true;
+  };
 
   
 
@@ -1489,14 +1560,57 @@ function NovaAvaliacao() {
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label>Localização / Referência</Label>
-                  <Input value={c.localizacao} onChange={(e) => updateComp(index, { localizacao: e.target.value })} />
+                  <Label className={validationErrors[`comp-${c.id}-localizacao`] ? "text-destructive" : ""}>
+                    Localização / Referência
+                  </Label>
+                  <Input 
+                    id={`comp-${c.id}-localizacao`}
+                    name={`comp-${c.id}-localizacao`}
+                    value={c.localizacao} 
+                    onChange={(e) => {
+                      updateComp(index, { localizacao: e.target.value });
+                      if (validationErrors[`comp-${c.id}-localizacao`]) {
+                        setValidationErrors(prev => {
+                          const next = { ...prev };
+                          delete next[`comp-${c.id}-localizacao`];
+                          return next;
+                        });
+                      }
+                    }} 
+                    className={validationErrors[`comp-${c.id}-localizacao`] ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {validationErrors[`comp-${c.id}-localizacao`] && (
+                    <p className="text-xs font-medium text-destructive">
+                      Comparável #{index + 1}: {validationErrors[`comp-${c.id}-localizacao`]}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Área Total (m²)</Label>
-                  <Input type="number" value={c.area}
-                    onChange={(e) => updateComp(index, { area: toNum(e.target.value) })} />
-                  {Number(c.valor) > 0 && (!c.area || Number(c.area) <= 0) && (
+                  <Label className={validationErrors[`comp-${c.id}-area`] ? "text-destructive" : ""}>
+                    Área Total (m²)
+                  </Label>
+                  <Input 
+                    id={`comp-${c.id}-area`}
+                    name={`comp-${c.id}-area`}
+                    type="number" 
+                    value={c.area || ""}
+                    onChange={(e) => {
+                      updateComp(index, { area: toNum(e.target.value) });
+                      if (validationErrors[`comp-${c.id}-area`]) {
+                        setValidationErrors(prev => {
+                          const next = { ...prev };
+                          delete next[`comp-${c.id}-area`];
+                          return next;
+                        });
+                      }
+                    }}
+                    className={validationErrors[`comp-${c.id}-area`] ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {validationErrors[`comp-${c.id}-area`] ? (
+                    <p className="text-xs font-medium text-destructive">
+                      Comparável #{index + 1}: {validationErrors[`comp-${c.id}-area`]}
+                    </p>
+                  ) : (Number(c.valor) > 0 && (!c.area || Number(c.area) <= 0)) && (
                     <p className="text-xs font-medium text-amber-600">
                       Informe a área para calcular o valor/m²
                     </p>
@@ -1517,10 +1631,31 @@ function NovaAvaliacao() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label>Valor Anunciado (R$)</Label>
-                  <Input type="number" value={c.valor}
-                    onChange={(e) => updateComp(index, { valor: toNum(e.target.value) })} />
-                  {Number(c.valor) > 0 && Number(c.valor) < 10000 && (
+                  <Label className={validationErrors[`comp-${c.id}-valor`] ? "text-destructive" : ""}>
+                    Valor Anunciado (R$)
+                  </Label>
+                  <Input 
+                    id={`comp-${c.id}-valor`}
+                    name={`comp-${c.id}-valor`}
+                    type="number" 
+                    value={c.valor || ""}
+                    onChange={(e) => {
+                      updateComp(index, { valor: toNum(e.target.value) });
+                      if (validationErrors[`comp-${c.id}-valor`]) {
+                        setValidationErrors(prev => {
+                          const next = { ...prev };
+                          delete next[`comp-${c.id}-valor`];
+                          return next;
+                        });
+                      }
+                    }}
+                    className={validationErrors[`comp-${c.id}-valor`] ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {validationErrors[`comp-${c.id}-valor`] ? (
+                    <p className="text-xs font-medium text-destructive">
+                      Comparável #{index + 1}: {validationErrors[`comp-${c.id}-valor`]}
+                    </p>
+                  ) : Number(c.valor) > 0 && Number(c.valor) < 10000 && (
                     <p className="text-xs font-medium text-destructive">
                       Valor muito baixo — verifique se esqueceu zeros
                     </p>
@@ -1626,10 +1761,13 @@ function NovaAvaliacao() {
               <Button variant="ghost" onClick={() => setStep(1)} className="gap-2">
                 <ChevronLeft size={18} /> Voltar
               </Button>
-              <Button
-                onClick={() => setStep(3)}
+               <Button
+                onClick={() => {
+                  if (validarStep2()) {
+                    setStep(3);
+                  }
+                }}
                 className="bg-brand-blue"
-                disabled={comparaveis.some((c) => !c.localizacao || !c.area || Number(c.area) <= 0 || !c.valor || Number(c.valor) < 10000)}
               >
                 Próximo
               </Button>
