@@ -849,7 +849,9 @@ function NovaAvaliacao() {
           }
         }, 15000);
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log("[LAUDO 02] Simulando processamento...");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
 
         const mockRes = {
           id: "mock-" + crypto.randomUUID(),
@@ -929,9 +931,10 @@ function NovaAvaliacao() {
         // se a navegação for lenta ou interceptada.
         setIsLoading(false);
         processandoRef.current = false;
-        
+        console.log("[LAUDO 10.1] Executando navegação...");
         navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
         return;
+
       }
 
       const idempotencyKey = crypto.randomUUID();
