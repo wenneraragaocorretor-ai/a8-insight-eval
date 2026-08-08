@@ -2646,7 +2646,7 @@ function paginaMarketing(
     doc.text(lines, tx, startY);
   });
 
-  // ---- Página 2: Mockup de anúncio ----
+  // ---- Página 2: Esboço de anúncio ----
   novaPagina(doc);
   microHeader(doc, corretor);
   tituloPagina(doc, "Texto de Anúncio");

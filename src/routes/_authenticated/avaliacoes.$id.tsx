@@ -81,8 +81,11 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   component: AvaliacaoDetalhe,
 });
 
-const fmtBRL = (v: number | null | undefined) =>
-  v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const fmtBRL = (v: number | null | undefined) => {
+  const num = Number(v);
+  if (v == null || isNaN(num)) return "—";
+  return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+};
 
 function AvaliacaoDetalhe() {
   const data = Route.useLoaderData();

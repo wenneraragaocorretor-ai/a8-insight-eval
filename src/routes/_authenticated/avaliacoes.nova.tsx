@@ -910,7 +910,7 @@ function NovaAvaliacao() {
             avaliacao_id: mockRes.id, 
             relatorio_json: mockRes 
           },
-          comparaveis: comparaveis,
+          comparaveis: comparaveis.map(c => ({ ...c, valor_anunciado: c.valor })),
           profile: { 
             nome: "Corretor", 
             plano: plano 
