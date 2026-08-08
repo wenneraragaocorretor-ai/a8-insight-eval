@@ -25,10 +25,20 @@ import { ExpertChat } from "../../components/ExpertChat";
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
     if (params.id.startsWith("mock-")) {
-      const stored = typeof window !== 'undefined' ? sessionStorage.getItem(`mock_laudo_${params.id}`) : null;
-      if (stored) return JSON.parse(stored);
+      console.log("[LAUDO 11] Tentando carregar Mock ID:", params.id);
+      if (typeof window === 'undefined') {
+        console.log("[LAUDO 11] SSR detectado, retornando objeto vazio temporário");
+        return { avaliacao: { id: params.id }, resultado: {}, comparaveis: [], profile: {} };
+      }
+      const stored = sessionStorage.getItem(`mock_laudo_${params.id}`);
+      if (stored) {
+        console.log("[LAUDO 11.1] Mock encontrado no sessionStorage");
+        return JSON.parse(stored);
+      }
+      console.error("[LAUDO 11.ERR] Mock não encontrado");
       throw new Error("Mock laudo não encontrado no cache local");
     }
+
     return await getAvaliacaoDetalhe({ data: { id: params.id } });
   },
 
