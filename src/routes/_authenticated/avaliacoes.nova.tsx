@@ -1009,9 +1009,11 @@ function NovaAvaliacao() {
         <div>
           <h1 className="text-3xl font-bold text-brand-blue">
             {isEdit ? "Editar Laudo" : "Nova Avaliação"}
-            <span className="ml-3 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full uppercase tracking-tighter">
-              MOCK LOCAL
-            </span>
+            {typeof window !== 'undefined' && localStorage.getItem('DEBUG_MODE') === 'true' && (
+              <span className="ml-3 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full uppercase tracking-tighter">
+                DIAGNÓSTICO
+              </span>
+            )}
           </h1>
           <p className="text-muted-foreground">
             {isEdit
