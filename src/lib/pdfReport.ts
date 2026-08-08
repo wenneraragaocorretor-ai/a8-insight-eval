@@ -1114,7 +1114,8 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 }
 
 // ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
-function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any) {
+function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, avaliacao: any) {
+  const tipoImovel = avaliacao?.tipo_imovel;
   // Referência: mediana de R$/m² (sobre área base por tipo)
   const unit = comparaveis
     .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
@@ -1127,8 +1128,8 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
   const PER_PAGE = 6;
   for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
     novaPagina(doc);
-    microHeader(doc, corretor, (comparaveis[0] as any)?.refNum);
-    if (p === 0) tituloPagina(doc, "Comparáveis");
+    microHeader(doc, corretor, avaliacao.refNum);
+    if (p === 0) tituloPagina(doc, "Anúncios na Região");
 
     const pageItems = comparaveis.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
     const usable = PW - M * 2;
@@ -1853,7 +1854,7 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   aplicarRegressao(resultado, avaliacao, comparaveis);
   paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
@@ -2840,7 +2841,7 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
 
   paginaBairro(doc, avaliacao, rel, corretor);
   paginaPerfil(doc, rel, corretor);
-  paginaAnuncios(doc, comparaveis, corretor, avaliacao?.tipo_imovel);
+  paginaAnuncios(doc, comparaveis, corretor, avaliacao);
   paginaHomogeneizacao(doc, avaliacao, comparaveis, corretor);
   paginaDispersao(doc, avaliacao, resultado, comparaveis, corretor);
   aplicarRegressao(resultado, avaliacao, comparaveis);
