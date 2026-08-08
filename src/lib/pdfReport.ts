@@ -2652,27 +2652,27 @@ function paginaMarketing(
   tituloPagina(doc, "Texto de Anúncio");
 
   const an = marketing.anuncio ?? {};
-  const mockW = usable * 0.55;
-  const mockH = 120;
-  const mockX = M;
-  const mockY = 52;
+  const frameW = usable * 0.55;
+  const frameH = 120;
+  const frameX = M;
+  const frameY = 52;
   // Frame
   doc.setFillColor(...WHITE);
   doc.setDrawColor(...BORDER);
   doc.setLineWidth(0.6);
-  doc.roundedRect(mockX, mockY, mockW, mockH, 4, 4, "FD");
+  doc.roundedRect(frameX, frameY, frameW, frameH, 4, 4, "FD");
   // Header app
   doc.setFillColor(...BLUE);
-  doc.rect(mockX, mockY, mockW, 7, "F");
+  doc.rect(frameX, frameY, frameW, 7, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(...WHITE);
-  doc.text("PORTAL IMOBILIÁRIO", mockX + 4, mockY + 5);
+  doc.text("PORTAL IMOBILIÁRIO", frameX + 4, frameY + 5);
 
   // Foto principal ou placeholder
-  const fX = mockX + 4;
-  const fY = mockY + 11;
-  const fW = mockW - 8;
+  const fX = frameX + 4;
+  const fY = frameY + 11;
+  const fW = frameW - 8;
   const fH = 56;
   if (fotoPrincipal) {
     try {
@@ -2688,14 +2688,14 @@ function paginaMarketing(
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
     doc.setTextColor(...GRAY_DIM);
-    doc.text("Foto do imóvel", mockX + mockW / 2, fY + fH / 2, { align: "center" });
+    doc.text("Foto do imóvel", frameX + frameW / 2, fY + fH / 2, { align: "center" });
   }
 
   // Título
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(...BLUE);
-  textoMultilinha(doc, String(an.titulo ?? "—"), mockX + 6, mockY + 76, mockW - 12, {
+  textoMultilinha(doc, String(an.titulo ?? "—"), frameX + 6, frameY + 76, frameW - 12, {
     size: 12, bold: true, color: BLUE, lineHeight: 5, maxLines: 2,
   });
 
@@ -2710,7 +2710,7 @@ function paginaMarketing(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
-  doc.text(specsParts.length ? specsParts.join("  •  ") : "—", mockX + 6, mockY + 95);
+  doc.text(specsParts.length ? specsParts.join("  •  ") : "—", frameX + 6, frameY + 95);
 
   // Valor real (valor_central da avaliação)
   const valor = Number(resultado?.valor_central) || 0;
@@ -2718,27 +2718,27 @@ function paginaMarketing(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(...GOLD);
-  doc.text(valorTxt, mockX + mockW - 6, mockY + mockH - 6, { align: "right" });
+  doc.text(valorTxt, frameX + frameW - 6, frameY + frameH - 6, { align: "right" });
 
   // WhatsApp à direita
-  const wX = M + mockW + 8;
-  const wW = usable - mockW - 8;
-  const wY = mockY;
+  const wX = M + frameW + 8;
+  const wW = usable - frameW - 8;
+  const wY = frameY;
   doc.setFillColor(232, 244, 232);
-  doc.roundedRect(wX, wY, wW, mockH, 4, 4, "F");
+  doc.roundedRect(wX, wY, wW, frameH, 4, 4, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(40, 90, 60);
   doc.text("WHATSAPP", wX + 6, wY + 7);
   doc.setFillColor(...WHITE);
   doc.setDrawColor(180, 200, 180);
-  doc.roundedRect(wX + 4, wY + 11, wW - 8, mockH - 16, 4, 4, "FD");
+  doc.roundedRect(wX + 4, wY + 11, wW - 8, frameH - 16, 4, 4, "FD");
   textoMultilinha(doc, String(an.whatsapp ?? "—"), wX + 8, wY + 18, wW - 16, {
     size: 9, color: TEXT, lineHeight: 4.4,
   });
 
   // Descrição completa
-  const yD = mockY + mockH + 10;
+  const yD = frameY + frameH + 10;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...GOLD);
