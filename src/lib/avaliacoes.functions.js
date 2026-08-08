@@ -52,6 +52,8 @@ export const atualizarValorFinalCorretor = createServerFn({ method: "POST" })
     return { ok: true, valor_final_corretor: data.valor_final_corretor };
 });
 const evaluationSchema = z.object({
+    idempotencyKey: z.string().uuid().optional(),
+    correlationId: z.string().uuid().optional(),
     imovel: z.object({
         tipo: z.string(),
         finalidade: z.string(),
@@ -134,7 +136,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
     .inputValidator((data) => evaluationSchema.parse(data))
     .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    console.log("Iniciando processamento no servidor para o usuário:", userId);
+    console.log("[LAUDO 02.1] Início do processamento no servidor (Server Function):", userId);
     try {
         // Admins têm acesso ilimitado e não consomem créditos.
         const isAdmin = await userIsAdmin(supabase, userId);
@@ -180,16 +182,20 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
                 consomeCredito = true;
             }
         }
+        console.log(`[LAUDO 04] Chamando Edge Function 'gerar-avaliacao'. correlationId=${data.correlationId}`);
         const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
             body: data,
         });
         if (edgeError) {
-            console.error("Erro ao chamar Edge Function:", edgeError);
+            console.error("[LAUDO ERR] Erro ao chamar Edge Function:", edgeError);
             throw new Error("Erro na comunicação com o motor de IA: " + edgeError.message);
         }
-        if (aiResult.error) {
-            throw new Error(aiResult.error);
+        if (aiResult.error || aiResult.erro) {
+            console.error("[LAUDO ERR] Erro retornado pela Edge Function:", aiResult);
+            // Retorna o objeto de erro completo como string JSON para o frontend capturar
+            throw new Error(JSON.stringify(aiResult));
         }
+        console.log("[LAUDO 05] Resposta da IA recebida com sucesso");
         // Prepara os dados para a transação RPC
         const avaliacaoData = {
             tipo_relatorio: "Estudo de Mercado Simplificado",
@@ -266,20 +272,23 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
             versao_metodologia: 2,
         };
         // Executa a transação via RPC
+        console.log("[LAUDO 08] Solicitando salvamento no banco via RPC");
         const { data: avaliacaoId, error: rpcError } = await supabase.rpc("gravar_avaliacao_com_credito", {
             p_avaliacao_data: avaliacaoData,
             p_comparaveis_data: comparaveisData,
             p_resultado_data: resultadoData,
-            p_consome_credito: consomeCredito
+            p_consome_credito: consomeCredito,
+            p_idempotency_key: data.idempotencyKey
         });
         if (rpcError) {
-            console.error("Erro na transação RPC:", rpcError);
+            console.error("[LAUDO ERR] Erro na transação RPC (gravar_avaliacao_com_credito):", rpcError);
             throw new Error("Falha ao gravar avaliação e atualizar créditos: " + rpcError.message);
         }
+        console.log("[LAUDO 08.1] Laudo salvo com ID:", avaliacaoId);
         return { id: avaliacaoId, ...aiResult };
     }
     catch (error) {
-        console.error("Erro crítico no fluxo de avaliação:", error);
+        console.error("[LAUDO ERR] Erro crítico no fluxo de avaliação:", error);
         throw new Error(error.message || "Falha ao processar avaliação");
     }
 });
