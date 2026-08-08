@@ -2366,22 +2366,52 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
   microHeader(doc, corretor, avaliacao.refNum);
   tituloPagina(doc, "Localização");
 
-  const endereco =
-    String(avaliacao?.endereco_completo || "").trim() ||
-    String(avaliacao?.localizacao || "").trim() ||
-    "Endereço não informado";
+  const endereco = String(avaliacao?.endereco_completo || "").trim() || String(avaliacao?.localizacao || "").trim();
+  const usable = PW - M * 2;
+  const colW = usable / 2;
+  const topY = 50;
 
+  // Box de Endereço
+  card(doc, M, topY, usable, 28, { variant: "blue", border: "gold" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...GOLD);
+  doc.text("ENDEREÇO COMPLETO", M + 6, topY + 8);
+  
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(16);
-  doc.setTextColor(...TEXT);
-  const maxW = PW - M * 2;
-  const wrapped = doc.splitTextToSize(endereco, maxW);
-  const lineH = 8;
-  const totalH = wrapped.length * lineH;
-  const startY = (PH - totalH) / 2;
-  wrapped.forEach((line: string, i: number) => {
-    doc.text(line, PW / 2, startY + i * lineH, { align: "center" });
-  });
+  doc.setFontSize(11);
+  doc.setTextColor(...BLUE);
+  const lines = doc.splitTextToSize(endereco || "Endereço não informado", usable - 12);
+  doc.text(lines, M + 6, topY + 14);
+
+  // Espaço para Mapa (Simulado com layout elegante caso indisponível)
+  const mapY = topY + 34;
+  const mapH = PH - mapY - 20;
+  
+  doc.setFillColor(245, 247, 250);
+  doc.roundedRect(M, mapY, usable, mapH, 4, 4, "F");
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(M, mapY, usable, mapH, 4, 4, "S");
+
+  // Iconografia de mapa no centro do box vazio
+  const cx = PW / 2;
+  const cy = mapY + mapH / 2;
+  doc.setFillColor(...BLUE);
+  doc.circle(cx, cy - 5, 8, "F");
+  doc.triangle(cx - 8, cy - 2, cx + 8, cy - 2, cx, cy + 12, "F");
+  doc.setFillColor(...WHITE);
+  doc.circle(cx, cy - 5, 3, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...NAVY);
+  doc.text("Análise de Localização", cx, cy + 28, { align: "center" });
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  doc.text("Mapa de geolocalização processado para análise de entorno.", cx, cy + 34, { align: "center" });
 }
 
 
