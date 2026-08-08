@@ -1117,6 +1117,7 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, avaliacao: any) {
   const tipoImovel = avaliacao?.tipo_imovel;
   const areaAvaliada = areaBaseDe(tipoImovel, avaliacao).area;
+  const areaAvaliada = areaBaseDe(tipoImovel, avaliacao).area;
   
   // Referência: mediana de R$/m² (sobre área base por tipo)
   const unit = (comparaveis || [])
