@@ -827,11 +827,9 @@ function NovaAvaliacao() {
     processandoRef.current = true;
 
     // DIAGNÓSTICO: MOCK LOCAL ATIVO (USE_LOCAL_MOCK=true)
-    const USE_LOCAL_MOCK = useMemo(() => {
-      if (typeof window === 'undefined') return true;
-      const saved = localStorage.getItem('USE_LOCAL_MOCK');
-      return saved === null ? true : saved === 'true';
-    }, []);
+    const savedMock = typeof window !== 'undefined' ? localStorage.getItem('USE_LOCAL_MOCK') : null;
+    const USE_LOCAL_MOCK = savedMock === null ? true : savedMock === 'true';
+
 
     let timeoutId: any;
 
