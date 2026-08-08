@@ -1675,10 +1675,12 @@ function NovaAvaliacao() {
                 disabled={isLoading || (statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && !isEdit)}
               >
                 {isLoading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    {isEdit ? "Regenerando..." : "Processando..."}
-                  </>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <Loader2 size={18} className="animate-spin" />
+                      {isEdit ? "Regenerando..." : "Processando..."}
+                    </div>
+                  </div>
                 ) : (
                   <>
                     {isEdit ? <Pencil size={18} /> : <Sparkles size={18} />}
