@@ -1116,6 +1116,7 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 // ---------- PAGE: ANÚNCIOS NA REGIÃO ----------
 function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, avaliacao: any) {
   const tipoImovel = avaliacao?.tipo_imovel;
+  const areaAvaliada = areaBaseDe(tipoImovel, avaliacao).area;
   // Referência: mediana de R$/m² (sobre área base por tipo)
   const unit = comparaveis
     .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
@@ -1203,9 +1204,9 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
         doc.setTextColor(...GRAY);
-        doc.text("ABAIXO", barX, barY - 1);
-        doc.text("SIMILAR", barX + barW / 2, barY - 1, { align: "center" });
-        doc.text("ACIMA", barX + barW, barY - 1, { align: "right" });
+        doc.text("MENOR", barX, barY - 1);
+        doc.text("MÉDIA", barX + barW / 2, barY - 1, { align: "center" });
+        doc.text("MAIOR", barX + barW, barY - 1, { align: "right" });
         doc.setFillColor(...BORDER);
         doc.roundedRect(barX, barY + 1, barW, 3, 1.5, 1.5, "F");
         const ratio = vm / ref;
