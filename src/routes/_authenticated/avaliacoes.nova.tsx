@@ -827,11 +827,9 @@ function NovaAvaliacao() {
     processandoRef.current = true;
 
     // DIAGNÓSTICO: MOCK LOCAL ATIVO (USE_LOCAL_MOCK=true)
-    const USE_LOCAL_MOCK = useMemo(() => {
-      if (typeof window === 'undefined') return true;
-      const saved = localStorage.getItem('USE_LOCAL_MOCK');
-      return saved === null ? true : saved === 'true';
-    }, []);
+    const savedMock = typeof window !== 'undefined' ? localStorage.getItem('USE_LOCAL_MOCK') : null;
+    const USE_LOCAL_MOCK = savedMock === null ? true : savedMock === 'true';
+
 
     let timeoutId: any;
 
@@ -849,7 +847,9 @@ function NovaAvaliacao() {
           }
         }, 15000);
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log("[LAUDO 02] Simulando processamento...");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
 
         const mockRes = {
           id: "mock-" + crypto.randomUUID(),
@@ -929,9 +929,13 @@ function NovaAvaliacao() {
         // se a navegação for lenta ou interceptada.
         setIsLoading(false);
         processandoRef.current = false;
-        
-        navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
+        console.log("[LAUDO 10.1] Executando navegação...");
+        setTimeout(() => {
+          navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
+        }, 100);
         return;
+
+
       }
 
       const idempotencyKey = crypto.randomUUID();
