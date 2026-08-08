@@ -762,7 +762,7 @@ function NovaAvaliacao() {
     }, []);
 
     try {
-      if (USE_LOCAL_MOCK) {
+      if (USE_LOCAL_MOCK === true) {
         console.log("[LAUDO 01] MODO DIAGNÓSTICO: Mock Local Iniciado...");
         
         // Simula o atraso de 500ms
