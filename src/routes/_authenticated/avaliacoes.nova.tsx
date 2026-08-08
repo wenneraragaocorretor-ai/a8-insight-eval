@@ -828,72 +828,108 @@ function NovaAvaliacao() {
 
     // DIAGNÓSTICO: MOCK LOCAL ATIVO (USE_LOCAL_MOCK=true)
     const USE_LOCAL_MOCK = useMemo(() => {
-      // Prioriza localStorage se definido (para debug), senão usa true por padrão neste build
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('USE_LOCAL_MOCK') : null;
+      if (typeof window === 'undefined') return true;
+      const saved = localStorage.getItem('USE_LOCAL_MOCK');
       return saved === null ? true : saved === 'true';
     }, []);
+
+    let timeoutId: any;
 
     try {
       if (USE_LOCAL_MOCK === true) {
         console.log("[LAUDO 01] MODO DIAGNÓSTICO: Mock Local Iniciado...");
         
-        // Simula o atraso de 500ms
+        // Limite de segurança contra travamentos: 15 segundos no modo mock
+        timeoutId = setTimeout(() => {
+          if (processandoRef.current) {
+            console.error("[LAUDO ERR] Timeout de segurança atingido no Mock");
+            setIsLoading(false);
+            processandoRef.current = false;
+            setErrorDetail({ mensagem: "O processamento local excedeu o tempo limite de segurança (15s)." });
+          }
+        }, 15000);
+
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Objeto Mock estático baseado no evaluationResultSchema para pular Edge Function, RPC e Banco
         const mockRes = {
           id: "mock-" + crypto.randomUUID(),
           valor_minimo: 450000,
           valor_central: 500000,
           valor_maximo: 550000,
           valor_unitario_medio: 5208,
-          area_base_calculo: 96,
+          area_base_calculo: imovel.area_total || 100,
           area_base_tipo: imovel.tipo,
-          area_base_descricao: `Cálculo simulado para diagnóstico base em ${imovel.tipo}`,
-          resumo_texto: "ESTE É UM LAUDO DE TESTE (MOCK LOCAL). Nenhuma IA real foi consultada e nenhum crédito foi descontado. A finalidade é validar a renderização da interface e o fluxo de dados localmente.",
-          pontos_positivos: ["Localização privilegiada (Simulação)", "Planta otimizada", "Acabamento de alto padrão"],
-          pontos_atencao: ["Necessidade de pequena reforma na fachada", "Condomínio com valor acima da média"],
-          potencial_valorizacao: "O imóvel apresenta boa liquidez devido à região em crescimento.",
-          tendencias_mercado: "O mercado local está aquecido para este tipo de tipologia.",
-          perfil_profissao: "Profissionais liberais e executivos",
-          perfil_renda: "R$ 15.000 a R$ 25.000",
-          perfil_preferencias: "Priorizam segurança e proximidade com centros comerciais",
-          perfil_interesses: "Lifestyle urbano e facilidade de transporte",
+          area_base_descricao: `Cálculo simulado base em ${imovel.tipo}`,
+          resumo_texto: "Este laudo foi gerado em modo de demonstração técnica. As análises e valores apresentados são simulações destinadas à validação do fluxo do sistema.",
+          pontos_positivos: ["Localização estratégica", "Planta bem dimensionada", "Potencial de valorização"],
+          pontos_atencao: ["Imóvel necessita de atualização", "Concorrência elevada na região"],
+          potencial_valorizacao: "Médio a longo prazo.",
+          tendencias_mercado: "Estabilidade com viés de alta.",
+          perfil_profissao: "Público diversificado",
+          perfil_renda: "R$ 10.000 a R$ 20.000",
+          perfil_preferencias: "Priorizam localização",
+          perfil_interesses: "Serviços e conveniência",
           analise_bairro: {
-            bairro: "Bairro de Teste",
-            cidade: "Cidade Exemplo",
-            potencial_valorizacao: "Alta",
-            tendencias_mercado: "Estável",
-            descricao: "Região com infraestrutura completa."
+            bairro: imovel.localizacao || "Bairro Exemplo",
+            cidade: "Cidade",
+            potencial_valorizacao: "Estável",
+            tendencias_mercado: "Normal",
+            descricao: "Região consolidada com infraestrutura urbana."
           },
           perfil_publico: {
-            profissao: "Executivos",
-            renda_media: "Média Alta",
-            preferencias: "Segurança",
-            interesses: "Gastronomia"
+            profissao: "Variada",
+            renda_media: "Média",
+            preferencias: "Acesso a transporte",
+            interesses: "Qualidade de vida"
           },
-          dicas_precificacao: ["Ajustar valor conforme mobiliário", "Considerar permuta apenas até 20%"],
-          estrategias_venda: ["Fotos profissionais (Mock)", "Anúncio em portais premium"],
-          dicas_anuncio: ["Destaque a vista livre", "Enfatize a ventilação natural"],
-          analise_fotos: "Fotos com excelente iluminação e enquadramento (Simulado).",
-          analise_fotos_individual: fotos.map(() => "Análise simulada da foto."),
-          equacao_regressao: "y = 4500 + 500x",
-          r2: 0.92,
-          r2_interpretacao: "Excelente"
+          dicas_precificacao: ["Manter valor competitivo", "Negociação flexível"],
+          estrategias_venda: ["Divulgação em redes sociais", "Open house"],
+          dicas_anuncio: ["Destaque a iluminação natural"],
+          analise_fotos: "Ambientes amplos e bem distribuídos.",
+          analise_fotos_individual: fotos.map(() => "Foto analisada com sucesso."),
+          equacao_regressao: "y = a + bx",
+          r2: 0.85,
+          r2_interpretacao: "Boa"
         };
 
-        console.log("[LAUDO 10] MODO DIAGNÓSTICO: Mock Concluído");
-        toast.info("Modo de diagnóstico: Laudo local gerado (Sem custo)");
+        console.log("[LAUDO 09] Gravando no sessionStorage...");
         
-        // Salva no sessionStorage para que a página de visualização possa ler se o ID for "mock-..."
-        sessionStorage.setItem(`mock_laudo_${mockRes.id}`, JSON.stringify({
-          avaliacao: { ...imovel, id: mockRes.id, user_id: "mock-user", created_at: new Date().toISOString(), fotos: fotos.map(f => f.path) },
-          resultado: { ...mockRes, avaliacao_id: mockRes.id, relatorio_json: mockRes },
-
+        const payload = JSON.stringify({
+          avaliacao: { 
+            ...imovel, 
+            id: mockRes.id, 
+            user_id: "mock-user", 
+            created_at: new Date().toISOString(), 
+            fotos: fotos.map(f => f.path) 
+          },
+          resultado: { 
+            ...mockRes, 
+            avaliacao_id: mockRes.id, 
+            relatorio_json: mockRes 
+          },
           comparaveis: comparaveis,
-          profile: { nome: "Corretor (Teste)", plano: plano }
-        }));
+          profile: { 
+            nome: "Corretor", 
+            plano: plano 
+          }
+        });
 
+        sessionStorage.setItem(`mock_laudo_${mockRes.id}`, payload);
+        
+        // Verificação imediata pós-gravação
+        const check = sessionStorage.getItem(`mock_laudo_${mockRes.id}`);
+        if (!check) {
+          throw new Error("Falha crítica ao persistir dados temporários no navegador (sessionStorage).");
+        }
+
+        console.log("[LAUDO 10] Navegando para:", `/avaliacoes/${mockRes.id}`);
+        clearTimeout(timeoutId);
+        
+        // No modo mock, encerramos o loading ANTES de navegar para garantir que a UI não trave
+        // se a navegação for lenta ou interceptada.
+        setIsLoading(false);
+        processandoRef.current = false;
+        
         navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
         return;
       }
