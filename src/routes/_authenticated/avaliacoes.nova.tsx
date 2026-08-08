@@ -765,11 +765,12 @@ function NovaAvaliacao() {
     let firstErrorId: string | null = null;
 
     const validos = comparaveis.filter(c => {
-      // Um comparável é considerado "iniciado" se tiver qualquer dado principal
-      const iniciado = c.localizacao.trim() !== "" || 
-                       c.area > 0 || 
-                       c.valor > 0 || 
-                       c.fonte.trim() !== "";
+      // Um comparável é considerado "iniciado" se o usuário alterou dados essenciais.
+      // Ignoramos valores default (Normal, Bom, Meio de quadra, 0)
+      const iniciado = (c.localizacao && c.localizacao.trim() !== "") || 
+                       (c.area !== 0) || 
+                       (c.valor !== 0) || 
+                       (c.fonte && c.fonte.trim() !== "");
       
       if (!iniciado) return false;
 
