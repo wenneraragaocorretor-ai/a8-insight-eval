@@ -345,7 +345,6 @@ function AvaliacaoDetalhe() {
     } finally {
       setGeneratingPdf(false);
 
-      setGeneratingPdf(false);
     }
   };
 
