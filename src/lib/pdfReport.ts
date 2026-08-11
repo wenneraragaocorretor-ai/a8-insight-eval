@@ -2912,12 +2912,28 @@ export async function gerarPdfAvaliacao(
     }
   }
 
-  const doc =
+  const build = (
+    fts: string[],
+    ftsDet: FotoDetalhada[],
+    mkt: MarketingPdf | null,
+    qr: string | null,
+  ) =>
     modelo === 3
-      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet, opts.marketing ?? null, qrDataUrl)
+      ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fts, ftsDet, mkt, qr)
       : modelo === 2
-      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet)
-      : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fotos, fotosDet);
+      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fts, ftsDet)
+      : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fts, ftsDet);
+
+  let doc: jsPDF;
+  try {
+    doc = build(fotos, fotosDet, opts.marketing ?? null, qrDataUrl);
+  } catch (e) {
+    // Conteúdo opcional (fotos, logo, marketing, QR) não pode derrubar o documento:
+    // tenta novamente sem os elementos opcionais.
+    console.error("Falha ao montar o PDF com conteúdo opcional, refazendo sem extras:", e);
+    (corretor as any).logo_data_url = null;
+    doc = build([], [], null, null);
+  }
 
   const nome = `A8-Avaliacao-${refNum}.pdf`;
   doc.setProperties({
@@ -2927,6 +2943,30 @@ export async function gerarPdfAvaliacao(
     creator: "A8 Avalia",
     keywords: "avaliação, imóvel, mercado",
   });
-  doc.save(nome);
+
+  // Gera Blob e valida antes de baixar (evita "sucesso" sem arquivo real)
+  const blob: Blob = doc.output("blob");
+  if (!blob || blob.size === 0) throw new Error("O arquivo PDF foi gerado vazio");
+  const head = new Uint8Array(await blob.slice(0, 5).arrayBuffer());
+  const assinatura = String.fromCharCode(...head);
+  if (!assinatura.startsWith("%PDF")) throw new Error("O arquivo gerado não é um PDF válido");
+  const pdfBlob = blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" });
+
+  const url = URL.createObjectURL(pdfBlob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nome;
+    a.rel = "noopener";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+
+  return { nome, size: pdfBlob.size, type: pdfBlob.type, blob: pdfBlob };
 }
+
 
