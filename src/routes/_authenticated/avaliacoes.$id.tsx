@@ -230,24 +230,38 @@ function AvaliacaoDetalhe() {
     setGeneratingPdf(true);
     const toastId = toast.loading("Gerando PDF...");
 
+    const comTimeout = <T,>(p: Promise<T>, ms: number, rotulo: string): Promise<T> =>
+      Promise.race([
+        p,
+        new Promise<T>((_, rej) => setTimeout(() => rej(new Error(`Tempo esgotado: ${rotulo}`)), ms)),
+      ]);
+    const paraDataUrl = (blob: Blob) =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error ?? new Error("Falha ao ler arquivo"));
+        reader.readAsDataURL(blob);
+      });
+
     try {
-      // Carrega fotos do imóvel (paths privados → dataURL) para embutir no PDF
+      // Carrega fotos do imóvel (paths privados → dataURL) para embutir no PDF.
+      // Qualquer falha aqui é ignorada: fotos são opcionais e não podem impedir o PDF.
       const fotosPaths: string[] = Array.isArray((avaliacao as any)?.fotos) ? (avaliacao as any).fotos : [];
       const fotosMeta: Array<{ path: string; legenda?: string; principal?: boolean; comentario_ia?: string }> =
         Array.isArray((avaliacao as any)?.fotos_meta) ? (avaliacao as any).fotos_meta : [];
       const fotosDataUrls: string[] = [];
       const fotosDetalhadas: Array<{ dataUrl: string; legenda: string; principal: boolean; comentario_ia: string }> = [];
-      
+
       for (const p of fotosPaths.slice(0, 15)) {
         try {
-          const { data: blob, error } = await supabase.storage.from("avaliacoes-fotos").download(p);
+          const { data: blob, error } = await comTimeout(
+            supabase.storage.from("avaliacoes-fotos").download(p),
+            20000,
+            "download de foto",
+          );
           if (error || !blob) continue;
-          const dataUrl: string = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result));
-            reader.onerror = () => reject(reader.error);
-            reader.readAsDataURL(blob);
-          });
+          const dataUrl = await comTimeout(paraDataUrl(blob), 15000, "leitura de foto");
+          if (!dataUrl.startsWith("data:image")) continue;
           fotosDataUrls.push(dataUrl);
           const meta = fotosMeta.find((m) => m.path === p);
           fotosDetalhadas.push({
@@ -257,42 +271,47 @@ function AvaliacaoDetalhe() {
             comentario_ia: meta?.comentario_ia ?? "",
           });
         } catch (e) {
-          console.error("Falha ao carregar foto para o PDF:", e);
+          console.error("Falha ao carregar foto para o PDF (ignorada):", e);
         }
       }
 
-      // Carrega o logo do corretor (bucket privado "logos")
+      // Carrega o logo do corretor (bucket privado "logos") — opcional
       let logoDataUrl: string | null = null;
       const logoPath = (profile as any)?.logo_url;
       if (logoPath) {
         try {
-          const { data: blob } = await supabase.storage.from("logos").download(logoPath);
+          const { data: blob } = await comTimeout(
+            supabase.storage.from("logos").download(logoPath),
+            15000,
+            "download do logo",
+          );
           if (blob) {
-            logoDataUrl = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(String(reader.result));
-              reader.onerror = () => reject(reader.error);
-              reader.readAsDataURL(blob);
-            });
+            const dataUrl = await comTimeout(paraDataUrl(blob), 10000, "leitura do logo");
+            if (dataUrl.startsWith("data:image")) logoDataUrl = dataUrl;
           }
         } catch (e) {
-          console.error("Falha ao carregar logo:", e);
+          console.error("Falha ao carregar logo (ignorada):", e);
         }
       }
 
-      // Marketing (Plano Expert / Modelo 3) — gera silenciosamente se ainda não houver
+      // Marketing (Plano Expert / Modelo 3) — opcional, gerado silenciosamente
       let marketingForPdf: MarketingResultado | null = marketing;
       if (modelo === 3 && !marketingForPdf) {
         try {
-          marketingForPdf = await fetchMarketing({ data: { id: avaliacao.id } });
+          marketingForPdf = await comTimeout(
+            fetchMarketing({ data: { id: avaliacao.id } }),
+            60000,
+            "assistente de marketing",
+          );
           setMarketing(marketingForPdf);
         } catch (e) {
-          console.error("Falha ao gerar marketing:", e);
+          console.error("Falha ao gerar marketing (ignorada):", e);
+          marketingForPdf = null;
         }
       }
 
       const { gerarPdfAvaliacao } = await import("../../lib/pdfReport");
-      await gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
+      const saida = await gerarPdfAvaliacao(avaliacao, resultado, comparaveis, {
         modelo,
         plano,
         fotosDataUrls,
@@ -311,13 +330,21 @@ function AvaliacaoDetalhe() {
           logo_data_url: logoDataUrl,
         },
       });
-      
-      toast.success("PDF baixado com sucesso!", { id: toastId });
+
+      if (!saida || !saida.size || saida.type !== "application/pdf") {
+        throw new Error("O arquivo PDF não pôde ser criado corretamente");
+      }
+      console.log("[PDF] gerado", saida.nome, saida.size, "bytes");
+      toast.success("PDF baixado com sucesso!", {
+        id: toastId,
+        description: `${saida.nome} (${Math.max(1, Math.round(saida.size / 1024))} KB). Verifique a pasta de downloads.`,
+      });
     } catch (e: any) {
       console.error("Erro ao gerar PDF:", e);
-      toast.error(`Falha ao gerar PDF: ${e.message || "Erro desconhecido"}`, { id: toastId });
+      toast.error(`Falha ao gerar PDF: ${e?.message || "Erro desconhecido"}`, { id: toastId, duration: 10000 });
     } finally {
       setGeneratingPdf(false);
+
     }
   };
 
