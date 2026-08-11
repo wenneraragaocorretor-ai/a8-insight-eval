@@ -2874,6 +2874,11 @@ export async function gerarPdfAvaliacao(
   },
 ) {
   const { modelo, plano } = opts;
+  if (typeof document === "undefined") throw new Error("A exportação de PDF só está disponível no navegador");
+  if (!avaliacao || typeof avaliacao !== "object") throw new Error("Dados da avaliação indisponíveis para gerar o PDF");
+  if (!resultado || typeof resultado !== "object") throw new Error("O resultado da avaliação ainda não está disponível");
+  if (!resultado.relatorio_json || typeof resultado.relatorio_json !== "object") resultado.relatorio_json = {};
+  comparaveis = Array.isArray(comparaveis) ? comparaveis.filter(Boolean) : [];
   const fotos = Array.isArray(opts.fotosDataUrls) ? opts.fotosDataUrls.filter((s) => typeof s === "string" && s.length > 0) : [];
   const fotosDet = Array.isArray(opts.fotosDetalhadas) ? opts.fotosDetalhadas.filter((f) => f && f.dataUrl) : [];
   const corretor: CorretorInfo =
@@ -2886,6 +2891,7 @@ export async function gerarPdfAvaliacao(
 
   // Garante que a regressão foi aplicada ao objeto resultado antes de gerar o PDF
   aplicarRegressao(resultado, avaliacao, comparaveis);
+
 
   // Número público de referência (profissional)
   const refNum = `A8-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000000)).padStart(6, "0")}`;
