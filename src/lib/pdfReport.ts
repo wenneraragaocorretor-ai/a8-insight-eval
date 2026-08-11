@@ -333,7 +333,7 @@ function rodape(doc: jsPDF, corretor: CorretorInfo) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(6);
     doc.setTextColor(...GRAY_DIM);
-    const disclaimer = "Esta avaliação é mercadológica e não substitui laudo assinado por profissional habilitado (CNAI/IBAPE).";
+    const disclaimer = "Estudo mercadológico realizado por profissional inscrito no Cadastro Nacional de Avaliadores Imobiliários — CNAI.";
     doc.text(disclaimer, PW / 2, footerY + 7, { align: "center" });
 
     // Número da página à direita
@@ -1465,7 +1465,7 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   doc.setFontSize(8);
   doc.setTextColor(220, 220, 230);
   doc.text(
-    "Esta avaliação é mercadológica e não substitui laudo técnico assinado por profissional habilitado (CNAI/IBAPE).",
+    "Estudo mercadológico realizado por profissional inscrito no Cadastro Nacional de Avaliadores Imobiliários — CNAI.",
     PW / 2, PH - 15, { align: "center" },
   );
 
