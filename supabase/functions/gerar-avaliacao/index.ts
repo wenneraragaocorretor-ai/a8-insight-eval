@@ -7,6 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const ANTHROPIC_MODEL = "claude-sonnet-4-6";
+
 // ===== Validação rigorosa do JSON devolvido pela IA =====
 class RespostaIAInvalida extends Error {}
 
