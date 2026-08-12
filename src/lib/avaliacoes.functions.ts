@@ -291,10 +291,10 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       }));
 
       const resultadoData = {
-        valor_minimo: aiResult.valor_minimo,
-        valor_central: aiResult.valor_central,
-        valor_maximo: aiResult.valor_maximo,
-        valor_unitario_medio: aiResult.valor_unitario_medio,
+        valor_minimo: aiResult.valor_minimo ?? aiResult.sumario_executivo?.valor_minimo ?? null,
+        valor_central: aiResult.valor_central ?? aiResult.sumario_executivo?.valor_avaliado ?? null,
+        valor_maximo: aiResult.valor_maximo ?? aiResult.sumario_executivo?.valor_maximo ?? null,
+        valor_unitario_medio: aiResult.valor_unitario_medio ?? aiResult.sumario_executivo?.valor_unitario_m2 ?? null,
         relatorio_json: aiResult,
         versao_metodologia: 2,
       };
