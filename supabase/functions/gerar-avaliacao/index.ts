@@ -246,11 +246,13 @@ Deno.serve(async (req) => {
     console.log("5. Parseando JSON...")
     // Limpeza rigorosa do JSON (remove markdown json tags e textos extras)
     let jsonText = rawContent;
+    
+    // 1. Extrair conteúdo entre blocos de código markdown (```json ou ```)
     const jsonMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) {
       jsonText = jsonMatch[1].trim();
     } else {
-      // Se não tem tags de code block, remove qualquer coisa antes do primeiro { e depois do último }
+      // 2. Fallback: extrair do primeiro { ao último }
       const firstBrace = rawContent.indexOf('{');
       const lastBrace = rawContent.lastIndexOf('}');
       if (firstBrace !== -1 && lastBrace !== -1) {
@@ -258,10 +260,10 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Limpeza secundária solicitada
+    // 3. Sanitização agressiva para garantir que apenas o objeto JSON permaneça
     jsonText = jsonText
-      .replace(/```json/g, '')
-      .replace(/```/g, '')
+      .replace(/^[\s\S]*?\{/, '{')   // Garante que comece com {
+      .replace(/\}[^}]*$/, '}')      // Garante que termine com }
       .trim();
 
     let result: any
