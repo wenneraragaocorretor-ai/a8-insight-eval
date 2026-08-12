@@ -826,9 +826,10 @@ function NovaAvaliacao() {
     setErrorDetail(null);
     processandoRef.current = true;
 
-    // DIAGNÓSTICO ATIVO (USE_LOCAL_MOCK=true)
+    // O modo de diagnóstico (USE_LOCAL_MOCK) agora é controlado exclusivamente pelo localStorage.
+    // Em produção/uso normal, savedMock será null e USE_LOCAL_MOCK será false.
     const savedMock = typeof window !== 'undefined' ? localStorage.getItem('USE_LOCAL_MOCK') : null;
-    const USE_LOCAL_MOCK = savedMock === null ? true : savedMock === 'true';
+    const USE_LOCAL_MOCK = savedMock === 'true';
 
 
     let timeoutId: any;
