@@ -145,25 +145,39 @@ Deno.serve(async (req) => {
     // 2. CHAMANDO CLAUDE API
     console.log("2. Chamando Claude API...")
     
-    // Baixa as fotos do imóvel
-    const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 15) : []
+    // Baixa as fotos do imóvel (máximo 1 para teste/economia conforme solicitado)
+    const fotosPaths: string[] = Array.isArray(imovel.fotos) ? imovel.fotos.slice(0, 1) : []
     const fotosImagens: Array<{ mediaType: string; base64: string }> = []
+    
     if (fotosPaths.length > 0) {
       for (const p of fotosPaths) {
         try {
           const { data: blob, error } = await admin.storage.from('avaliacoes-fotos').download(p)
-          if (error || !blob) continue
-          const buf = new Uint8Array(await blob.arrayBuffer())
-          let base64 = ''
-          const CHUNK_SIZE = 8192
-          for (let i = 0; i < buf.length; i += CHUNK_SIZE) {
-            const chunk = buf.slice(i, i + CHUNK_SIZE)
-            base64 += btoa(String.fromCharCode.apply(null, Array.from(chunk)))
+          if (error || !blob) {
+            console.error(`Erro ao baixar foto ${p}:`, error)
+            continue
           }
+          
+          const arrayBuffer = await blob.arrayBuffer()
+          const uint8Array = new Uint8Array(arrayBuffer)
+          
+          // Conversão robusta para Base64 no Deno
+          let binary = ''
+          const len = uint8Array.byteLength
+          for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(uint8Array[i])
+          }
+          const base64 = btoa(binary)
+          
           const mediaType = blob.type || 'image/jpeg'
-          fotosImagens.push({ mediaType, base64 })
+          
+          // Validar se o MIME type é aceito pela Anthropic (image/jpeg, image/png, image/gif, image/webp)
+          const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+          const finalMediaType = supportedTypes.includes(mediaType) ? mediaType : 'image/jpeg'
+          
+          fotosImagens.push({ mediaType: finalMediaType, base64 })
         } catch (e) {
-          console.error('Falha ao baixar foto', p, e)
+          console.error('Falha ao processar foto:', p, e)
         }
       }
     }
@@ -180,7 +194,8 @@ Deno.serve(async (req) => {
     const systemPrompt = `Você é um especialista em avaliação imobiliária (NBR 14653-2). Adapte sempre a linguagem ao padrão construtivo informado pelo corretor. ${tomGuia}
     Retorne APENAS um JSON estruturado seguindo exatamente o schema informado. Não inclua conversas ou marcações markdown.`
 
-    const userPrompt = `DADOS DO IMÓVEL AVALIANDO: ${JSON.stringify(imovel)} \n COMPARÁVEIS: ${JSON.stringify(comparaveis)}`
+    const userPrompt = `DADOS DO IMÓVEL AVALIANDO: ${JSON.stringify(imovel)} \n COMPARÁVEIS: ${JSON.stringify(comparaveis)}
+    ${fotosImagens.length > 0 ? "Analise as fotos enviadas e preencha 'analise_fotos' (geral) e 'analise_fotos_individual' (um comentário por foto)." : "Nenhuma foto foi enviada para análise."}`
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
