@@ -277,7 +277,7 @@ Deno.serve(async (req) => {
       correlation_id: correlationId,
       status: 'completed',
       completed_at: new Date().toISOString(),
-      model: 'claude-3-5-sonnet'
+      model: 'claude-sonnet-4-20250514'
     })
 
     // 7. CONCLUÍDO!
