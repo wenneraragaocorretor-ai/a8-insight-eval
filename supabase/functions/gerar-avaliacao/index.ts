@@ -212,10 +212,14 @@ Deno.serve(async (req) => {
           {
             role: 'user',
             content: [
-              ...fotosImagens.flatMap((img, i) => ([
-                { type: 'text', text: `Foto ${i + 1}:` },
-                { type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } },
-              ])),
+              ...fotosImagens.map((img, i) => ({ 
+                type: 'image', 
+                source: { 
+                  type: 'base64', 
+                  media_type: img.mediaType as any, 
+                  data: img.base64 
+                } 
+              })),
               { type: 'text', text: userPrompt },
             ],
           },
