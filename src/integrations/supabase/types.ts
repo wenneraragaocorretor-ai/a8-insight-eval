@@ -617,26 +617,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      gravar_avaliacao_com_credito:
-        | {
-            Args: {
-              p_avaliacao_data: Json
-              p_comparaveis_data: Json
-              p_consome_credito: boolean
-              p_resultado_data: Json
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_avaliacao_data: Json
-              p_comparaveis_data: Json
-              p_consome_credito: boolean
-              p_idempotency_key?: string
-              p_resultado_data: Json
-            }
-            Returns: string
-          }
+      gravar_avaliacao_com_credito: {
+        Args: {
+          p_avaliacao_data: Json
+          p_comparaveis_data: Json
+          p_consome_credito: boolean
+          p_idempotency_key?: string
+          p_resultado_data: Json
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
