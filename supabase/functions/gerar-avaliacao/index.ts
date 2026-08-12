@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 8192,
         system: systemPrompt,
         messages: [
@@ -277,7 +277,7 @@ Deno.serve(async (req) => {
       correlation_id: correlationId,
       status: 'completed',
       completed_at: new Date().toISOString(),
-      model: 'claude-sonnet-4-20250514'
+      model: 'claude-sonnet-4-6'
     })
 
     // 7. CONCLUÍDO!
