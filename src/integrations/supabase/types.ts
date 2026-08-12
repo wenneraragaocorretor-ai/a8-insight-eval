@@ -123,6 +123,7 @@ export type Database = {
           id: string
           idade_aparente: string | null
           idade_real: number | null
+          idempotency_key: string | null
           infraestrutura_lazer: Json
           localizacao: string
           numero_pavimentos: string | null
@@ -166,6 +167,7 @@ export type Database = {
           id?: string
           idade_aparente?: string | null
           idade_real?: number | null
+          idempotency_key?: string | null
           infraestrutura_lazer?: Json
           localizacao: string
           numero_pavimentos?: string | null
@@ -209,6 +211,7 @@ export type Database = {
           id?: string
           idade_aparente?: string | null
           idade_real?: number | null
+          idempotency_key?: string | null
           infraestrutura_lazer?: Json
           localizacao?: string
           numero_pavimentos?: string | null
