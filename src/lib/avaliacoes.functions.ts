@@ -290,11 +290,16 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         valor_anunciado: c.valor,
       }));
 
+      const getVal = (val: any) => {
+        const n = Number(val);
+        return Number.isFinite(n) && n > 0 ? n : null;
+      };
+
       const resultadoData = {
-        valor_minimo: aiResult.valor_minimo ?? aiResult.sumario_executivo?.valor_minimo ?? null,
-        valor_central: aiResult.valor_central ?? aiResult.sumario_executivo?.valor_avaliado ?? null,
-        valor_maximo: aiResult.valor_maximo ?? aiResult.sumario_executivo?.valor_maximo ?? null,
-        valor_unitario_medio: aiResult.valor_unitario_medio ?? aiResult.sumario_executivo?.valor_unitario_m2 ?? null,
+        valor_minimo: getVal(aiResult.valor_minimo ?? aiResult.sumario_executivo?.valor_minimo),
+        valor_central: getVal(aiResult.valor_central ?? aiResult.sumario_executivo?.valor_avaliado ?? aiResult.valor_avaliacao),
+        valor_maximo: getVal(aiResult.valor_maximo ?? aiResult.sumario_executivo?.valor_maximo),
+        valor_unitario_medio: getVal(aiResult.valor_unitario_medio ?? aiResult.sumario_executivo?.valor_unitario_m2 ?? aiResult.valor_m2),
         relatorio_json: aiResult,
         versao_metodologia: 2,
       };
