@@ -9,41 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as TermosRouteImport } from './routes/termos'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
-import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
-import { Route as AfiliadosDashboardRouteImport } from './routes/afiliados.dashboard'
-import { Route as AfiliadosLoginRouteImport } from './routes/afiliados.login'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as AuthenticatedAdminAfiliadosRouteImport } from './routes/_authenticated/admin.afiliados'
-import { Route as AuthenticatedAdminBetaTestersRouteImport } from './routes/_authenticated/admin.beta-testers'
-import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
-import { Route as AuthenticatedAdminTestIaRouteImport } from './routes/_authenticated/admin.test-ia'
-import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
-import { Route as AuthenticatedAvaliacoesIdRouteImport } from './routes/_authenticated/avaliacoes.$id'
-import { Route as AuthenticatedAvaliacoesNovaRouteImport } from './routes/_authenticated/avaliacoes.nova'
+import { Route as AfiliadosLoginRouteImport } from './routes/afiliados.login'
+import { Route as AfiliadosDashboardRouteImport } from './routes/afiliados.dashboard'
+import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
+import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
-import { Route as ApiPublicBuscarComparaveisRouteImport } from './routes/api/public/buscar-comparaveis'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as ApiPublicBuscarComparaveisRouteImport } from './routes/api/public/buscar-comparaveis'
+import { Route as AuthenticatedAvaliacoesNovaRouteImport } from './routes/_authenticated/avaliacoes.nova'
+import { Route as AuthenticatedAvaliacoesIdRouteImport } from './routes/_authenticated/avaliacoes.$id'
+import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as AuthenticatedAdminTestIaRouteImport } from './routes/_authenticated/admin.test-ia'
+import { Route as AuthenticatedAdminPlanosRouteImport } from './routes/_authenticated/admin.planos'
+import { Route as AuthenticatedAdminBetaTestersRouteImport } from './routes/_authenticated/admin.beta-testers'
+import { Route as AuthenticatedAdminAfiliadosRouteImport } from './routes/_authenticated/admin.afiliados'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
@@ -51,34 +42,18 @@ const PrivacidadeRoute = PrivacidadeRouteImport.update({
   path: '/privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TermosRoute = TermosRouteImport.update({
-  id: '/termos',
-  path: '/termos',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
-  id: '/planos',
-  path: '/planos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AfiliadosDashboardRoute = AfiliadosDashboardRouteImport.update({
-  id: '/afiliados/dashboard',
-  path: '/afiliados/dashboard',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AfiliadosLoginRoute = AfiliadosLoginRouteImport.update({
-  id: '/afiliados/login',
-  path: '/afiliados/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -86,27 +61,69 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AfiliadosLoginRoute = AfiliadosLoginRouteImport.update({
+  id: '/afiliados/login',
+  path: '/afiliados/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AfiliadosDashboardRoute = AfiliadosDashboardRouteImport.update({
+  id: '/afiliados/dashboard',
+  path: '/afiliados/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardIndexRoute =
+  AuthenticatedDashboardIndexRouteImport.update({
+    id: '/dashboard/',
+    path: '/dashboard/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const AuthenticatedAdminAfiliadosRoute =
-  AuthenticatedAdminAfiliadosRouteImport.update({
-    id: '/afiliados',
-    path: '/afiliados',
-    getParentRoute: () => AuthenticatedAdminRoute,
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe-webhook',
+  path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBuscarComparaveisRoute =
+  ApiPublicBuscarComparaveisRouteImport.update({
+    id: '/api/public/buscar-comparaveis',
+    path: '/api/public/buscar-comparaveis',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAdminBetaTestersRoute =
-  AuthenticatedAdminBetaTestersRouteImport.update({
-    id: '/beta-testers',
-    path: '/beta-testers',
-    getParentRoute: () => AuthenticatedAdminRoute,
+const AuthenticatedAvaliacoesNovaRoute =
+  AuthenticatedAvaliacoesNovaRouteImport.update({
+    id: '/avaliacoes/nova',
+    path: '/avaliacoes/nova',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminPlanosRoute =
-  AuthenticatedAdminPlanosRouteImport.update({
-    id: '/planos',
-    path: '/planos',
+const AuthenticatedAvaliacoesIdRoute =
+  AuthenticatedAvaliacoesIdRouteImport.update({
+    id: '/avaliacoes/$id',
+    path: '/avaliacoes/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminUsuariosRoute =
+  AuthenticatedAdminUsuariosRouteImport.update({
+    id: '/usuarios',
+    path: '/usuarios',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminTestIaRoute =
@@ -115,41 +132,24 @@ const AuthenticatedAdminTestIaRoute =
     path: '/test-ia',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminUsuariosRoute =
-  AuthenticatedAdminUsuariosRouteImport.update({
-    id: '/usuarios',
-    path: '/usuarios',
+const AuthenticatedAdminPlanosRoute =
+  AuthenticatedAdminPlanosRouteImport.update({
+    id: '/planos',
+    path: '/planos',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAvaliacoesIdRoute =
-  AuthenticatedAvaliacoesIdRouteImport.update({
-    id: '/avaliacoes/$id',
-    path: '/avaliacoes/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedAdminBetaTestersRoute =
+  AuthenticatedAdminBetaTestersRouteImport.update({
+    id: '/beta-testers',
+    path: '/beta-testers',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAvaliacoesNovaRoute =
-  AuthenticatedAvaliacoesNovaRouteImport.update({
-    id: '/avaliacoes/nova',
-    path: '/avaliacoes/nova',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedAdminAfiliadosRoute =
+  AuthenticatedAdminAfiliadosRouteImport.update({
+    id: '/afiliados',
+    path: '/afiliados',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedDashboardIndexRoute =
-  AuthenticatedDashboardIndexRouteImport.update({
-    id: '/dashboard/',
-    path: '/dashboard/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const ApiPublicBuscarComparaveisRoute =
-  ApiPublicBuscarComparaveisRouteImport.update({
-    id: '/api/public/buscar-comparaveis',
-    path: '/api/public/buscar-comparaveis',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
-  id: '/api/public/stripe-webhook',
-  path: '/api/public/stripe-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -308,25 +308,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacidade': {
@@ -336,46 +322,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/termos': {
-      id: '/termos'
-      path: '/termos'
-      fullPath: '/termos'
-      preLoaderRoute: typeof TermosRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/perfil': {
-      id: '/_authenticated/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/planos': {
-      id: '/_authenticated/planos'
-      path: '/planos'
-      fullPath: '/planos'
-      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/afiliados/dashboard': {
-      id: '/afiliados/dashboard'
-      path: '/afiliados/dashboard'
-      fullPath: '/afiliados/dashboard'
-      preLoaderRoute: typeof AfiliadosDashboardRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/afiliados/login': {
-      id: '/afiliados/login'
-      path: '/afiliados/login'
-      fullPath: '/afiliados/login'
-      preLoaderRoute: typeof AfiliadosLoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -385,60 +350,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/': {
-      id: '/_authenticated/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+    '/afiliados/login': {
+      id: '/afiliados/login'
+      path: '/afiliados/login'
+      fullPath: '/afiliados/login'
+      preLoaderRoute: typeof AfiliadosLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/afiliados': {
-      id: '/_authenticated/admin/afiliados'
-      path: '/afiliados'
-      fullPath: '/admin/afiliados'
-      preLoaderRoute: typeof AuthenticatedAdminAfiliadosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+    '/afiliados/dashboard': {
+      id: '/afiliados/dashboard'
+      path: '/afiliados/dashboard'
+      fullPath: '/afiliados/dashboard'
+      preLoaderRoute: typeof AfiliadosDashboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/beta-testers': {
-      id: '/_authenticated/admin/beta-testers'
-      path: '/beta-testers'
-      fullPath: '/admin/beta-testers'
-      preLoaderRoute: typeof AuthenticatedAdminBetaTestersRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/planos': {
-      id: '/_authenticated/admin/planos'
+    '/_authenticated/planos': {
+      id: '/_authenticated/planos'
       path: '/planos'
-      fullPath: '/admin/planos'
-      preLoaderRoute: typeof AuthenticatedAdminPlanosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/test-ia': {
-      id: '/_authenticated/admin/test-ia'
-      path: '/test-ia'
-      fullPath: '/admin/test-ia'
-      preLoaderRoute: typeof AuthenticatedAdminTestIaRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/usuarios': {
-      id: '/_authenticated/admin/usuarios'
-      path: '/usuarios'
-      fullPath: '/admin/usuarios'
-      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/avaliacoes/$id': {
-      id: '/_authenticated/avaliacoes/$id'
-      path: '/avaliacoes/$id'
-      fullPath: '/avaliacoes/$id'
-      preLoaderRoute: typeof AuthenticatedAvaliacoesIdRouteImport
+      fullPath: '/planos'
+      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/avaliacoes/nova': {
-      id: '/_authenticated/avaliacoes/nova'
-      path: '/avaliacoes/nova'
-      fullPath: '/avaliacoes/nova'
-      preLoaderRoute: typeof AuthenticatedAvaliacoesNovaRouteImport
+    '/_authenticated/perfil': {
+      id: '/_authenticated/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard/': {
@@ -448,12 +392,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/buscar-comparaveis': {
-      id: '/api/public/buscar-comparaveis'
-      path: '/api/public/buscar-comparaveis'
-      fullPath: '/api/public/buscar-comparaveis'
-      preLoaderRoute: typeof ApiPublicBuscarComparaveisRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/api/public/stripe-webhook': {
       id: '/api/public/stripe-webhook'
@@ -461,6 +405,62 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/stripe-webhook'
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/public/buscar-comparaveis': {
+      id: '/api/public/buscar-comparaveis'
+      path: '/api/public/buscar-comparaveis'
+      fullPath: '/api/public/buscar-comparaveis'
+      preLoaderRoute: typeof ApiPublicBuscarComparaveisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/avaliacoes/nova': {
+      id: '/_authenticated/avaliacoes/nova'
+      path: '/avaliacoes/nova'
+      fullPath: '/avaliacoes/nova'
+      preLoaderRoute: typeof AuthenticatedAvaliacoesNovaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/avaliacoes/$id': {
+      id: '/_authenticated/avaliacoes/$id'
+      path: '/avaliacoes/$id'
+      fullPath: '/avaliacoes/$id'
+      preLoaderRoute: typeof AuthenticatedAvaliacoesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/usuarios': {
+      id: '/_authenticated/admin/usuarios'
+      path: '/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/test-ia': {
+      id: '/_authenticated/admin/test-ia'
+      path: '/test-ia'
+      fullPath: '/admin/test-ia'
+      preLoaderRoute: typeof AuthenticatedAdminTestIaRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/planos': {
+      id: '/_authenticated/admin/planos'
+      path: '/planos'
+      fullPath: '/admin/planos'
+      preLoaderRoute: typeof AuthenticatedAdminPlanosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/beta-testers': {
+      id: '/_authenticated/admin/beta-testers'
+      path: '/beta-testers'
+      fullPath: '/admin/beta-testers'
+      preLoaderRoute: typeof AuthenticatedAdminBetaTestersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/afiliados': {
+      id: '/_authenticated/admin/afiliados'
+      path: '/afiliados'
+      fullPath: '/admin/afiliados'
+      preLoaderRoute: typeof AuthenticatedAdminAfiliadosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
   }
 }

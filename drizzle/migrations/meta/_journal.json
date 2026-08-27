@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1787867279880,
+      "tag": "0000_fix_gravar_avaliacao_jsonb_fields",
+      "breakpoints": true
+    }
+  ]
+}
