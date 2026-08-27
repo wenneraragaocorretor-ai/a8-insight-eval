@@ -13,20 +13,48 @@ import { supabase } from "../../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { ChevronLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Download, Lock, Sparkles, Users, Megaphone, FileText, Copy, Pencil, Save, RotateCcw, Loader2, AlertTriangle } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import {
+  ChevronLeft,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  ShieldAlert,
+  Download,
+  Lock,
+  Sparkles,
+  Users,
+  Megaphone,
+  FileText,
+  Copy,
+  Pencil,
+  Save,
+  RotateCcw,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import { limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
 import { ExpertChat } from "../../components/ExpertChat";
-
-
-
 
 export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   loader: async ({ params }) => {
     if (params.id.startsWith("mock-")) {
       console.log("[LAUDO 11] Carregando ID de diagnóstico:", params.id);
-      if (typeof window === 'undefined') {
+      if (typeof window === "undefined") {
         console.log("[LAUDO 11] SSR detectado, retornando objeto vazio temporário");
         return { avaliacao: { id: params.id }, resultado: {}, comparaveis: [], profile: {} };
       }
@@ -44,7 +72,8 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
 
   errorComponent: ({ error }) => {
     console.error("[LAUDO ERR] Erro ao renderizar AvaliacaoDetalhe:", error);
-    const isUnauthorized = error.message?.includes("permissão") || error.message?.includes("permissao");
+    const isUnauthorized =
+      error.message?.includes("permissão") || error.message?.includes("permissao");
     return (
       <div className="p-8 text-center">
         {isUnauthorized ? (
@@ -58,7 +87,8 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
             <AlertTriangle className="mx-auto h-10 w-10 text-destructive mb-3" />
             <h2 className="text-xl font-bold text-destructive">Erro ao carregar laudo</h2>
             <p className="text-muted-foreground mt-2">
-              Não foi possível carregar os dados desta avaliação. Pode ser que o processo de geração tenha falhado ou o registro tenha sido removido.
+              Não foi possível carregar os dados desta avaliação. Pode ser que o processo de geração
+              tenha falhado ou o registro tenha sido removido.
             </p>
             <div className="mt-4 p-3 bg-red-50 text-red-700 text-xs rounded border border-red-100 max-w-md mx-auto">
               Detalhe técnico: {error.message}
@@ -66,8 +96,12 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
           </>
         )}
         <div className="mt-6 flex gap-3 justify-center">
-          <Link to="/dashboard"><Button variant="outline">Ir para Dashboard</Button></Link>
-          <Link to="/avaliacoes/nova"><Button>Tentar Nova Avaliação</Button></Link>
+          <Link to="/dashboard">
+            <Button variant="outline">Ir para Dashboard</Button>
+          </Link>
+          <Link to="/avaliacoes/nova">
+            <Button>Tentar Nova Avaliação</Button>
+          </Link>
         </div>
       </div>
     );
@@ -75,7 +109,9 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
   notFoundComponent: () => (
     <div className="p-8 text-center">
       <h2 className="text-xl font-bold">Avaliação não encontrada</h2>
-      <Link to="/dashboard"><Button className="mt-4">Voltar ao Dashboard</Button></Link>
+      <Link to="/dashboard">
+        <Button className="mt-4">Voltar ao Dashboard</Button>
+      </Link>
     </div>
   ),
   component: AvaliacaoDetalhe,
@@ -84,27 +120,20 @@ export const Route = createFileRoute("/_authenticated/avaliacoes/$id")({
 const fmtBRL = (v: number | null | undefined) => {
   const num = Number(v);
   if (v == null || isNaN(num)) return "—";
-  return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return num.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  });
 };
 
 function AvaliacaoDetalhe() {
   const data = Route.useLoaderData();
   const { avaliacao, resultado, comparaveis, profile } = data || {};
-  console.log("[LAUDO 11] Página do laudo carregada", { id: avaliacao?.id, hasResultado: !!resultado });
-  
-  if (avaliacao?.id?.startsWith("mock-") && (!resultado || Object.keys(resultado).length === 0)) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-gold" />
-        <p className="text-muted-foreground">Finalizando carregamento do diagnóstico...</p>
-        <script dangerouslySetInnerHTML={{ __html: `
-          if (typeof window !== 'undefined' && !window.location.search.includes('retry')) {
-            setTimeout(() => window.location.reload(), 500);
-          }
-        `}} />
-      </div>
-    );
-  }
+  console.log("[LAUDO 11] Página do laudo carregada", {
+    id: avaliacao?.id,
+    hasResultado: !!resultado,
+  });
 
   const rel: any = (resultado?.relatorio_json as any) || {};
 
@@ -119,7 +148,9 @@ function AvaliacaoDetalhe() {
       try {
         const r = await fetchAmIAdmin();
         if ((r as any)?.admin) {
-          const v = (typeof window !== "undefined" && localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY)) || "expert";
+          const v =
+            (typeof window !== "undefined" && localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY)) ||
+            "expert";
           setAdminOverride(v);
         }
       } catch {}
@@ -153,7 +184,8 @@ function AvaliacaoDetalhe() {
     if (!a?.posicao_solar) faltando.push("Posição solar");
     if (!a?.topografia) faltando.push("Topografia");
     if (!a?.zoneamento) faltando.push("Zoneamento");
-    if (!Array.isArray(a?.tipo_acabamento) || a.tipo_acabamento.length === 0) faltando.push("Tipo de acabamento");
+    if (!Array.isArray(a?.tipo_acabamento) || a.tipo_acabamento.length === 0)
+      faltando.push("Tipo de acabamento");
     return faltando;
   })();
 
@@ -161,9 +193,11 @@ function AvaliacaoDetalhe() {
   const valorCentralTecnico = Number(resultado?.valor_central) || 0;
   const valorFinalSalvo = (resultado as any)?.valor_final_corretor;
   const [valorFinalInput, setValorFinalInput] = useState<string>(
-    String(Number.isFinite(Number(valorFinalSalvo)) && Number(valorFinalSalvo) > 0
-      ? Number(valorFinalSalvo)
-      : valorCentralTecnico),
+    String(
+      Number.isFinite(Number(valorFinalSalvo)) && Number(valorFinalSalvo) > 0
+        ? Number(valorFinalSalvo)
+        : valorCentralTecnico,
+    ),
   );
   const [savingValor, setSavingValor] = useState(false);
   const salvarValorFinal = useServerFn(atualizarValorFinalCorretor);
@@ -197,6 +231,24 @@ function AvaliacaoDetalhe() {
 
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
+  if (avaliacao?.id?.startsWith("mock-") && (!resultado || Object.keys(resultado).length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-gold" />
+        <p className="text-muted-foreground">Finalizando carregamento do diagnóstico...</p>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+          if (typeof window !== 'undefined' && !window.location.search.includes('retry')) {
+            setTimeout(() => window.location.reload(), 500);
+          }
+        `,
+          }}
+        />
+      </div>
+    );
+  }
+
   const handleDownload = async () => {
     if (generatingPdf) return;
     if (!disponiveis.includes(modelo)) {
@@ -212,7 +264,8 @@ function AvaliacaoDetalhe() {
           duration: 12000,
           action: {
             label: "Editar agora",
-            onClick: () => navigate({ to: "/avaliacoes/nova", search: { edit: avaliacao.id } as any }),
+            onClick: () =>
+              navigate({ to: "/avaliacoes/nova", search: { edit: avaliacao.id } as any }),
           },
         },
       );
@@ -233,7 +286,9 @@ function AvaliacaoDetalhe() {
     const comTimeout = <T,>(p: Promise<T>, ms: number, rotulo: string): Promise<T> =>
       Promise.race([
         p,
-        new Promise<T>((_, rej) => setTimeout(() => rej(new Error(`Tempo esgotado: ${rotulo}`)), ms)),
+        new Promise<T>((_, rej) =>
+          setTimeout(() => rej(new Error(`Tempo esgotado: ${rotulo}`)), ms),
+        ),
       ]);
     const paraDataUrl = (blob: Blob) =>
       new Promise<string>((resolve, reject) => {
@@ -246,11 +301,22 @@ function AvaliacaoDetalhe() {
     try {
       // Carrega fotos do imóvel (paths privados → dataURL) para embutir no PDF.
       // Qualquer falha aqui é ignorada: fotos são opcionais e não podem impedir o PDF.
-      const fotosPaths: string[] = Array.isArray((avaliacao as any)?.fotos) ? (avaliacao as any).fotos : [];
-      const fotosMeta: Array<{ path: string; legenda?: string; principal?: boolean; comentario_ia?: string }> =
-        Array.isArray((avaliacao as any)?.fotos_meta) ? (avaliacao as any).fotos_meta : [];
+      const fotosPaths: string[] = Array.isArray((avaliacao as any)?.fotos)
+        ? (avaliacao as any).fotos
+        : [];
+      const fotosMeta: Array<{
+        path: string;
+        legenda?: string;
+        principal?: boolean;
+        comentario_ia?: string;
+      }> = Array.isArray((avaliacao as any)?.fotos_meta) ? (avaliacao as any).fotos_meta : [];
       const fotosDataUrls: string[] = [];
-      const fotosDetalhadas: Array<{ dataUrl: string; legenda: string; principal: boolean; comentario_ia: string }> = [];
+      const fotosDetalhadas: Array<{
+        dataUrl: string;
+        legenda: string;
+        principal: boolean;
+        comentario_ia: string;
+      }> = [];
 
       for (const p of fotosPaths.slice(0, 15)) {
         try {
@@ -341,19 +407,23 @@ function AvaliacaoDetalhe() {
       });
     } catch (e: any) {
       console.error("Erro ao gerar PDF:", e);
-      toast.error(`Falha ao gerar PDF: ${e?.message || "Erro desconhecido"}`, { id: toastId, duration: 10000 });
+      toast.error(`Falha ao gerar PDF: ${e?.message || "Erro desconhecido"}`, {
+        id: toastId,
+        duration: 10000,
+      });
     } finally {
       setGeneratingPdf(false);
-
     }
   };
-
 
   return (
     <div className="max-w-5xl mx-auto py-8 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          <Link
+            to="/dashboard"
+            className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          >
             <ChevronLeft size={16} /> Dashboard
           </Link>
           <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -385,7 +455,9 @@ function AvaliacaoDetalhe() {
             <p className="text-xs text-muted-foreground mt-1">
               Última edição em{" "}
               {new Date((avaliacao as any).ultima_edicao_em).toLocaleDateString("pt-BR", {
-                day: "2-digit", month: "short", year: "numeric",
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
               })}
             </p>
           )}
@@ -411,7 +483,9 @@ function AvaliacaoDetalhe() {
             </Select>
             <Button
               variant="outline"
-              onClick={() => navigate({ to: "/avaliacoes/nova", search: { edit: avaliacao.id } as any })}
+              onClick={() =>
+                navigate({ to: "/avaliacoes/nova", search: { edit: avaliacao.id } as any })
+              }
               className="gap-2 border-[#0F2D5C] text-[#0F2D5C] hover:bg-[#0F2D5C] hover:text-white"
               disabled={(() => {
                 if (avaliacao.id.startsWith("mock-")) return true; // Bloqueado (Diagnóstico)
@@ -419,11 +493,14 @@ function AvaliacaoDetalhe() {
                 return lim !== null && ((avaliacao as any)?.edicoes_count ?? 0) >= lim;
               })()}
             >
-              <Pencil size={16} /> {avaliacao.id.startsWith("mock-") ? "Edição bloqueada (Modo de Diagnóstico)" : "Editar Laudo"}
+              <Pencil size={16} />{" "}
+              {avaliacao.id.startsWith("mock-")
+                ? "Edição bloqueada (Modo de Diagnóstico)"
+                : "Editar Laudo"}
             </Button>
 
-            <Button 
-              onClick={handleDownload} 
+            <Button
+              onClick={handleDownload}
               className="gap-2 bg-brand-gold text-primary-foreground"
               disabled={generatingPdf}
             >
@@ -442,28 +519,43 @@ function AvaliacaoDetalhe() {
             const lim = limiteEdicoesPorPlano(plano);
             const usadas = (avaliacao as any)?.edicoes_count ?? 0;
             if (lim === null) {
-              return <span className="text-xs text-muted-foreground">Edições ilimitadas (Expert)</span>;
+              return (
+                <span className="text-xs text-muted-foreground">Edições ilimitadas (Expert)</span>
+              );
             }
             const restantes = Math.max(0, lim - usadas);
             return (
               <span className="text-xs text-muted-foreground">
-                {restantes > 0 ? `${restantes} edição(ões) restante(s)` : "Limite de edições atingido"}
+                {restantes > 0
+                  ? `${restantes} edição(ões) restante(s)`
+                  : "Limite de edições atingido"}
               </span>
             );
           })()}
         </div>
       </div>
 
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="premium-card">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><TrendingDown size={16} /> Valor Mínimo</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{fmtBRL(resultado?.valor_minimo)}</div></CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingDown size={16} /> Valor Mínimo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{fmtBRL(resultado?.valor_minimo)}</div>
+          </CardContent>
         </Card>
         <Card className="premium-card border-brand-gold">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Target size={16} /> Valor Central</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Target size={16} /> Valor Central
+            </CardTitle>
+          </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-brand-gold">{fmtBRL(resultado?.valor_central)}</div>
+            <div className="text-3xl font-bold text-brand-gold">
+              {fmtBRL(resultado?.valor_central)}
+            </div>
             {(() => {
               const total = Number(avaliacao?.area_total);
               const base = areaBaseDe(avaliacao?.tipo_imovel, avaliacao);
@@ -481,10 +573,14 @@ function AvaliacaoDetalhe() {
               return (
                 <>
                   {valorBase > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">{fmtBRL(valorBase)}/m² {baseLabel}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {fmtBRL(valorBase)}/m² {baseLabel}
+                    </p>
                   )}
                   {showTotalRef && (
-                    <p className="text-xs text-muted-foreground">{fmtBRL(vc / total)}/m² total (referência)</p>
+                    <p className="text-xs text-muted-foreground">
+                      {fmtBRL(vc / total)}/m² total (referência)
+                    </p>
                   )}
                 </>
               );
@@ -492,8 +588,14 @@ function AvaliacaoDetalhe() {
           </CardContent>
         </Card>
         <Card className="premium-card">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><TrendingUp size={16} /> Valor Máximo</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{fmtBRL(resultado?.valor_maximo)}</div></CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp size={16} /> Valor Máximo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{fmtBRL(resultado?.valor_maximo)}</div>
+          </CardContent>
         </Card>
       </div>
 
@@ -509,15 +611,21 @@ function AvaliacaoDetalhe() {
             const max = Number(resultado?.valor_maximo) || 0;
             const parsed = Number(String(valorFinalInput).replace(/\./g, "").replace(",", "."));
             const valido = Number.isFinite(parsed) && parsed >= min && parsed <= max;
-            const alterado = Number.isFinite(parsed) && Math.round(parsed) !== Math.round(Number(valorFinalSalvo ?? valorCentralTecnico));
+            const alterado =
+              Number.isFinite(parsed) &&
+              Math.round(parsed) !== Math.round(Number(valorFinalSalvo ?? valorCentralTecnico));
             const handleSalvar = async () => {
               if (!valido) {
-                toast.error(`O valor deve estar entre ${fmtBRL(min)} e ${fmtBRL(max)} conforme o campo de arbítrio técnico (NBR 14653-2).`);
+                toast.error(
+                  `O valor deve estar entre ${fmtBRL(min)} e ${fmtBRL(max)} conforme o campo de arbítrio técnico (NBR 14653-2).`,
+                );
                 return;
               }
               setSavingValor(true);
               try {
-                await salvarValorFinal({ data: { avaliacao_id: avaliacao.id, valor_final_corretor: Math.round(parsed) } });
+                await salvarValorFinal({
+                  data: { avaliacao_id: avaliacao.id, valor_final_corretor: Math.round(parsed) },
+                });
                 toast.success("Valor final do laudo salvo");
                 await router.invalidate();
               } catch (e: any) {
@@ -529,7 +637,9 @@ function AvaliacaoDetalhe() {
             const handleResetar = async () => {
               setSavingValor(true);
               try {
-                await salvarValorFinal({ data: { avaliacao_id: avaliacao.id, valor_final_corretor: null } });
+                await salvarValorFinal({
+                  data: { avaliacao_id: avaliacao.id, valor_final_corretor: null },
+                });
                 setValorFinalInput(String(valorCentralTecnico));
                 toast.success("Valor restaurado para o cálculo técnico");
                 await router.invalidate();
@@ -552,25 +662,41 @@ function AvaliacaoDetalhe() {
                       className="w-44 text-lg font-semibold"
                     />
                   </div>
-                  <Button onClick={handleSalvar} disabled={!valido || !alterado || savingValor} className="gap-2 bg-brand-gold text-primary-foreground">
+                  <Button
+                    onClick={handleSalvar}
+                    disabled={!valido || !alterado || savingValor}
+                    className="gap-2 bg-brand-gold text-primary-foreground"
+                  >
                     <Save size={16} /> Salvar
                   </Button>
                   {valorFinalSalvo != null && (
-                    <Button variant="outline" onClick={handleResetar} disabled={savingValor} className="gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleResetar}
+                      disabled={savingValor}
+                      className="gap-2"
+                    >
                       <RotateCcw size={16} /> Usar valor calculado
                     </Button>
                   )}
                 </div>
                 {!valido ? (
                   <p className="text-xs text-destructive">
-                    O valor deve estar entre {fmtBRL(min)} e {fmtBRL(max)} conforme o campo de arbítrio técnico (NBR 14653-2).
+                    O valor deve estar entre {fmtBRL(min)} e {fmtBRL(max)} conforme o campo de
+                    arbítrio técnico (NBR 14653-2).
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Faixa permitida: {fmtBRL(min)} – {fmtBRL(max)}. Valor calculado pela regressão: {fmtBRL(valorCentralTecnico)}.
-                    {valorFinalSalvo != null && Math.round(Number(valorFinalSalvo)) !== Math.round(valorCentralTecnico) && (
-                      <span> Valor personalizado salvo: <strong>{fmtBRL(Number(valorFinalSalvo))}</strong>.</span>
-                    )}
+                    Faixa permitida: {fmtBRL(min)} – {fmtBRL(max)}. Valor calculado pela regressão:{" "}
+                    {fmtBRL(valorCentralTecnico)}.
+                    {valorFinalSalvo != null &&
+                      Math.round(Number(valorFinalSalvo)) !== Math.round(valorCentralTecnico) && (
+                        <span>
+                          {" "}
+                          Valor personalizado salvo:{" "}
+                          <strong>{fmtBRL(Number(valorFinalSalvo))}</strong>.
+                        </span>
+                      )}
                   </p>
                 )}
               </div>
@@ -579,11 +705,11 @@ function AvaliacaoDetalhe() {
         </CardContent>
       </Card>
 
-
-
       {rel.analise && (
         <Card className="premium-card">
-          <CardHeader><CardTitle>Análise de Mercado</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Análise de Mercado</CardTitle>
+          </CardHeader>
           <CardContent>
             <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">
               {typeof rel.analise === "string" ? rel.analise : JSON.stringify(rel.analise, null, 2)}
@@ -593,7 +719,9 @@ function AvaliacaoDetalhe() {
       )}
 
       <Card className="premium-card">
-        <CardHeader><CardTitle>Comparáveis Utilizados</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Comparáveis Utilizados</CardTitle>
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -607,8 +735,9 @@ function AvaliacaoDetalhe() {
                   </span>
                 </TableHead>
                 <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">{labelValorM2(avaliacao?.tipo_imovel).replace("Valor/m²", "R$/m²")}</TableHead>
-
+                <TableHead className="text-right">
+                  {labelValorM2(avaliacao?.tipo_imovel).replace("Valor/m²", "R$/m²")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -619,7 +748,9 @@ function AvaliacaoDetalhe() {
                     <TableCell className="font-medium">{c.fonte}</TableCell>
                     <TableCell>{c.localizacao || "—"}</TableCell>
                     <TableCell className="text-right">{areaBase}</TableCell>
-                    <TableCell className="text-right">{fmtBRL(Number(c.valor_anunciado))}</TableCell>
+                    <TableCell className="text-right">
+                      {fmtBRL(Number(c.valor_anunciado))}
+                    </TableCell>
                     <TableCell className="text-right">
                       {areaBase > 0 ? fmtBRL(Number(c.valor_anunciado) / areaBase) : "—"}
                     </TableCell>
@@ -633,16 +764,22 @@ function AvaliacaoDetalhe() {
 
       {(rel.dicas || rel.recomendacoes) && (
         <Card className="premium-card">
-          <CardHeader><CardTitle>Dicas e Recomendações</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Dicas e Recomendações</CardTitle>
+          </CardHeader>
           <CardContent>
             {Array.isArray(rel.dicas || rel.recomendacoes) ? (
               <ul className="list-disc pl-5 space-y-2">
                 {(rel.dicas || rel.recomendacoes).map((d: string, i: number) => (
-                  <li key={i} className="text-sm">{d}</li>
+                  <li key={i} className="text-sm">
+                    {d}
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm whitespace-pre-wrap">{String(rel.dicas || rel.recomendacoes)}</p>
+              <p className="text-sm whitespace-pre-wrap">
+                {String(rel.dicas || rel.recomendacoes)}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -662,7 +799,8 @@ function AvaliacaoDetalhe() {
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              Disponível no plano Expert — gere perfil do público, estratégia de divulgação e textos prontos para portais e redes sociais.
+              Disponível no plano Expert — gere perfil do público, estratégia de divulgação e textos
+              prontos para portais e redes sociais.
             </p>
             <Button
               onClick={() => navigate({ to: "/planos" })}
@@ -673,134 +811,195 @@ function AvaliacaoDetalhe() {
           </CardContent>
         </Card>
       ) : (
-      <Card className="premium-card border-brand-gold">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="text-brand-gold" size={20} />
-            Assistente de Marketing
-          </CardTitle>
-          {!marketing && (
-            <Button
-              onClick={handleGerarMarketing}
-              disabled={loadingMkt}
-              className="bg-brand-gold text-primary-foreground gap-2"
-            >
-              <Sparkles size={16} />
-              {loadingMkt ? "Gerando..." : "Gerar com IA"}
-            </Button>
-          )}
-          {marketing && (
-            <Button variant="outline" size="sm" onClick={handleGerarMarketing} disabled={loadingMkt}>
-              {loadingMkt ? "Atualizando..." : "Regenerar"}
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          {!marketing && !loadingMkt && (
-            <p className="text-sm text-muted-foreground">
-              Gere um plano de marketing personalizado com perfil do público-alvo, estratégia de divulgação e textos prontos para portais e redes sociais.
-            </p>
-          )}
-          {marketing && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* CARD 1 — Público */}
-              <Card className="bg-muted/40">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Users size={16} className="text-brand-gold" /> Público-Alvo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div><span className="font-semibold">Faixa etária:</span> {marketing.publico.faixa_etaria}</div>
-                  <div><span className="font-semibold">Perfil familiar:</span> {marketing.publico.perfil_familiar}</div>
-                  <div><span className="font-semibold">Renda:</span> {marketing.publico.faixa_renda}</div>
-                  <div><span className="font-semibold">Estilo de vida:</span> {marketing.publico.estilo_vida}</div>
-                  <div><span className="font-semibold">Motivação:</span> {marketing.publico.motivacao_compra}</div>
-                </CardContent>
-              </Card>
+        <Card className="premium-card border-brand-gold">
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="text-brand-gold" size={20} />
+              Assistente de Marketing
+            </CardTitle>
+            {!marketing && (
+              <Button
+                onClick={handleGerarMarketing}
+                disabled={loadingMkt}
+                className="bg-brand-gold text-primary-foreground gap-2"
+              >
+                <Sparkles size={16} />
+                {loadingMkt ? "Gerando..." : "Gerar com IA"}
+              </Button>
+            )}
+            {marketing && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGerarMarketing}
+                disabled={loadingMkt}
+              >
+                {loadingMkt ? "Atualizando..." : "Regenerar"}
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {!marketing && !loadingMkt && (
+              <p className="text-sm text-muted-foreground">
+                Gere um plano de marketing personalizado com perfil do público-alvo, estratégia de
+                divulgação e textos prontos para portais e redes sociais.
+              </p>
+            )}
+            {marketing && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* CARD 1 — Público */}
+                <Card className="bg-muted/40">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users size={16} className="text-brand-gold" /> Público-Alvo
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-semibold">Faixa etária:</span>{" "}
+                      {marketing.publico.faixa_etaria}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Perfil familiar:</span>{" "}
+                      {marketing.publico.perfil_familiar}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Renda:</span> {marketing.publico.faixa_renda}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Estilo de vida:</span>{" "}
+                      {marketing.publico.estilo_vida}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Motivação:</span>{" "}
+                      {marketing.publico.motivacao_compra}
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* CARD 2 — Divulgação */}
-              <Card className="bg-muted/40">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Megaphone size={16} className="text-brand-gold" /> Estratégia de Divulgação
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-semibold">Canais:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {marketing.divulgacao.canais.map((c, i) => (
-                        <span key={i} className="text-xs bg-brand-blue text-white px-2 py-0.5 rounded">{c}</span>
-                      ))}
+                {/* CARD 2 — Divulgação */}
+                <Card className="bg-muted/40">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Megaphone size={16} className="text-brand-gold" /> Estratégia de Divulgação
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-semibold">Canais:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {marketing.divulgacao.canais.map((c, i) => (
+                          <span
+                            key={i}
+                            className="text-xs bg-brand-blue text-white px-2 py-0.5 rounded"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div><span className="font-semibold">Melhor horário:</span> {marketing.divulgacao.melhor_horario}</div>
-                  <div><span className="font-semibold">Prazo de venda:</span> {marketing.divulgacao.prazo_venda}</div>
-                  <div><span className="font-semibold">Precificação:</span> {marketing.divulgacao.dicas_precificacao}</div>
-                  <div><span className="font-semibold">Desconto máx:</span> {marketing.divulgacao.desconto_maximo}</div>
-                </CardContent>
-              </Card>
+                    <div>
+                      <span className="font-semibold">Melhor horário:</span>{" "}
+                      {marketing.divulgacao.melhor_horario}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Prazo de venda:</span>{" "}
+                      {marketing.divulgacao.prazo_venda}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Precificação:</span>{" "}
+                      {marketing.divulgacao.dicas_precificacao}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Desconto máx:</span>{" "}
+                      {marketing.divulgacao.desconto_maximo}
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* CARD 3 — Anúncio */}
-              <Card className="bg-muted/40">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FileText size={16} className="text-brand-gold" /> Texto de Anúncio
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">Título</span>
-                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copiar(marketing.anuncio.titulo, "Título")}>
-                        <Copy size={12} />
-                      </Button>
+                {/* CARD 3 — Anúncio */}
+                <Card className="bg-muted/40">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText size={16} className="text-brand-gold" /> Texto de Anúncio
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">Título</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2"
+                          onClick={() => copiar(marketing.anuncio.titulo, "Título")}
+                        >
+                          <Copy size={12} />
+                        </Button>
+                      </div>
+                      <p className="text-xs bg-background p-2 rounded border">
+                        {marketing.anuncio.titulo}
+                      </p>
                     </div>
-                    <p className="text-xs bg-background p-2 rounded border">{marketing.anuncio.titulo}</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">Descrição (portais)</span>
-                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copiar(marketing.anuncio.descricao_portal, "Descrição")}>
-                        <Copy size={12} />
-                      </Button>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">Descrição (portais)</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2"
+                          onClick={() => copiar(marketing.anuncio.descricao_portal, "Descrição")}
+                        >
+                          <Copy size={12} />
+                        </Button>
+                      </div>
+                      <p className="text-xs bg-background p-2 rounded border whitespace-pre-wrap max-h-40 overflow-y-auto">
+                        {marketing.anuncio.descricao_portal}
+                      </p>
                     </div>
-                    <p className="text-xs bg-background p-2 rounded border whitespace-pre-wrap max-h-40 overflow-y-auto">
-                      {marketing.anuncio.descricao_portal}
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">WhatsApp</span>
-                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copiar(marketing.anuncio.whatsapp, "Texto WhatsApp")}>
-                        <Copy size={12} />
-                      </Button>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">WhatsApp</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2"
+                          onClick={() => copiar(marketing.anuncio.whatsapp, "Texto WhatsApp")}
+                        >
+                          <Copy size={12} />
+                        </Button>
+                      </div>
+                      <p className="text-xs bg-background p-2 rounded border whitespace-pre-wrap">
+                        {marketing.anuncio.whatsapp}
+                      </p>
                     </div>
-                    <p className="text-xs bg-background p-2 rounded border whitespace-pre-wrap">{marketing.anuncio.whatsapp}</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">Hashtags</span>
-                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => copiar(marketing.anuncio.hashtags.join(" "), "Hashtags")}>
-                        <Copy size={12} />
-                      </Button>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">Hashtags</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2"
+                          onClick={() => copiar(marketing.anuncio.hashtags.join(" "), "Hashtags")}
+                        >
+                          <Copy size={12} />
+                        </Button>
+                      </div>
+                      <p className="text-xs bg-background p-2 rounded border text-brand-blue font-medium">
+                        {marketing.anuncio.hashtags.join(" ")}
+                      </p>
                     </div>
-                    <p className="text-xs bg-background p-2 rounded border text-brand-blue font-medium">
-                      {marketing.anuncio.hashtags.join(" ")}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-
       <p className="text-xs text-center text-muted-foreground italic">
-        "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional habilitado (CNAI/IBAPE)"
+        "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional
+        habilitado (CNAI/IBAPE)"
       </p>
       <ExpertChat plano={plano} avaliacaoId={avaliacao?.id} />
     </div>

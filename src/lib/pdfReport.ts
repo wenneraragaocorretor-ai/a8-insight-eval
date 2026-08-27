@@ -5,31 +5,30 @@ import { COVER_BG_BASE64 } from "../assets/cover-bg";
 // Regra única de área-base (espelhada em supabase/functions/_shared/area-base.ts)
 import { areaBaseDe, labelValorM2, sufixoAreaBase } from "./areaBase";
 
-
 // ============================================================
 // A8 Avalia — PDF Premium (portrait A4)
 // 210mm x 297mm | Fundo branco | Dourado #C8A951 | Azul #0F2D5C
 // Margens: 25mm laterais / 20mm topo-base
 // ============================================================
 
-const BG: [number, number, number] = [255, 255, 255];        // #FFFFFF
-const BG_SOFT: [number, number, number] = [247, 248, 250];   // #F7F8FA
-const CARD_TOP: [number, number, number] = [255, 255, 255];  // white card
+const BG: [number, number, number] = [255, 255, 255]; // #FFFFFF
+const BG_SOFT: [number, number, number] = [247, 248, 250]; // #F7F8FA
+const CARD_TOP: [number, number, number] = [255, 255, 255]; // white card
 const CARD_BOTTOM: [number, number, number] = [247, 248, 250];
 const CARD_BLUE: [number, number, number] = [230, 241, 251]; // #E6F1FB light blue
-const BORDER: [number, number, number] = [232, 232, 232];    // #E8E8E8
-const GOLD: [number, number, number] = [200, 169, 81];       // #C8A951
-const BLUE: [number, number, number] = [15, 45, 92];         // #0F2D5C
-const NAVY: [number, number, number] = [10, 31, 68];          // #0A1F44
+const BORDER: [number, number, number] = [232, 232, 232]; // #E8E8E8
+const GOLD: [number, number, number] = [200, 169, 81]; // #C8A951
+const BLUE: [number, number, number] = [15, 45, 92]; // #0F2D5C
+const NAVY: [number, number, number] = [10, 31, 68]; // #0A1F44
 const GOLD_LIGHT: [number, number, number] = [226, 201, 126]; // #E2C97E
 const WHITE: [number, number, number] = [255, 255, 255];
-const TEXT: [number, number, number] = [44, 44, 42];         // #2C2C2A
+const TEXT: [number, number, number] = [44, 44, 42]; // #2C2C2A
 const GRAY: [number, number, number] = [90, 95, 105];
 const GRAY_DIM: [number, number, number] = [140, 145, 155];
 
 const PW = 210; // page width portrait A4
 const PH = 297; // page height portrait A4
-const M = 25;   // horizontal margin (vertical bands use literals ~12-20mm)
+const M = 25; // horizontal margin (vertical bands use literals ~12-20mm)
 
 export type PlanoUsuario = "basico" | "profissional" | "expert" | string;
 export type ModeloPdf = 1 | 2 | 3;
@@ -49,7 +48,11 @@ export type CorretorInfo = {
 const fmtBRL = (v: number | null | undefined) =>
   v == null || isNaN(Number(v))
     ? "—"
-    : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+    : Number(v).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+        maximumFractionDigits: 0,
+      });
 
 // A regra de área-base, o rótulo de R$/m² e o sufixo de eixo vêm de
 // `src/lib/areaBase.ts` (fonte única, espelhada nas Edge Functions).
@@ -59,10 +62,10 @@ const fmtBRL = (v: number | null | undefined) =>
 export type RegressaoLinear = {
   ok: boolean;
   n: number;
-  a: number;          // intercepto
-  b: number;          // coeficiente angular
-  r2: number;         // coef. de determinação
-  valorM2: number;    // y estimado em x = areaAvaliada
+  a: number; // intercepto
+  b: number; // coeficiente angular
+  r2: number; // coef. de determinação
+  valorM2: number; // y estimado em x = areaAvaliada
   valorTotal: number; // valorM2 * areaAvaliada
   areaAvaliada: number;
   equacao?: string;
@@ -81,16 +84,25 @@ function calcularRegressao(avaliacao: any, comparaveis: any[], resultado?: any):
     })
     .filter((p): p is { x: number; y: number } => p !== null);
   const n = pts.length;
-  const base: RegressaoLinear = { ok: false, n, a: 0, b: 0, r2: 0, valorM2: 0, valorTotal: 0, areaAvaliada };
-  
+  const base: RegressaoLinear = {
+    ok: false,
+    n,
+    a: 0,
+    b: 0,
+    r2: 0,
+    valorM2: 0,
+    valorTotal: 0,
+    areaAvaliada,
+  };
+
   if (n < 2) {
     // Se não há comparáveis suficientes para regressão, tenta o valor central técnico do resultado
     const valorUnitario = Number(resultado?.valor_unitario_medio) || 0;
     const valorTotal = Number(resultado?.valor_central) || 0;
-    return { 
-      ...base, 
-      valorM2: valorUnitario > 0 ? valorUnitario : areaAvaliada > 0 ? valorTotal / areaAvaliada : 0, 
-      valorTotal 
+    return {
+      ...base,
+      valorM2: valorUnitario > 0 ? valorUnitario : areaAvaliada > 0 ? valorTotal / areaAvaliada : 0,
+      valorTotal,
     };
   }
   if (areaAvaliada <= 0) return base;
@@ -137,17 +149,17 @@ function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): R
     console.warn("[LAUDO 11.2] Resultado não fornecido para aplicarRegressao");
     return reg;
   }
-  
+
   // SEMPRE anexa o objeto de regressão ao resultado, mesmo que ok=false
   resultado.regressao = reg;
-  
+
   if (reg.ok) {
     const tech = Math.round(reg.valorTotal);
     const min = Math.round(reg.valorTotal * 0.85);
     const max = Math.round(reg.valorTotal * 1.15);
     const override = Number(resultado.valor_final_corretor);
     const useOverride = Number.isFinite(override) && override >= min && override <= max;
-    
+
     resultado.valor_central = useOverride ? Math.round(override) : tech;
     resultado.valor_central_tecnico = tech;
     resultado.valor_minimo = min;
@@ -161,19 +173,19 @@ function aplicarRegressao(resultado: any, avaliacao: any, comparaveis: any[]): R
   } else {
     // Se a regressão falhou, garante que os valores base existam para o PDF não quebrar
     resultado.valor_central = resultado.valor_central || 0;
-    resultado.valor_minimo = resultado.valor_minimo || Math.round(Number(resultado.valor_central) * 0.85);
-    resultado.valor_maximo = resultado.valor_maximo || Math.round(Number(resultado.valor_central) * 1.15);
+    resultado.valor_minimo =
+      resultado.valor_minimo || Math.round(Number(resultado.valor_central) * 0.85);
+    resultado.valor_maximo =
+      resultado.valor_maximo || Math.round(Number(resultado.valor_central) * 1.15);
     resultado.valor_unitario_medio = resultado.valor_unitario_medio || 0;
   }
   return reg;
 }
 
-
-
-
-
 const fmtNum = (v: number | null | undefined, digits = 2) =>
-  v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("pt-BR", { maximumFractionDigits: digits });
+  v == null || isNaN(Number(v))
+    ? "—"
+    : Number(v).toLocaleString("pt-BR", { maximumFractionDigits: digits });
 
 const hoje = () => new Date().toLocaleDateString("pt-BR");
 
@@ -181,14 +193,18 @@ const hoje = () => new Date().toLocaleDateString("pt-BR");
 const fmtFonte = (f: any): string => {
   const s = String(f ?? "").trim();
   if (!s) return "—";
-  const looksLikeUrl = /^https?:\/\//i.test(s) || /^www\./i.test(s) || /^[a-z0-9-]+(\.[a-z0-9-]+)+\//i.test(s);
+  const looksLikeUrl =
+    /^https?:\/\//i.test(s) || /^www\./i.test(s) || /^[a-z0-9-]+(\.[a-z0-9-]+)+\//i.test(s);
   if (!looksLikeUrl) return s;
   try {
     const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
     const host = new URL(withProto).hostname.replace(/^www\./i, "");
     return host || s;
   } catch {
-    return s.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
+    return s
+      .replace(/^https?:\/\//i, "")
+      .replace(/^www\./i, "")
+      .split("/")[0];
   }
 };
 
@@ -220,7 +236,11 @@ function card(
   y: number,
   w: number,
   h: number,
-  opts: { radius?: number; variant?: "white" | "blue" | "darkblue"; border?: "gold" | "soft" | "none" } = {},
+  opts: {
+    radius?: number;
+    variant?: "white" | "blue" | "darkblue";
+    border?: "gold" | "soft" | "none";
+  } = {},
 ) {
   const radius = opts.radius ?? 3;
   const variant = opts.variant ?? "white";
@@ -308,11 +328,11 @@ function rodape(doc: jsPDF, corretor: CorretorInfo) {
     doc.setPage(i);
     // Margem inferior segura para o rodapé
     const footerY = PH - 15;
-    
+
     // Máscara branca cobrindo a faixa do rodapé para evitar sobreposição
     doc.setFillColor(255, 255, 255);
     doc.rect(0, footerY - 2, PW, PH - (footerY - 2), "F");
-    
+
     // Linha dourada fina
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.3);
@@ -323,7 +343,7 @@ function rodape(doc: jsPDF, corretor: CorretorInfo) {
     doc.setFontSize(7);
     doc.setTextColor(...NAVY);
     doc.text("A8 AVALIA", M, footerY + 5);
-    
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(...BLUE);
@@ -333,17 +353,22 @@ function rodape(doc: jsPDF, corretor: CorretorInfo) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(6);
     doc.setTextColor(...GRAY_DIM);
-    const disclaimer = "Estudo mercadológico realizado por profissional inscrito no Cadastro Nacional de Avaliadores Imobiliários — CNAI.";
+    const disclaimer =
+      "Estudo mercadológico realizado por profissional inscrito no Cadastro Nacional de Avaliadores Imobiliários — CNAI.";
     doc.text(disclaimer, PW / 2, footerY + 7, { align: "center" });
 
     // Número da página à direita
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(...GOLD);
-    doc.text(`${String(i).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, PW - M, footerY + 7, { align: "right" });
+    doc.text(
+      `${String(i).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
+      PW - M,
+      footerY + 7,
+      { align: "right" },
+    );
   }
 }
-
 
 function textoMultilinha(
   doc: jsPDF,
@@ -351,7 +376,14 @@ function textoMultilinha(
   x: number,
   y: number,
   w: number,
-  opts: { size?: number; color?: [number, number, number]; bold?: boolean; lineHeight?: number; maxLines?: number; maxHeight?: number } = {},
+  opts: {
+    size?: number;
+    color?: [number, number, number];
+    bold?: boolean;
+    lineHeight?: number;
+    maxLines?: number;
+    maxHeight?: number;
+  } = {},
 ) {
   const size = opts.size ?? 10;
   doc.setFont("helvetica", opts.bold ? "bold" : "normal");
@@ -379,7 +411,14 @@ function textoMultilinha(
 // ============================================================
 // HELPERS VISUAIS (gauges, badges, mini-charts)
 // ============================================================
-function iconCircle(doc: jsPDF, cx: number, cy: number, r: number, glyph: string, cor: [number, number, number] = GOLD) {
+function iconCircle(
+  doc: jsPDF,
+  cx: number,
+  cy: number,
+  r: number,
+  glyph: string,
+  cor: [number, number, number] = GOLD,
+) {
   doc.setFillColor(...cor);
   doc.circle(cx, cy, r, "F");
   if (!glyph) return;
@@ -389,8 +428,14 @@ function iconCircle(doc: jsPDF, cx: number, cy: number, r: number, glyph: string
   doc.text(glyph, cx, cy + r * 0.55, { align: "center" });
 }
 
-
-function progressBar(doc: jsPDF, x: number, y: number, w: number, pct: number, cor: [number, number, number] = GOLD) {
+function progressBar(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  pct: number,
+  cor: [number, number, number] = GOLD,
+) {
   doc.setFillColor(...BORDER);
   doc.roundedRect(x, y, w, 3, 1.5, 1.5, "F");
   const p = Math.max(0, Math.min(1, pct));
@@ -415,7 +460,12 @@ function gaugeChart(doc: jsPDF, cx: number, cy: number, r: number, valor: number
     const filled = t <= v / 10;
     const col: [number, number, number] = filled ? colorFor(t) : [232, 232, 232];
     doc.setDrawColor(...col);
-    doc.line(cx + Math.cos(a1) * r, cy + Math.sin(a1) * r, cx + Math.cos(a2) * r, cy + Math.sin(a2) * r);
+    doc.line(
+      cx + Math.cos(a1) * r,
+      cy + Math.sin(a1) * r,
+      cx + Math.cos(a2) * r,
+      cy + Math.sin(a2) * r,
+    );
   }
   const angP = start + (end - start) * (v / 10);
   doc.setDrawColor(...BLUE);
@@ -433,10 +483,18 @@ function gaugeChart(doc: jsPDF, cx: number, cy: number, r: number, valor: number
   doc.text("/ 10", cx, cy + 17, { align: "center" });
 }
 
-function trendBadge(doc: jsPDF, cx: number, cy: number, w: number, h: number, tendencia: "alta" | "estavel" | "baixa") {
-  const cor: [number, number, number] = tendencia === "alta" ? [40, 167, 105]
-    : tendencia === "baixa" ? [220, 53, 69] : [240, 180, 60];
-  const txt = tendencia === "alta" ? "VALORIZAÇÃO" : tendencia === "baixa" ? "DESVALORIZAÇÃO" : "ESTÁVEL";
+function trendBadge(
+  doc: jsPDF,
+  cx: number,
+  cy: number,
+  w: number,
+  h: number,
+  tendencia: "alta" | "estavel" | "baixa",
+) {
+  const cor: [number, number, number] =
+    tendencia === "alta" ? [40, 167, 105] : tendencia === "baixa" ? [220, 53, 69] : [240, 180, 60];
+  const txt =
+    tendencia === "alta" ? "VALORIZAÇÃO" : tendencia === "baixa" ? "DESVALORIZAÇÃO" : "ESTÁVEL";
   doc.setFillColor(...cor);
   doc.roundedRect(cx - w / 2, cy - h / 2, w, h, 3, 3, "F");
 
@@ -480,7 +538,8 @@ function infraIcon(doc: jsPDF, kind: string, cx: number, cy: number, r: number, 
     doc.rect(cx - r * 0.35, cy + 0.1, r * 0.7, r * 0.18, "F");
   } else if (k.includes("hospital")) {
     // Medical cross
-    const a = r * 0.7, b = r * 0.25;
+    const a = r * 0.7,
+      b = r * 0.25;
     doc.rect(cx - b, cy - a, b * 2, a * 2, "F");
     doc.rect(cx - a, cy - b, a * 2, b * 2, "F");
   } else if (k.includes("super")) {
@@ -500,10 +559,16 @@ function infraIcon(doc: jsPDF, kind: string, cx: number, cy: number, r: number, 
     doc.circle(cx + r * 0.35, cy + r * 0.55, r * 0.15, "F");
   } else if (k.includes("farm")) {
     // Plus sign (pharmacy cross)
-    const a = r * 0.65, b = r * 0.22;
+    const a = r * 0.65,
+      b = r * 0.22;
     doc.rect(cx - b, cy - a, b * 2, a * 2, "F");
     doc.rect(cx - a, cy - b, a * 2, b * 2, "F");
-  } else if (k.includes("lazer") || k.includes("parque") || k.includes("árvore") || k.includes("arvore")) {
+  } else if (
+    k.includes("lazer") ||
+    k.includes("parque") ||
+    k.includes("árvore") ||
+    k.includes("arvore")
+  ) {
     // Tree: triangle crown + trunk
     doc.triangle(cx, cy - r * 0.75, cx - r * 0.65, cy + r * 0.2, cx + r * 0.65, cy + r * 0.2, "F");
     doc.rect(cx - r * 0.15, cy + r * 0.2, r * 0.3, r * 0.45, "F");
@@ -531,7 +596,8 @@ function badgePadrao(padrao: string): { cor: [number, number, number]; label: st
   const p = String(padrao || "").toLowerCase();
   if (p.includes("luxo")) return { cor: [120, 81, 169], label: padrao };
   if (p.includes("alto")) return { cor: GOLD, label: padrao };
-  if (p.includes("normal") || p.includes("médio") || p.includes("medio")) return { cor: BLUE, label: padrao };
+  if (p.includes("normal") || p.includes("médio") || p.includes("medio"))
+    return { cor: BLUE, label: padrao };
   return { cor: [120, 125, 135], label: padrao || "—" };
 }
 
@@ -540,7 +606,8 @@ function conservPct(c: string): number {
   if (v.includes("péssimo") || v.includes("pessimo") || v.includes("ruim")) return 0.18;
   if (v.includes("regular")) return 0.45;
   if (v.includes("bom")) return 0.72;
-  if (v.includes("ótimo") || v.includes("otimo") || v.includes("novo") || v.includes("reformado")) return 1.0;
+  if (v.includes("ótimo") || v.includes("otimo") || v.includes("novo") || v.includes("reformado"))
+    return 1.0;
   return 0.55;
 }
 
@@ -566,7 +633,6 @@ function paginaCapa(
 
   // Overlay gradiente azul marinho escuro (várias camadas para fake gradient)
   doc.saveGraphicsState();
-  // @ts-ignore
   doc.setGState(new (doc as any).GState({ opacity: 0.55 }));
   doc.setFillColor(...NAVY);
   doc.rect(0, 0, PW, fotoH, "F");
@@ -574,7 +640,6 @@ function paginaCapa(
 
   // Banda mais escura na base da foto para transição
   doc.saveGraphicsState();
-  // @ts-ignore
   doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
   doc.setFillColor(...NAVY);
   doc.rect(0, fotoH - 24, PW, 24, "F");
@@ -611,7 +676,9 @@ function paginaCapa(
     try {
       const fmt = corretor.logo_data_url.includes("image/png") ? "PNG" : "JPEG";
       doc.addImage(corretor.logo_data_url, fmt, M, 14, 28, 14, undefined, "FAST");
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   } else {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
@@ -651,12 +718,9 @@ function paginaCapa(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(90, 90, 90);
-  doc.text(
-    "Conforme orientações da NBR 14653-2 da ABNT",
-    PW / 2,
-    yTituloCentro + 16,
-    { align: "center" },
-  );
+  doc.text("Conforme orientações da NBR 14653-2 da ABNT", PW / 2, yTituloCentro + 16, {
+    align: "center",
+  });
 
   // ===== Endereço do imóvel (sobre a foto, em branco) =====
   doc.setFont("helvetica", "normal");
@@ -723,7 +787,6 @@ function paginaSumario(doc: jsPDF, sec: string[]) {
     doc.text(nome.toUpperCase(), xCard + 22, y + hCard / 2 + labelFs * 0.18);
     y += hCard + gap;
   });
-
 }
 
 // ---------- PAGE: IMÓVEL ----------
@@ -735,13 +798,14 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   // metric cards row — sempre exibir áreas separadas quando informadas
   const areaItems: Array<[string, string]> = [];
   const hasTotal = a.area_total !== null && a.area_total !== undefined && Number(a.area_total) > 0;
-  const hasConstr = a.area_construida !== null && a.area_construida !== undefined && Number(a.area_construida) > 0;
-  const hasPriv = a.area_privativa !== null && a.area_privativa !== undefined && Number(a.area_privativa) > 0;
+  const hasConstr =
+    a.area_construida !== null && a.area_construida !== undefined && Number(a.area_construida) > 0;
+  const hasPriv =
+    a.area_privativa !== null && a.area_privativa !== undefined && Number(a.area_privativa) > 0;
   if (hasTotal) areaItems.push(["ÁREA TOTAL (m²)", String(a.area_total)]);
   if (hasConstr) areaItems.push(["ÁREA CONSTR. (m²)", String(a.area_construida)]);
   if (hasPriv) areaItems.push(["ÁREA PRIV. (m²)", String(a.area_privativa)]);
   if (areaItems.length === 0) areaItems.push(["ÁREA (m²)", "—"]);
-
 
   const items: Array<[string, string]> = [
     ["TIPOLOGIA", String(a.tipo_imovel ?? "—")],
@@ -772,7 +836,6 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc.text(val, x + cw / 2, yRow + 22, { align: "center" });
   });
 
-
   // location bar
   const yLoc = yRow + ch + 6;
   card(doc, M, yLoc, usable, 14, { variant: "darkblue" });
@@ -790,8 +853,8 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   const neg: string[] = Array.isArray(rel?.pontos_atencao)
     ? rel.pontos_atencao
     : Array.isArray(rel?.pontos_negativos)
-    ? rel.pontos_negativos
-    : [];
+      ? rel.pontos_negativos
+      : [];
   const yPN = yLoc + 22;
   const colW = (usable - gap) / 2;
   const colH = PH - yPN - 18;
@@ -820,7 +883,11 @@ function paginaImovel(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc.setFontSize(10);
     doc.setTextColor(190, 50, 50);
     doc.text("•", M + colW + gap + 8, yn);
-    yn = textoMultilinha(doc, p, M + colW + gap + 12, yn, colW - 18, { size: 10, color: TEXT, lineHeight: 4.5 });
+    yn = textoMultilinha(doc, p, M + colW + gap + 12, yn, colW - 18, {
+      size: 10,
+      color: TEXT,
+      lineHeight: 4.5,
+    });
     yn += 3;
   });
 }
@@ -843,8 +910,12 @@ function paginaFotos(doc: jsPDF, rel: any, fotos: string[], corretor: CorretorIn
     try {
       // detect type from dataURL
       const match = /^data:image\/(jpe?g|png|webp);base64,/i.exec(src);
-      const fmt = match && match[1].toLowerCase().startsWith("png") ? "PNG"
-        : match && match[1].toLowerCase() === "webp" ? "WEBP" : "JPEG";
+      const fmt =
+        match && match[1].toLowerCase().startsWith("png")
+          ? "PNG"
+          : match && match[1].toLowerCase() === "webp"
+            ? "WEBP"
+            : "JPEG";
       // fundo card
       doc.setFillColor(...CARD_BLUE);
       doc.roundedRect(x, y, w, h, 2, 2, "F");
@@ -888,10 +959,12 @@ function paginaFotos(doc: jsPDF, rel: any, fotos: string[], corretor: CorretorIn
       ? rel.analise_fotos
       : "Análise visual das imagens não disponível.";
   textoMultilinha(doc, analiseTxt, M + 8, yAn + 18, usable - 16, {
-    size: 10, color: TEXT, lineHeight: 4.6, maxHeight: (analiseH - 12) - 22,
+    size: 10,
+    color: TEXT,
+    lineHeight: 4.6,
+    maxHeight: analiseH - 12 - 22,
   });
 }
-
 
 // ---------- PAGE: ANÁLISE DO BAIRRO ----------
 function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
@@ -977,14 +1050,23 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
   doc.text("TENDÊNCIA DE MERCADO", x3 + colW / 2, yRow + 10, { align: "center" });
 
   const tendStr = String(ab.tendencia ?? rel?.tendencia ?? "alta").toLowerCase();
-  const tend: "alta" | "estavel" | "baixa" = tendStr.includes("desv") || tendStr.includes("baix")
-    ? "baixa"
-    : tendStr.includes("estav") ? "estavel" : "alta";
+  const tend: "alta" | "estavel" | "baixa" =
+    tendStr.includes("desv") || tendStr.includes("baix")
+      ? "baixa"
+      : tendStr.includes("estav")
+        ? "estavel"
+        : "alta";
   trendBadge(doc, x3 + colW / 2, yRow + 36, colW - 16, 20, tend);
   textoMultilinha(
     doc,
-    String(ab.tendencias_mercado ?? rel?.tendencias_mercado ?? "Mercado em movimento positivo, com demanda crescente na região."),
-    x3 + 6, yRow + 56, colW - 12,
+    String(
+      ab.tendencias_mercado ??
+        rel?.tendencias_mercado ??
+        "Mercado em movimento positivo, com demanda crescente na região.",
+    ),
+    x3 + 6,
+    yRow + 56,
+    colW - 12,
     { size: 9, color: TEXT, lineHeight: 4.2, maxHeight: ch - 60 },
   );
 
@@ -997,7 +1079,10 @@ function paginaBairro(doc: jsPDF, a: any, rel: any, corretor: CorretorInfo) {
     doc.setTextColor(...GOLD);
     doc.text("SOBRE A REGIÃO", M, yDesc);
     textoMultilinha(doc, resumo, M, yDesc + 5, usable, {
-      size: 10, color: TEXT, lineHeight: 4.6, maxHeight: PH - 22 - (yDesc + 5),
+      size: 10,
+      color: TEXT,
+      lineHeight: 4.6,
+      maxHeight: PH - 22 - (yDesc + 5),
     });
   }
 }
@@ -1045,14 +1130,20 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 
   // 3 motivações com bullets dourados (sem ícones unicode/emoji)
   const stripNonAscii = (s: string) =>
-    s.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "") // surrogate pairs (emojis)
-      .replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "")     // fora de Latin-1
+    s
+      .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "") // surrogate pairs (emojis)
+      .replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "") // fora de Latin-1
       .replace(/\s+/g, " ")
       .trim();
-  const motivRaw = (Array.isArray(pp.motivacoes) && pp.motivacoes.length
-    ? pp.motivacoes.slice(0, 3).map(String)
-    : String(pp.motivacao_compra ?? "Upgrade patrimonial | Investimento | Família")
-        .split(/[|,/]+/).map((s: string) => s.trim()).filter(Boolean).slice(0, 3))
+  const motivRaw = (
+    Array.isArray(pp.motivacoes) && pp.motivacoes.length
+      ? pp.motivacoes.slice(0, 3).map(String)
+      : String(pp.motivacao_compra ?? "Upgrade patrimonial | Investimento | Família")
+          .split(/[|,/]+/)
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+          .slice(0, 3)
+  )
     .map(stripNonAscii)
     .filter(Boolean);
   if (motivRaw.length) {
@@ -1089,7 +1180,10 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
   // Interesses como chips coloridos
   const interesses: string[] = Array.isArray(pp.interesses)
     ? pp.interesses.filter(Boolean).map(String)
-    : String(pp.interesses ?? pp.preferencias ?? "").split(/[|,]+/).map((s: string) => s.trim()).filter(Boolean);
+    : String(pp.interesses ?? pp.preferencias ?? "")
+        .split(/[|,]+/)
+        .map((s: string) => s.trim())
+        .filter(Boolean);
   if (interesses.length) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -1097,12 +1191,21 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
     doc.text("INTERESSES", M, 168);
     let cxi = M;
     let cyi = 175;
-    const cores: Array<[number, number, number]> = [BLUE, GOLD, [120, 81, 169], [40, 167, 105], [220, 100, 80]];
+    const cores: Array<[number, number, number]> = [
+      BLUE,
+      GOLD,
+      [120, 81, 169],
+      [40, 167, 105],
+      [220, 100, 80],
+    ];
     interesses.slice(0, 14).forEach((it, i) => {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       const w = doc.getTextWidth(it) + 10;
-      if (cxi + w > PW - M) { cxi = M; cyi += 9; }
+      if (cxi + w > PW - M) {
+        cxi = M;
+        cyi += 9;
+      }
       const cor = cores[i % cores.length];
       doc.setFillColor(...cor);
       doc.roundedRect(cxi, cyi - 4, w, 7, 3.5, 3.5, "F");
@@ -1117,7 +1220,7 @@ function paginaPerfil(doc: jsPDF, rel: any, corretor: CorretorInfo) {
 function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, avaliacao: any) {
   const tipoImovel = avaliacao?.tipo_imovel;
   const areaAvaliada = areaBaseDe(tipoImovel, avaliacao).area;
-  
+
   // Referência: mediana de R$/m² (sobre área base por tipo)
   const unit = (comparaveis || [])
     .map((c) => ({ ab: areaBaseDe(tipoImovel, c).area, v: Number(c.valor_anunciado) }))
@@ -1125,7 +1228,6 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
     .map((p) => p.v / p.ab);
   const sortedRef = [...unit].sort((a, b) => a - b);
   const ref = sortedRef.length ? sortedRef[Math.floor(sortedRef.length / 2)] : 0;
-
 
   const PER_PAGE = 6;
   for (let p = 0; p < Math.ceil(comparaveis.length / PER_PAGE); p++) {
@@ -1213,7 +1315,8 @@ function paginaAnuncios(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, 
         const ratio = vm / ref;
         const t = Math.max(0, Math.min(1, (ratio - 0.7) / 0.6));
         const mx = barX + t * barW;
-        const cor: [number, number, number] = t < 0.4 ? [40, 167, 105] : t > 0.6 ? [220, 53, 69] : GOLD;
+        const cor: [number, number, number] =
+          t < 0.4 ? [40, 167, 105] : t > 0.6 ? [220, 53, 69] : GOLD;
         doc.setFillColor(...cor);
         doc.circle(mx, barY + 2.5, 2.5, "F");
       }
@@ -1247,7 +1350,12 @@ function paginaValor(doc: jsPDF, avaliacao: any, resultado: any, corretor: Corre
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
     doc.setTextColor(200, 200, 210);
-    doc.text(`Calculado por regressão linear (mínimos quadrados) · R² = ${fmtNum(reg.r2, 3)} · n = ${reg.n}`, PW / 2, 66, { align: "center" });
+    doc.text(
+      `Calculado por regressão linear (mínimos quadrados) · R² = ${fmtNum(reg.r2, 3)} · n = ${reg.n}`,
+      PW / 2,
+      66,
+      { align: "center" },
+    );
   }
 
   // Valor central enorme dourado
@@ -1288,7 +1396,14 @@ function paginaValor(doc: jsPDF, avaliacao: any, resultado: any, corretor: Corre
   const baseY = PH - 38;
   const tipW = (PW - M * 2) / 3;
   const tips: Array<{ kind: "bulb" | "chart" | "cal"; txt: string }> = [
-    { kind: "bulb", txt: (Number(resultado?.valor_final_corretor) || Number(resultado?.valor_central)) > Number(resultado?.valor_central_tecnico) ? "Ajuste estratégico acima" : "Base técnica de mercado" },
+    {
+      kind: "bulb",
+      txt:
+        (Number(resultado?.valor_final_corretor) || Number(resultado?.valor_central)) >
+        Number(resultado?.valor_central_tecnico)
+          ? "Ajuste estratégico acima"
+          : "Base técnica de mercado",
+    },
     { kind: "chart", txt: "Baseado em comparáveis" },
     { kind: "cal", txt: "Válido por 6 meses" },
   ];
@@ -1355,7 +1470,9 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
       const fmt = corretor.logo_data_url.includes("image/png") ? "PNG" : "JPEG";
       doc.addImage(corretor.logo_data_url, fmt, PW / 2 - 22, yCursor, 44, 22, undefined, "FAST");
       yCursor += 30;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   // Imobiliária (se houver) — normaliza marca antiga "A8 Investimentos" para "A8 AVALIA"
@@ -1382,7 +1499,10 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     let s = v.trim();
     for (const p of prefixes) {
       const re = new RegExp(`^${p}[\\s\\-:]*`, "i");
-      if (re.test(s)) { s = s.replace(re, "").trim(); break; }
+      if (re.test(s)) {
+        s = s.replace(re, "").trim();
+        break;
+      }
     }
     return s;
   };
@@ -1410,9 +1530,9 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
   // Pílulas de contato (telefone/whatsapp, email, cidade)
   const localCidade = [corretor.cidade, corretor.estado].filter(Boolean).join(" / ");
   const items = [
-    (corretor.telefone && String(corretor.telefone).trim()) ? `WhatsApp  ${corretor.telefone}` : null,
-    (corretor.email && String(corretor.email).trim()) ? `E-mail  ${corretor.email}` : null,
-    (localCidade && String(localCidade).trim()) ? `Local  ${localCidade}` : null,
+    corretor.telefone && String(corretor.telefone).trim() ? `WhatsApp  ${corretor.telefone}` : null,
+    corretor.email && String(corretor.email).trim() ? `E-mail  ${corretor.email}` : null,
+    localCidade && String(localCidade).trim() ? `Local  ${localCidade}` : null,
   ].filter(Boolean) as string[];
 
   if (items.length) {
@@ -1427,7 +1547,11 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
 
     // Distribui em linhas que caibam dentro de maxRowW
     const rows: { items: string[]; widths: number[]; total: number }[] = [];
-    let cur: { items: string[]; widths: number[]; total: number } = { items: [], widths: [], total: 0 };
+    let cur: { items: string[]; widths: number[]; total: number } = {
+      items: [],
+      widths: [],
+      total: 0,
+    };
     items.forEach((t, i) => {
       const w = widths[i];
       const projected = cur.total + (cur.items.length ? colGap : 0) + w;
@@ -1459,14 +1583,15 @@ function paginaContato(doc: jsPDF, corretor: CorretorInfo) {
     });
   }
 
-
   // Disclaimer técnico (CNAI/IBAPE)
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8);
   doc.setTextColor(220, 220, 230);
   doc.text(
     "Estudo mercadológico realizado por profissional inscrito no Cadastro Nacional de Avaliadores Imobiliários — CNAI.",
-    PW / 2, PH - 15, { align: "center" },
+    PW / 2,
+    PH - 15,
+    { align: "center" },
   );
 
   // Faixa dourada inferior
@@ -1480,10 +1605,26 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
   microHeader(doc, corretor);
   tituloPagina(doc, "Homogeneização");
 
-  const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-  const ordemPadrao = ["baixo", "simples", "popular", "medio", "médio", "normal", "alto", "luxo", "alto luxo"];
+  const norm = (v: any) =>
+    String(v ?? "")
+      .trim()
+      .toLowerCase();
+  const ordemPadrao = [
+    "baixo",
+    "simples",
+    "popular",
+    "medio",
+    "médio",
+    "normal",
+    "alto",
+    "luxo",
+    "alto luxo",
+  ];
   const ordemConserv = ["ruim", "regular", "bom", "novo", "reformado"];
-  const rank = (lista: string[], v: string) => { const i = lista.indexOf(v); return i === -1 ? 0 : i; };
+  const rank = (lista: string[], v: string) => {
+    const i = lista.indexOf(v);
+    return i === -1 ? 0 : i;
+  };
 
   type Row = { idx: number; fonte: string; fatores: Array<[string, number]>; total: number };
   const rows: Row[] = comparaveis.map((c, i) => {
@@ -1501,12 +1642,25 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
     const fConserv = cC === cA ? 1.0 : cC < cA ? 1.08 : 0.95;
     const locA = norm(a?.localizacao);
     const locC = norm(c.localizacao);
-    const fLocal = !locA || !locC ? 1.0 : locA === locC ? 1.0 : locA.split(",")[0] === locC.split(",")[0] ? 0.98 : 0.95;
+    const fLocal =
+      !locA || !locC
+        ? 1.0
+        : locA === locC
+          ? 1.0
+          : locA.split(",")[0] === locC.split(",")[0]
+            ? 0.98
+            : 0.95;
     const total = fOferta * fArea * fPadrao * fConserv * fLocal;
     return {
       idx: i + 1,
       fonte: fmtFonte(c.fonte),
-      fatores: [["Oferta", fOferta], ["Área", fArea], ["Padrão", fPadrao], ["Conservação", fConserv], ["Localização", fLocal]],
+      fatores: [
+        ["Oferta", fOferta],
+        ["Área", fArea],
+        ["Padrão", fPadrao],
+        ["Conservação", fConserv],
+        ["Localização", fLocal],
+      ],
       total,
     };
   });
@@ -1519,7 +1673,11 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
-  doc.text("Cada barra representa um fator aplicado. Azul = deságio (<1) · Dourado = prêmio (>1) · Linha central = 1,00", M, yStart - 4);
+  doc.text(
+    "Cada barra representa um fator aplicado. Azul = deságio (<1) · Dourado = prêmio (>1) · Linha central = 1,00",
+    M,
+    yStart - 4,
+  );
 
   rows.forEach((r, ri) => {
     const y = yStart + ri * rowH;
@@ -1559,7 +1717,7 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
       const cor: [number, number, number] = val < 1 ? BLUE : val > 1 ? GOLD : [120, 125, 135];
       const delta = val - 1;
       const half = barAreaW / 2;
-      const len = Math.min(half, Math.abs(delta) * half / 0.2);
+      const len = Math.min(half, (Math.abs(delta) * half) / 0.2);
       doc.setFillColor(...cor);
       if (delta < 0) doc.rect(refX - len, by, len, barH, "F");
       else if (delta > 0) doc.rect(refX, by, len, barH, "F");
@@ -1572,11 +1730,12 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
       doc.setTextColor(...cor);
-      const valX = delta < 0
-        ? Math.max(M + labelW + 2, refX - len - 1)
-        : delta > 0
-          ? Math.min(M + labelW + barAreaW - 1, refX + len + 1)
-          : refX + 2;
+      const valX =
+        delta < 0
+          ? Math.max(M + labelW + 2, refX - len - 1)
+          : delta > 0
+            ? Math.min(M + labelW + barAreaW - 1, refX + len + 1)
+            : refX + 2;
       const align = delta < 0 ? "right" : "left";
       doc.text(fmtNum(val, 2), valX, by + barH / 2 + 1.4, { align: align as any });
     });
@@ -1590,7 +1749,13 @@ function paginaHomogeneizacao(doc: jsPDF, a: any, comparaveis: any[], corretor: 
 }
 
 // ---------- EXPERT EXTRA: TRATAMENTO ESTATÍSTICO ----------
-function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInfo, tipoImovel?: any, resultado?: any) {
+function paginaEstatistica(
+  doc: jsPDF,
+  comparaveis: any[],
+  corretor: CorretorInfo,
+  tipoImovel?: any,
+  resultado?: any,
+) {
   novaPagina(doc);
   microHeader(doc, corretor, (resultado as any)?.refNum);
   tituloPagina(doc, "Tratamento Estatístico");
@@ -1599,7 +1764,10 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
     .map((c) => ({ ab: areaBaseDe(tipoImovel ?? c.tipo, c).area, v: Number(c.valor_anunciado) }))
     .filter((p) => p.ab > 0 && p.v > 0)
     .map((p) => p.v / p.ab);
-  let media = 0, mediana = 0, desvio = 0, cv = 0;
+  let media = 0,
+    mediana = 0,
+    desvio = 0,
+    cv = 0;
   if (unit.length) {
     media = unit.reduce((a, b) => a + b, 0) / unit.length;
     const sorted = [...unit].sort((a, b) => a - b);
@@ -1610,7 +1778,8 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
     cv = media > 0 ? (desvio / media) * 100 : 0;
   }
 
-  const cvColor: [number, number, number] = cv < 15 ? [40, 167, 105] : cv < 30 ? [240, 180, 60] : [220, 53, 69];
+  const cvColor: [number, number, number] =
+    cv < 15 ? [40, 167, 105] : cv < 30 ? [240, 180, 60] : [220, 53, 69];
 
   const usable = PW - M * 2;
   const gap = 6;
@@ -1619,11 +1788,23 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   const yRow = 56;
 
   const lblM2 = labelValorM2(tipoImovel);
-  const cards: Array<{ bg: [number, number, number]; fg: [number, number, number]; accent: [number, number, number]; label: string; value: string }> = [
+  const cards: Array<{
+    bg: [number, number, number];
+    fg: [number, number, number];
+    accent: [number, number, number];
+    label: string;
+    value: string;
+  }> = [
     { bg: NAVY, fg: WHITE, accent: GOLD, label: `Média ${lblM2}`, value: fmtBRL(media) },
     { bg: BLUE, fg: WHITE, accent: GOLD, label: `Mediana ${lblM2}`, value: fmtBRL(mediana) },
     { bg: WHITE, fg: BLUE, accent: GOLD, label: "Desvio Padrão", value: fmtBRL(desvio) },
-    { bg: WHITE, fg: cvColor, accent: cvColor, label: "Coef. Variação", value: `${fmtNum(cv, 1)}%` },
+    {
+      bg: WHITE,
+      fg: cvColor,
+      accent: cvColor,
+      label: "Coef. Variação",
+      value: `${fmtNum(cv, 1)}%`,
+    },
   ];
 
   cards.forEach((c, i) => {
@@ -1652,20 +1833,32 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
   doc.setFont("helvetica", "italic");
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
-  const cvDesc = cv < 15 ? "amostra muito homogênea" : cv < 30 ? "amostra aceitável" : "amostra com alta dispersão";
+  const cvDesc =
+    cv < 15
+      ? "amostra muito homogênea"
+      : cv < 30
+        ? "amostra aceitável"
+        : "amostra com alta dispersão";
   let cursorY = yRow + ch + 12;
-  cursorY = textoMultilinha(
-    doc,
-    `Tratamento por fatores de homogeneização (ABNT NBR 14653-2). Coef. de variação de ${fmtNum(cv, 1)}% — ${cvDesc}.`,
-    M, cursorY, usable,
-    { size: 11, color: TEXT, lineHeight: 5.2 },
-  ) ?? cursorY + 10;
+  cursorY =
+    textoMultilinha(
+      doc,
+      `Tratamento por fatores de homogeneização (ABNT NBR 14653-2). Coef. de variação de ${fmtNum(cv, 1)}% — ${cvDesc}.`,
+      M,
+      cursorY,
+      usable,
+      { size: 11, color: TEXT, lineHeight: 5.2 },
+    ) ?? cursorY + 10;
 
   // Disclaimer legal para Modelos 1 e 2
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8);
   doc.setTextColor(...GRAY);
-  doc.text("Nota: Este estudo utiliza tratamento por fatores de homogeneização e regressão linear simplificada conforme NBR 14653-2.", M, cursorY + 5);
+  doc.text(
+    "Nota: Este estudo utiliza tratamento por fatores de homogeneização e regressão linear simplificada conforme NBR 14653-2.",
+    M,
+    cursorY + 5,
+  );
 
   // ----- Regressão Linear (mínimos quadrados) -----
   const reg: RegressaoLinear | undefined = resultado?.regressao;
@@ -1694,7 +1887,8 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
 
     const r2 = reg.r2;
     const qualidade = r2 > 0.8 ? "amostra excelente" : r2 >= 0.6 ? "amostra boa" : "amostra fraca";
-    const r2Color: [number, number, number] = r2 > 0.8 ? [80, 200, 140] : r2 >= 0.6 ? [240, 200, 80] : [240, 120, 120];
+    const r2Color: [number, number, number] =
+      r2 > 0.8 ? [80, 200, 140] : r2 >= 0.6 ? [240, 200, 80] : [240, 120, 120];
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
@@ -1729,14 +1923,18 @@ function paginaEstatistica(doc: jsPDF, comparaveis: any[], corretor: CorretorInf
     textoMultilinha(
       doc,
       `Equação: ${reg.equacao || ""} · R²: ${reg.r2.toFixed(4)} (${reg.interpretacao || ""}). n = ${reg.n} comparáveis.`,
-      M, boxY + boxH + 6, usable,
+      M,
+      boxY + boxH + 6,
+      usable,
       { size: 9, color: GRAY, lineHeight: 4.6 },
     );
   } else if (resultado) {
     textoMultilinha(
       doc,
       "Regressão linear não calculada: amostra insuficiente (mínimo 2 comparáveis com área e valor válidos).",
-      M, cursorY + 8, usable,
+      M,
+      cursorY + 8,
+      usable,
       { size: 10, color: GRAY, lineHeight: 5 },
     );
   }
@@ -1765,7 +1963,10 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
   ];
   items.forEach(([l, v], i) => {
     const x = M + i * (cw + gap);
-    card(doc, x, yRow, cw, ch, { variant: i === 1 ? "darkblue" : "white", border: i === 1 ? "gold" : "soft" });
+    card(doc, x, yRow, cw, ch, {
+      variant: i === 1 ? "darkblue" : "white",
+      border: i === 1 ? "gold" : "soft",
+    });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...(i === 1 ? GOLD : BLUE));
@@ -1789,7 +1990,14 @@ function paginaArbitrio(doc: jsPDF, resultado: any, corretor: CorretorInfo) {
 // ============================================================
 // Orquestração dos modelos
 // ============================================================
-function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
+function gerarModelo1(
+  avaliacao: any,
+  resultado: any,
+  comparaveis: any[],
+  corretor: CorretorInfo,
+  fotos: string[],
+  fotosDet: FotoDetalhada[] = [],
+) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const fotosLim = fotos.slice(0, 3);
@@ -1797,18 +2005,15 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   const temFotos = fotosLim.length > 0;
   const temDocFotos = fotosDetLim.length > 0;
   const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
-  
+
   paginaCapa(doc, avaliacao, corretor, "Relatório de Avaliação Mercadológica", capaFoto);
-  paginaSumario(
-    doc,
-    [
-      "Ficha Técnica",
-      "Localização",
-      ...(temDocFotos ? ["Fotos com Análise"] : temFotos ? ["Fotos do Imóvel"] : []),
-      "Valor do Imóvel",
-      "Contato",
-    ],
-  );
+  paginaSumario(doc, [
+    "Ficha Técnica",
+    "Localização",
+    ...(temDocFotos ? ["Fotos com Análise"] : temFotos ? ["Fotos do Imóvel"] : []),
+    "Valor do Imóvel",
+    "Contato",
+  ]);
   paginaFichaTecnica(doc, avaliacao, corretor);
   paginaLocalizacao(doc, avaliacao, corretor);
   if (temDocFotos) paginaDocumentacaoFotografica(doc, fotosDetLim, corretor);
@@ -1820,7 +2025,14 @@ function gerarModelo1(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
-function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = []) {
+function gerarModelo2(
+  avaliacao: any,
+  resultado: any,
+  comparaveis: any[],
+  corretor: CorretorInfo,
+  fotos: string[],
+  fotosDet: FotoDetalhada[] = [],
+) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   const fotosLim = fotos.slice(0, 8);
@@ -1828,26 +2040,23 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   const temFotos = fotosLim.length > 0;
   const temDocFotos = fotosDetLim.length > 0;
   const capaFoto = fotosDet.find((f) => f.principal)?.dataUrl || fotosLim[0] || null;
-  
+
   paginaCapa(doc, avaliacao, corretor, "Estudo de Mercado Imobiliário", capaFoto);
-  paginaSumario(
-    doc,
-    [
-      "O Imóvel",
-      "Ficha Técnica",
-      "Ambientes",
-      "Localização",
-      ...(temFotos ? ["Fotos do Imóvel"] : []),
-      ...(temDocFotos ? ["Documentação Fotográfica"] : []),
-      "Análise do Bairro",
-      "Perfil do Público",
-      "Comparáveis",
-      "Homogeneização",
-      "Tratamento Estatístico",
-      "Valor do Imóvel",
-      "Contato",
-    ],
-  );
+  paginaSumario(doc, [
+    "O Imóvel",
+    "Ficha Técnica",
+    "Ambientes",
+    "Localização",
+    ...(temFotos ? ["Fotos do Imóvel"] : []),
+    ...(temDocFotos ? ["Documentação Fotográfica"] : []),
+    "Análise do Bairro",
+    "Perfil do Público",
+    "Comparáveis",
+    "Homogeneização",
+    "Tratamento Estatístico",
+    "Valor do Imóvel",
+    "Contato",
+  ]);
   paginaImovel(doc, avaliacao, rel, corretor);
   paginaFichaTecnica(doc, avaliacao, corretor);
   paginaAmbientes(doc, avaliacao, corretor);
@@ -1866,8 +2075,6 @@ function gerarModelo2(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
-
-
 function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
   novaPagina(doc);
   microHeader(doc, corretor, a.refNum);
@@ -1878,12 +2085,14 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
 
   // ===== CARDS PRINCIPAIS =====
   const principais: Array<{ icon: string; value: string; label: string }> = [];
-  if (a.quartos != null && Number(a.quartos) > 0) principais.push({ icon: "", value: String(a.quartos), label: "Quartos" });
-  if (a.suites != null && Number(a.suites) > 0) principais.push({ icon: "", value: String(a.suites), label: "Suítes" });
-  const vagas = (Number(a.vagas_cobertas) || 0) + (Number(a.vagas_descobertas) || 0) || Number(a.vagas) || 0;
+  if (a.quartos != null && Number(a.quartos) > 0)
+    principais.push({ icon: "", value: String(a.quartos), label: "Quartos" });
+  if (a.suites != null && Number(a.suites) > 0)
+    principais.push({ icon: "", value: String(a.suites), label: "Suítes" });
+  const vagas =
+    (Number(a.vagas_cobertas) || 0) + (Number(a.vagas_descobertas) || 0) || Number(a.vagas) || 0;
   if (vagas > 0) principais.push({ icon: "", value: String(vagas), label: "Vagas" });
   if (a.area_total) principais.push({ icon: "", value: String(a.area_total), label: "m² Área" });
-
 
   if (principais.length) {
     const gap = 6;
@@ -1981,7 +2190,9 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(26);
       doc.setTextColor(...BLUE);
-      doc.text(String(a.numero_pavimentos || a.total_andares), x + w / 2, y + h / 2 + 8, { align: "center" });
+      doc.text(String(a.numero_pavimentos || a.total_andares), x + w / 2, y + h / 2 + 8, {
+        align: "center",
+      });
     });
   }
 
@@ -2012,7 +2223,10 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       const tw = doc.getTextWidth(it) + 10;
-      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      if (cxi + tw > PW - M) {
+        cxi = M;
+        cyi += 9;
+      }
       doc.setFillColor(...CARD_BLUE);
       doc.setDrawColor(...BORDER);
       doc.setLineWidth(0.2);
@@ -2039,7 +2253,10 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       const tw = doc.getTextWidth(it) + 12;
-      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      if (cxi + tw > PW - M) {
+        cxi = M;
+        cyi += 9;
+      }
       doc.setFillColor(...WHITE);
       doc.setDrawColor(...GOLD);
       doc.setLineWidth(0.4);
@@ -2068,7 +2285,10 @@ function paginaFichaTecnica(doc: jsPDF, a: any, corretor: CorretorInfo) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       const tw = doc.getTextWidth(it) + 10;
-      if (cxi + tw > PW - M) { cxi = M; cyi += 9; }
+      if (cxi + tw > PW - M) {
+        cxi = M;
+        cyi += 9;
+      }
       doc.setFillColor(...CARD_BLUE);
       doc.roundedRect(cxi, cyi - 4, tw, 7, 3.5, 3.5, "F");
       doc.setTextColor(...BLUE);
@@ -2132,7 +2352,11 @@ function paginaAmbientes(doc: jsPDF, a: any, corretor: CorretorInfo) {
   });
 }
 
-function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], corretor: CorretorInfo) {
+function paginaDocumentacaoFotografica(
+  doc: jsPDF,
+  fotosDet: FotoDetalhada[],
+  corretor: CorretorInfo,
+) {
   if (fotosDet.length === 0) return;
   const usable = PW - M * 2;
   const gap = 6;
@@ -2145,9 +2369,6 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
   const maxY = PH - 18;
   let y = topY;
   let col = 0;
-  
-
-
 
   const novaPag = () => {
     novaPagina(doc);
@@ -2159,14 +2380,17 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
 
   novaPag();
 
-
   fotosDet.forEach((f) => {
     if (col === 0 && y + blocoH > maxY) novaPag();
     const x = M + col * (colW + gap);
     try {
       const match = /^data:image\/(jpe?g|png|webp);base64,/i.exec(f.dataUrl);
-      const fmt = match && match[1].toLowerCase().startsWith("png") ? "PNG"
-        : match && match[1].toLowerCase() === "webp" ? "WEBP" : "JPEG";
+      const fmt =
+        match && match[1].toLowerCase().startsWith("png")
+          ? "PNG"
+          : match && match[1].toLowerCase() === "webp"
+            ? "WEBP"
+            : "JPEG";
       doc.setFillColor(...CARD_BLUE);
       doc.roundedRect(x, y, colW, imgH, 2, 2, "F");
       doc.addImage(f.dataUrl, fmt as any, x + 1, y + 1, colW - 2, imgH - 2, undefined, "FAST");
@@ -2182,7 +2406,9 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
       doc.setFontSize(8);
       doc.setTextColor(...TEXT);
       textoMultilinha(doc, f.comentario_ia, x, y + imgH + legendaH + 5, colW, {
-        size: 8, color: TEXT, lineHeight: 3.6,
+        size: 8,
+        color: TEXT,
+        lineHeight: 3.6,
       });
     }
     col++;
@@ -2191,11 +2417,16 @@ function paginaDocumentacaoFotografica(doc: jsPDF, fotosDet: FotoDetalhada[], co
       y += blocoH;
     }
   });
-  
 }
 
 // ---------- EXPERT EXTRA: DISPERSÃO (R$/m² × Área) ----------
-function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo) {
+function paginaDispersao(
+  doc: jsPDF,
+  avaliacao: any,
+  resultado: any,
+  comparaveis: any[],
+  corretor: CorretorInfo,
+) {
   novaPagina(doc);
   microHeader(doc, corretor, avaliacao.refNum);
   const tipoImovel = avaliacao?.tipo_imovel;
@@ -2208,7 +2439,8 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
     .map((p) => ({ x: p.ab, y: p.v / p.ab }));
 
   // Detecta outliers via 1.5 * desvio padrão em y
-  let mean = 0, sd = 0;
+  let mean = 0,
+    sd = 0;
   if (pts.length) {
     mean = pts.reduce((a, b) => a + b.y, 0) / pts.length;
     sd = Math.sqrt(pts.reduce((a, b) => a + (b.y - mean) ** 2, 0) / pts.length);
@@ -2220,12 +2452,14 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
   const avalArea = areaBaseDe(tipoImovel, avaliacao).area;
   const avalY =
     Number(resultado?.valor_unitario_medio) ||
-    (Number(resultado?.valor_central) > 0 && avalArea > 0 ? Number(resultado.valor_central) / avalArea : 0);
+    (Number(resultado?.valor_central) > 0 && avalArea > 0
+      ? Number(resultado.valor_central) / avalArea
+      : 0);
   const avalPoint = avalArea > 0 && avalY > 0 ? { x: avalArea, y: avalY } : null;
 
-
   // Regressão linear nos inliers
-  let slope = 0, intercept = mean;
+  let slope = 0,
+    intercept = mean;
   if (inliers.length >= 2) {
     const mx = inliers.reduce((a, b) => a + b.x, 0) / inliers.length;
     const my = inliers.reduce((a, b) => a + b.y, 0) / inliers.length;
@@ -2250,12 +2484,16 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
     doc.setFont("helvetica", "italic");
     doc.setFontSize(11);
     doc.setTextColor(...GRAY);
-    doc.text("Sem dados suficientes para gerar o gráfico de dispersão.", PW / 2, PH / 2, { align: "center" });
+    doc.text("Sem dados suficientes para gerar o gráfico de dispersão.", PW / 2, PH / 2, {
+      align: "center",
+    });
     return;
   }
   const padPct = 0.08;
-  const xMinR = Math.min(...allXs), xMaxR = Math.max(...allXs);
-  const yMinR = Math.min(...allYs), yMaxR = Math.max(...allYs);
+  const xMinR = Math.min(...allXs),
+    xMaxR = Math.max(...allXs);
+  const yMinR = Math.min(...allYs),
+    yMaxR = Math.max(...allYs);
   const xMin = xMinR - (xMaxR - xMinR || xMinR) * padPct;
   const xMax = xMaxR + (xMaxR - xMinR || xMaxR) * padPct;
   const yMin = Math.max(0, yMinR - (yMaxR - yMinR || yMinR) * padPct);
@@ -2311,7 +2549,8 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
   doc.setDrawColor(220, 53, 69);
   doc.setLineWidth(0.8);
   outliers.forEach((p) => {
-    const cx = sx(p.x), cy = sy(p.y);
+    const cx = sx(p.x),
+      cy = sy(p.y);
     doc.line(cx - 2, cy - 2, cx + 2, cy + 2);
     doc.line(cx - 2, cy + 2, cx + 2, cy - 2);
   });
@@ -2335,7 +2574,12 @@ function paginaDispersao(doc: jsPDF, avaliacao: any, resultado: any, comparaveis
 
   // Legenda
   const lgY = PH - 22;
-  const item = (cx: number, cor: [number, number, number], tipo: "dot" | "x" | "gold", label: string) => {
+  const item = (
+    cx: number,
+    cor: [number, number, number],
+    tipo: "dot" | "x" | "gold",
+    label: string,
+  ) => {
     if (tipo === "gold") {
       doc.setFillColor(...cor);
       doc.circle(cx, lgY - 1.2, 2, "F");
@@ -2369,7 +2613,9 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
   microHeader(doc, corretor, avaliacao.refNum);
   tituloPagina(doc, "Localização");
 
-  const endereco = String(avaliacao?.endereco_completo || "").trim() || String(avaliacao?.localizacao || "").trim();
+  const endereco =
+    String(avaliacao?.endereco_completo || "").trim() ||
+    String(avaliacao?.localizacao || "").trim();
   const usable = PW - M * 2;
   const colW = usable / 2;
   const topY = 50;
@@ -2380,7 +2626,7 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
   doc.setFontSize(10);
   doc.setTextColor(...GOLD);
   doc.text("ENDEREÇO COMPLETO", M + 6, topY + 8);
-  
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   doc.setTextColor(...BLUE);
@@ -2390,7 +2636,7 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
   // Espaço para Mapa (Simulado com layout elegante caso indisponível)
   const mapY = topY + 34;
   const mapH = PH - mapY - 20;
-  
+
   doc.setFillColor(245, 247, 250);
   doc.roundedRect(M, mapY, usable, mapH, 4, 4, "F");
   doc.setDrawColor(...BORDER);
@@ -2410,15 +2656,14 @@ function paginaLocalizacao(doc: jsPDF, avaliacao: any, corretor: CorretorInfo) {
   doc.setFontSize(14);
   doc.setTextColor(...NAVY);
   doc.text("Análise de Localização", cx, cy + 28, { align: "center" });
-  
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
-  doc.text("Mapa de geolocalização processado para análise de entorno.", cx, cy + 34, { align: "center" });
+  doc.text("Mapa de geolocalização processado para análise de entorno.", cx, cy + 34, {
+    align: "center",
+  });
 }
-
-
-
 
 function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string | null) {
   novaPagina(doc);
@@ -2506,8 +2751,18 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string
 
   // Data por extenso
   const meses = [
-    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+    "janeiro",
+    "fevereiro",
+    "março",
+    "abril",
+    "maio",
+    "junho",
+    "julho",
+    "agosto",
+    "setembro",
+    "outubro",
+    "novembro",
+    "dezembro",
   ];
   const d = new Date();
   const dataExt = `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
@@ -2529,10 +2784,11 @@ function paginaAssinatura(doc: jsPDF, corretor: CorretorInfo, qrDataUrl?: string
       doc.setFontSize(8);
       doc.setTextColor(...BLUE);
       doc.text("Verificação de Autenticidade", PW / 2, qrY + qrSize + 4.5, { align: "center" });
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 }
-
 
 function paginaMarketing(
   doc: jsPDF,
@@ -2583,12 +2839,21 @@ function paginaMarketing(
   doc.setTextColor(...GOLD);
   doc.text("CANAIS RECOMENDADOS", M, y);
   y += 6;
-  const canais: string[] = Array.isArray(marketing.divulgacao?.canais) ? marketing.divulgacao!.canais! : [];
-  const prioridades: Array<"Alta" | "Média" | "Baixa"> = ["Alta", "Alta", "Média", "Média", "Baixa"];
+  const canais: string[] = Array.isArray(marketing.divulgacao?.canais)
+    ? marketing.divulgacao!.canais!
+    : [];
+  const prioridades: Array<"Alta" | "Média" | "Baixa"> = [
+    "Alta",
+    "Alta",
+    "Média",
+    "Média",
+    "Baixa",
+  ];
   canais.slice(0, 5).forEach((c, i) => {
     const pri = prioridades[i] || "Média";
     const pct = pri === "Alta" ? 1 : pri === "Média" ? 0.6 : 0.3;
-    const cor: [number, number, number] = pri === "Alta" ? GOLD : pri === "Média" ? BLUE : [120, 125, 135];
+    const cor: [number, number, number] =
+      pri === "Alta" ? GOLD : pri === "Média" ? BLUE : [120, 125, 135];
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...TEXT);
@@ -2648,8 +2913,12 @@ function paginaMarketing(
   doc.setTextColor(...GOLD);
   doc.text("PRECIFICAÇÃO", M, y);
   y += 6;
-  const lanc = String(marketing.divulgacao?.dicas_precificacao ?? "Anunciar pelo valor central de avaliação.");
-  const desc = String(marketing.divulgacao?.desconto_maximo ?? "Até 8% para fechamento rápido à vista.");
+  const lanc = String(
+    marketing.divulgacao?.dicas_precificacao ?? "Anunciar pelo valor central de avaliação.",
+  );
+  const desc = String(
+    marketing.divulgacao?.desconto_maximo ?? "Até 8% para fechamento rápido à vista.",
+  );
   const passos: Array<{ lbl: string; val: string; cor: [number, number, number] }> = [
     { lbl: "Lançamento", val: lanc, cor: GOLD },
     { lbl: "Negociação", val: "Desconto de 5% a 10% na negociação.", cor: BLUE },
@@ -2728,7 +2997,11 @@ function paginaMarketing(
   doc.setFontSize(12);
   doc.setTextColor(...BLUE);
   textoMultilinha(doc, String(an.titulo ?? "—"), frameX + 6, frameY + 76, frameW - 12, {
-    size: 12, bold: true, color: BLUE, lineHeight: 5, maxLines: 2,
+    size: 12,
+    bold: true,
+    color: BLUE,
+    lineHeight: 5,
+    maxLines: 2,
   });
 
   // Especificações reais (quartos / vagas / área)
@@ -2766,7 +3039,9 @@ function paginaMarketing(
   doc.setDrawColor(180, 200, 180);
   doc.roundedRect(wX + 4, wY + 11, wW - 8, frameH - 16, 4, 4, "FD");
   textoMultilinha(doc, String(an.whatsapp ?? "—"), wX + 8, wY + 18, wW - 16, {
-    size: 9, color: TEXT, lineHeight: 4.4,
+    size: 9,
+    color: TEXT,
+    lineHeight: 4.4,
   });
 
   // Descrição completa
@@ -2776,7 +3051,9 @@ function paginaMarketing(
   doc.setTextColor(...GOLD);
   doc.text("DESCRIÇÃO COMPLETA — PORTAIS", M, yD);
   textoMultilinha(doc, String(an.descricao_portal ?? "—"), M, yD + 6, usable, {
-    size: 9, color: TEXT, lineHeight: 4.2,
+    size: 9,
+    color: TEXT,
+    lineHeight: 4.2,
   });
 }
 
@@ -2803,7 +3080,16 @@ export type MarketingPdf = {
   };
 };
 
-function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corretor: CorretorInfo, fotos: string[], fotosDet: FotoDetalhada[] = [], marketing?: MarketingPdf | null, qrDataUrl?: string | null) {
+function gerarModelo3(
+  avaliacao: any,
+  resultado: any,
+  comparaveis: any[],
+  corretor: CorretorInfo,
+  fotos: string[],
+  fotosDet: FotoDetalhada[] = [],
+  marketing?: MarketingPdf | null,
+  qrDataUrl?: string | null,
+) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const rel = resultado?.relatorio_json || {};
   // EXPERT: até 10 fotos
@@ -2850,7 +3136,8 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   paginaEstatistica(doc, comparaveis, corretor, avaliacao?.tipo_imovel, resultado);
   paginaArbitrio(doc, resultado, corretor);
   paginaValor(doc, avaliacao, resultado, corretor);
-  if (temMkt && marketing) paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);
+  if (temMkt && marketing)
+    paginaMarketing(doc, marketing, corretor, avaliacao, resultado, capaFoto);
   paginaContato(doc, corretor);
   paginaAssinatura(doc, corretor, qrDataUrl);
   rodape(doc, corretor);
@@ -2858,7 +3145,12 @@ function gerarModelo3(avaliacao: any, resultado: any, comparaveis: any[], corret
   return doc;
 }
 
-export type FotoDetalhada = { dataUrl: string; legenda: string; principal: boolean; comentario_ia: string };
+export type FotoDetalhada = {
+  dataUrl: string;
+  legenda: string;
+  principal: boolean;
+  comentario_ia: string;
+};
 
 export async function gerarPdfAvaliacao(
   avaliacao: any,
@@ -2874,24 +3166,31 @@ export async function gerarPdfAvaliacao(
   },
 ) {
   const { modelo, plano } = opts;
-  if (typeof document === "undefined") throw new Error("A exportação de PDF só está disponível no navegador");
-  if (!avaliacao || typeof avaliacao !== "object") throw new Error("Dados da avaliação indisponíveis para gerar o PDF");
-  if (!resultado || typeof resultado !== "object") throw new Error("O resultado da avaliação ainda não está disponível");
-  if (!resultado.relatorio_json || typeof resultado.relatorio_json !== "object") resultado.relatorio_json = {};
+  if (typeof document === "undefined")
+    throw new Error("A exportação de PDF só está disponível no navegador");
+  if (!avaliacao || typeof avaliacao !== "object")
+    throw new Error("Dados da avaliação indisponíveis para gerar o PDF");
+  if (!resultado || typeof resultado !== "object")
+    throw new Error("O resultado da avaliação ainda não está disponível");
+  if (!resultado.relatorio_json || typeof resultado.relatorio_json !== "object")
+    resultado.relatorio_json = {};
   comparaveis = Array.isArray(comparaveis) ? comparaveis.filter(Boolean) : [];
-  const fotos = Array.isArray(opts.fotosDataUrls) ? opts.fotosDataUrls.filter((s) => typeof s === "string" && s.length > 0) : [];
-  const fotosDet = Array.isArray(opts.fotosDetalhadas) ? opts.fotosDetalhadas.filter((f) => f && f.dataUrl) : [];
+  const fotos = Array.isArray(opts.fotosDataUrls)
+    ? opts.fotosDataUrls.filter((s) => typeof s === "string" && s.length > 0)
+    : [];
+  const fotosDet = Array.isArray(opts.fotosDetalhadas)
+    ? opts.fotosDetalhadas.filter((f) => f && f.dataUrl)
+    : [];
   const corretor: CorretorInfo =
     typeof opts.corretor === "string"
       ? { nome: opts.corretor || "Corretor não identificado" }
-      : opts.corretor ?? { nome: "Corretor não identificado" };
+      : (opts.corretor ?? { nome: "Corretor não identificado" });
   if (!podeGerarModelo(plano, modelo)) {
     throw new Error("Faça upgrade para acessar este relatório");
   }
 
   // Garante que a regressão foi aplicada ao objeto resultado antes de gerar o PDF
   aplicarRegressao(resultado, avaliacao, comparaveis);
-
 
   // Número público de referência (profissional)
   const refNum = `A8-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000000)).padStart(6, "0")}`;
@@ -2901,7 +3200,7 @@ export async function gerarPdfAvaliacao(
     if (resultado.relatorio_json) resultado.relatorio_json.refNum = refNum;
   }
   (corretor as any).refNum = refNum;
-  fotosDet.forEach(f => (f as any).refNum = refNum);
+  fotosDet.forEach((f) => ((f as any).refNum = refNum));
 
   // QR Code (apenas Expert / Modelo 3) — verificação por telefone/email do corretor
   let qrDataUrl: string | null = null;
@@ -2927,8 +3226,8 @@ export async function gerarPdfAvaliacao(
     modelo === 3
       ? gerarModelo3(avaliacao, resultado, comparaveis, corretor, fts, ftsDet, mkt, qr)
       : modelo === 2
-      ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fts, ftsDet)
-      : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fts, ftsDet);
+        ? gerarModelo2(avaliacao, resultado, comparaveis, corretor, fts, ftsDet)
+        : gerarModelo1(avaliacao, resultado, comparaveis, corretor, fts, ftsDet);
 
   let doc: jsPDF;
   try {
@@ -2956,7 +3255,8 @@ export async function gerarPdfAvaliacao(
   const head = new Uint8Array(await blob.slice(0, 5).arrayBuffer());
   const assinatura = String.fromCharCode(...head);
   if (!assinatura.startsWith("%PDF")) throw new Error("O arquivo gerado não é um PDF válido");
-  const pdfBlob = blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" });
+  const pdfBlob =
+    blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" });
 
   const url = URL.createObjectURL(pdfBlob);
   try {
@@ -2974,5 +3274,3 @@ export async function gerarPdfAvaliacao(
 
   return { nome, size: pdfBlob.size, type: pdfBlob.type, blob: pdfBlob };
 }
-
-

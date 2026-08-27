@@ -18,7 +18,6 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
-
 function AuthenticatedLayout() {
   const fetchAdmin = useServerFn(amIAdmin);
   const queryClient = useQueryClient();
@@ -43,7 +42,10 @@ function AuthenticatedLayout() {
   return (
     <div className="min-h-screen flex w-full bg-background">
       <div className="flex-1 flex flex-col">
-        <header className="h-16 border-b flex items-center px-6 justify-between glass sticky top-0 z-10" translate="no">
+        <header
+          className="h-16 border-b flex items-center px-6 justify-between glass sticky top-0 z-10"
+          translate="no"
+        >
           <Link to="/dashboard" className="font-bold text-xl text-brand-blue" translate="no">
             A8 <span className="text-brand-gold">Avalia</span>
           </Link>

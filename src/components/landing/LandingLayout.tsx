@@ -16,9 +16,7 @@ function SiteNav() {
     <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-[#0A1F44]/40 border-b border-white/10">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-1 select-none">
-          <span className="font-display text-sm tracking-[0.3em] text-[#C8A951] uppercase">
-            A8
-          </span>
+          <span className="font-display text-sm tracking-[0.3em] text-[#C8A951] uppercase">A8</span>
           <span className="font-display text-sm tracking-[0.3em] text-white/90 uppercase">
             Avalia
           </span>
@@ -75,8 +73,8 @@ function Footer() {
               </span>
             </div>
             <p className="text-white/60 text-sm font-light max-w-md leading-relaxed">
-              A plataforma definitiva para corretores e avaliadores de imóveis
-              que atuam no mercado de alto padrão.
+              A plataforma definitiva para corretores e avaliadores de imóveis que atuam no mercado
+              de alto padrão.
             </p>
             <div className="flex gap-4 mt-6">
               <a
@@ -106,28 +104,62 @@ function Footer() {
           <div>
             <h4 className="text-[#E2C97E] text-xs tracking-[0.3em] uppercase mb-5">Produto</h4>
             <ul className="space-y-3 text-sm text-white/70">
-              <li><a href="/#diferenciais" className="hover:text-[#C8A951] transition-colors">Diferenciais</a></li>
-              <li><a href="/#como-funciona" className="hover:text-[#C8A951] transition-colors">Como funciona</a></li>
-              <li><a href="/#planos" className="hover:text-[#C8A951] transition-colors">Planos</a></li>
-              <li><Link to="/auth" search={{ plan: undefined }} className="hover:text-[#C8A951] transition-colors">Entrar</Link></li>
+              <li>
+                <a href="/#diferenciais" className="hover:text-[#C8A951] transition-colors">
+                  Diferenciais
+                </a>
+              </li>
+              <li>
+                <a href="/#como-funciona" className="hover:text-[#C8A951] transition-colors">
+                  Como funciona
+                </a>
+              </li>
+              <li>
+                <a href="/#planos" className="hover:text-[#C8A951] transition-colors">
+                  Planos
+                </a>
+              </li>
+              <li>
+                <Link
+                  to="/auth"
+                  search={{ plan: undefined }}
+                  className="hover:text-[#C8A951] transition-colors"
+                >
+                  Entrar
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-[#E2C97E] text-xs tracking-[0.3em] uppercase mb-5">Empresa</h4>
             <ul className="space-y-3 text-sm text-white/70">
-              <li><a href="/#depoimentos" className="hover:text-[#C8A951] transition-colors">Depoimentos</a></li>
-              <li><a href="#" className="hover:text-[#C8A951] transition-colors">Contato</a></li>
-              <li><Link to="/termos" className="hover:text-[#C8A951] transition-colors">Termos</Link></li>
-              <li><Link to="/privacidade" className="hover:text-[#C8A951] transition-colors">Privacidade</Link></li>
+              <li>
+                <a href="/#depoimentos" className="hover:text-[#C8A951] transition-colors">
+                  Depoimentos
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-[#C8A951] transition-colors">
+                  Contato
+                </a>
+              </li>
+              <li>
+                <Link to="/termos" className="hover:text-[#C8A951] transition-colors">
+                  Termos
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacidade" className="hover:text-[#C8A951] transition-colors">
+                  Privacidade
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         <div className="pt-8 border-t border-[#C8A951]/15 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <p className="text-white/50 text-xs">
-            © 2026 A8 Avalia. Todos os direitos reservados.
-          </p>
+          <p className="text-white/50 text-xs">© 2026 A8 Avalia. Todos os direitos reservados.</p>
           <p className="text-white/40 text-xs italic">
             Avaliações mercadológicas — não substituem laudo CNAI/IBAPE.
           </p>

@@ -5,11 +5,26 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { FileText, Plus, History, Trophy, Eye, CheckCircle2, AlertTriangle, User, Pencil, Receipt } from "lucide-react";
+import {
+  FileText,
+  Plus,
+  History,
+  Trophy,
+  Eye,
+  CheckCircle2,
+  AlertTriangle,
+  User,
+  Pencil,
+  Receipt,
+} from "lucide-react";
 import { toast } from "sonner";
 import { listarAvaliacoes } from "../../lib/avaliacoes.functions";
 import { getMeuPerfil } from "../../lib/perfil.functions";
-import { getStatusAssinatura, confirmarCheckout, listarCobrancasAvulsas } from "../../lib/stripe.functions";
+import {
+  getStatusAssinatura,
+  confirmarCheckout,
+  listarCobrancasAvulsas,
+} from "../../lib/stripe.functions";
 import { ExpertChat } from "../../components/ExpertChat";
 
 type DashboardSearch = { session_id?: string; pagamento?: string };
@@ -23,7 +38,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
 });
 
 const fmtBRL = (v: number | null | undefined) =>
-  v == null ? "—" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  v == null
+    ? "—"
+    : Number(v).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+        maximumFractionDigits: 0,
+      });
 
 const PLAN_LABEL: Record<string, string> = {
   basico: "Básico",
@@ -117,18 +138,26 @@ function Dashboard() {
           assinaturaAtivaOk = !!d.assinaturaAtiva;
           creditosOk = (d.creditosAvulsos ?? 0) > 0;
           planoMudou = detected !== baselinePlano;
-          console.log("[checkout] poll", i, { detected, assinaturaAtivaOk, creditosOk, planoMudou });
-          if (isPayment ? creditosOk : (assinaturaAtivaOk && detected !== "basico" && detected !== "user")) {
+          console.log("[checkout] poll", i, {
+            detected,
+            assinaturaAtivaOk,
+            creditosOk,
+            planoMudou,
+          });
+          if (
+            isPayment
+              ? creditosOk
+              : assinaturaAtivaOk && detected !== "basico" && detected !== "user"
+          ) {
             break;
           }
         }
         await new Promise((res) => setTimeout(res, 500));
       }
 
-
       // Sucesso se creditos aumentaram ou assinatura ativa foi confirmada.
       // O Stripe Webhook processa a atualização, mas o polling aqui dá a resposta imediata.
-      const sucesso = isPayment ? creditosOk : (assinaturaAtivaOk && !!detected && planoMudou);
+      const sucesso = isPayment ? creditosOk : assinaturaAtivaOk && !!detected && planoMudou;
       if (sucesso) {
         if (isPayment && plano === "expert_extra") {
           setWelcomePlano("Expert (Laudo Avulso)");
@@ -184,7 +213,9 @@ function Dashboard() {
   const ehAdmin = !!(status as any)?.isAdmin;
   const planoLabel = ehAdmin
     ? "Administrador (acesso total ilimitado)"
-    : status?.plano ? (PLAN_LABEL[status.plano] ?? "—") : "—";
+    : status?.plano
+      ? (PLAN_LABEL[status.plano] ?? "—")
+      : "—";
   const planoCode = status?.plano ?? null;
   const ehBasico = !ehAdmin && (planoCode === "basico" || planoCode === "user" || !planoCode);
   const ehExpert = !ehAdmin && planoCode === "expert";
@@ -195,11 +226,9 @@ function Dashboard() {
   // Só mostra "limite atingido" para usuários COM plano ativo. Admin nunca atinge limite.
   const temPlanoAtivo = !ehAdmin && !!planoCode && !!ativa;
   const ehProfissional = !ehAdmin && (planoCode === "profissional" || planoCode === "pro");
-  const limiteAtingido = temPlanoAtivo && (
-    ehBasico
-      ? creditos <= 0
-      : (ehProfissional || ehExpert) && limite != null && usadas >= limite
-  );
+  const limiteAtingido =
+    temPlanoAtivo &&
+    (ehBasico ? creditos <= 0 : (ehProfissional || ehExpert) && limite != null && usadas >= limite);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -239,12 +268,13 @@ function Dashboard() {
               </p>
             </div>
             <Link to="/perfil">
-              <Button className="bg-yellow-500 hover:bg-yellow-600 text-yellow-950">Completar agora</Button>
+              <Button className="bg-yellow-500 hover:bg-yellow-600 text-yellow-950">
+                Completar agora
+              </Button>
             </Link>
           </CardContent>
         </Card>
       )}
-
 
       {(() => {
         const ehBeta = !!(status as any)?.isBetaTester;
@@ -256,7 +286,9 @@ function Dashboard() {
         const dataFmt = exp.toLocaleDateString("pt-BR");
         const urgente = diasRestantes <= 3;
         return (
-          <Card className={`premium-card border-2 ${urgente ? "border-orange-400 bg-orange-50" : "border-brand-gold bg-brand-gold/5"}`}>
+          <Card
+            className={`premium-card border-2 ${urgente ? "border-orange-400 bg-orange-50" : "border-brand-gold bg-brand-gold/5"}`}
+          >
             <CardContent className="flex items-center gap-3 py-4">
               <div className="flex-1">
                 <p className={`font-semibold ${urgente ? "text-orange-900" : "text-brand-blue"}`}>
@@ -287,13 +319,12 @@ function Dashboard() {
                   : `Sua assinatura do Plano ${welcomePlano} está ativa. Aproveite!`}
               </p>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setWelcomePlano(null)}>Fechar</Button>
+            <Button variant="ghost" size="sm" onClick={() => setWelcomePlano(null)}>
+              Fechar
+            </Button>
           </CardContent>
         </Card>
       )}
-
-
-
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="premium-card">
@@ -314,7 +345,11 @@ function Dashboard() {
                     : `${usadas} / ${limite ?? 8}`}
             </div>
             <p className="text-xs text-muted-foreground">
-              {ehAdmin ? "Sem limite mensal" : ehBasico ? "Crédito por compra (R$ 157)" : "Mês atual"}
+              {ehAdmin
+                ? "Sem limite mensal"
+                : ehBasico
+                  ? "Crédito por compra (R$ 157)"
+                  : "Mês atual"}
             </p>
           </CardContent>
         </Card>
@@ -326,11 +361,15 @@ function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{planoLabel}</div>
             <p className="text-xs text-muted-foreground">
-              {ehAdmin ? "Acesso total a todos os recursos, sem cobrança" : ehBasico ? (
+              {ehAdmin ? (
+                "Acesso total a todos os recursos, sem cobrança"
+              ) : ehBasico ? (
                 <Link to="/planos" className="text-brand-gold font-medium hover:underline">
                   Comprar laudo / fazer upgrade
                 </Link>
-              ) : ativa ? "Assinatura ativa" : (
+              ) : ativa ? (
+                "Assinatura ativa"
+              ) : (
                 <Link to="/planos" className="text-brand-gold font-medium hover:underline">
                   Assinar plano
                 </Link>
@@ -351,67 +390,92 @@ function Dashboard() {
         </Card>
       </div>
 
-      {ehExpert && (() => {
-        const limExpert = limite ?? 20;
-        const restantes = Math.max(0, limExpert - usadas);
-        const pct = Math.min(100, (usadas / limExpert) * 100);
-        const atingiu = usadas >= limExpert;
-        const proximo = !atingiu && restantes <= 2;
-        const barColor = atingiu ? "bg-orange-500" : proximo ? "bg-yellow-500" : "bg-brand-gold";
-        return (
-          <Card className="premium-card">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-base text-brand-blue">Uso mensal do Plano Expert</CardTitle>
-                <span className="text-sm font-semibold text-brand-blue">
-                  Laudos utilizados: {usadas} / {limExpert}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="w-full h-3 rounded-full bg-muted overflow-hidden">
-                <div className={`h-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
-              </div>
-              {atingiu && (
-                <div className="flex items-start gap-2 rounded-lg border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-orange-900">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                  <span><strong>Limite atingido</strong> — próximos laudos: <strong>R$ 12,00/cada</strong>.{creditos > 0 ? ` Você tem ${creditos} crédito(s) avulso(s) disponível(eis).` : ""}</span>
+      {ehExpert &&
+        (() => {
+          const limExpert = limite ?? 20;
+          const restantes = Math.max(0, limExpert - usadas);
+          const pct = Math.min(100, (usadas / limExpert) * 100);
+          const atingiu = usadas >= limExpert;
+          const proximo = !atingiu && restantes <= 2;
+          const barColor = atingiu ? "bg-orange-500" : proximo ? "bg-yellow-500" : "bg-brand-gold";
+          return (
+            <Card className="premium-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-base text-brand-blue">
+                    Uso mensal do Plano Expert
+                  </CardTitle>
+                  <span className="text-sm font-semibold text-brand-blue">
+                    Laudos utilizados: {usadas} / {limExpert}
+                  </span>
                 </div>
-              )}
-              {proximo && (
-                <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-900">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                  <span>Você está próximo do limite — <strong>{restantes} laudo(s) restante(s)</strong>.</span>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="w-full h-3 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`h-full ${barColor} transition-all`}
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
-              )}
-              {cobrancasExtras.filter((c: any) => c.tipo === "expert_extra").length > 0 && (
-                <div className="pt-2 border-t">
-                  <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-brand-blue">
-                    <Receipt className="h-4 w-4" /> Histórico de laudos adicionais
+                {atingiu && (
+                  <div className="flex items-start gap-2 rounded-lg border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-orange-900">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>
+                      <strong>Limite atingido</strong> — próximos laudos:{" "}
+                      <strong>R$ 12,00/cada</strong>.
+                      {creditos > 0
+                        ? ` Você tem ${creditos} crédito(s) avulso(s) disponível(eis).`
+                        : ""}
+                    </span>
                   </div>
-                  <ul className="space-y-1 text-sm">
-                    {cobrancasExtras
-                      .filter((c: any) => c.tipo === "expert_extra")
-                      .slice(0, 10)
-                      .map((c: any) => (
-                        <li key={c.id} className="flex items-center justify-between text-muted-foreground">
-                          <span>
-                            {new Date(c.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
-                            {" · "}{c.descricao ?? "Laudo adicional Expert"}
-                          </span>
-                          <span className="font-semibold text-brand-blue">
-                            {((c.valor_cents ?? 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: (c.moeda ?? "BRL").toUpperCase() })}
-                          </span>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })()}
-
+                )}
+                {proximo && (
+                  <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-900">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>
+                      Você está próximo do limite —{" "}
+                      <strong>{restantes} laudo(s) restante(s)</strong>.
+                    </span>
+                  </div>
+                )}
+                {cobrancasExtras.filter((c: any) => c.tipo === "expert_extra").length > 0 && (
+                  <div className="pt-2 border-t">
+                    <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-brand-blue">
+                      <Receipt className="h-4 w-4" /> Histórico de laudos adicionais
+                    </div>
+                    <ul className="space-y-1 text-sm">
+                      {cobrancasExtras
+                        .filter((c: any) => c.tipo === "expert_extra")
+                        .slice(0, 10)
+                        .map((c: any) => (
+                          <li
+                            key={c.id}
+                            className="flex items-center justify-between text-muted-foreground"
+                          >
+                            <span>
+                              {new Date(c.created_at).toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                              {" · "}
+                              {c.descricao ?? "Laudo adicional Expert"}
+                            </span>
+                            <span className="font-semibold text-brand-blue">
+                              {((c.valor_cents ?? 0) / 100).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: (c.moeda ?? "BRL").toUpperCase(),
+                              })}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
       {limiteAtingido && (
         <Card className="premium-card border-brand-gold border-2">
@@ -440,7 +504,11 @@ function Dashboard() {
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-brand-blue">Últimas Avaliações</h2>
         {isLoading ? (
-          <Card className="premium-card"><CardContent className="py-8 text-center text-muted-foreground">Carregando...</CardContent></Card>
+          <Card className="premium-card">
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Carregando...
+            </CardContent>
+          </Card>
         ) : avaliacoes.length === 0 ? (
           <Card className="premium-card bg-muted/30 border-dashed border-2">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -449,7 +517,9 @@ function Dashboard() {
               </div>
               <p className="text-muted-foreground">Você ainda não realizou nenhuma avaliação.</p>
               <Link to="/avaliacoes/nova">
-                <Button variant="link" className="text-brand-blue font-semibold mt-2">Começar agora</Button>
+                <Button variant="link" className="text-brand-blue font-semibold mt-2">
+                  Começar agora
+                </Button>
               </Link>
             </CardContent>
           </Card>
@@ -469,11 +539,20 @@ function Dashboard() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(a.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                      {new Date(a.created_at).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
                       {a.ultima_edicao_em && (
                         <>
-                          {" "}• editado em{" "}
-                          {new Date(a.ultima_edicao_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                          {" "}
+                          • editado em{" "}
+                          {new Date(a.ultima_edicao_em).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </>
                       )}
                     </p>
@@ -484,12 +563,18 @@ function Dashboard() {
                   </div>
                   <div className="flex gap-2">
                     <Link to="/avaliacoes/nova" search={{ edit: a.id } as any}>
-                      <Button variant="outline" size="sm" className="gap-1 border-[#0F2D5C] text-[#0F2D5C] hover:bg-[#0F2D5C] hover:text-white">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 border-[#0F2D5C] text-[#0F2D5C] hover:bg-[#0F2D5C] hover:text-white"
+                      >
                         <Pencil size={14} /> Editar
                       </Button>
                     </Link>
                     <Link to="/avaliacoes/$id" params={{ id: a.id }}>
-                      <Button variant="outline" size="sm" className="gap-1"><Eye size={14} /> Visualizar</Button>
+                      <Button variant="outline" size="sm" className="gap-1">
+                        <Eye size={14} /> Visualizar
+                      </Button>
                     </Link>
                   </div>
                 </CardContent>
@@ -512,7 +597,9 @@ function AdminModeloSelector() {
   });
   const onChange = (v: string) => {
     setValor(v);
-    try { localStorage.setItem(ADMIN_PLANO_OVERRIDE_KEY, v); } catch {}
+    try {
+      localStorage.setItem(ADMIN_PLANO_OVERRIDE_KEY, v);
+    } catch {}
     toast.success(`Modelo de teste: ${v.charAt(0).toUpperCase() + v.slice(1)}`);
   };
   return (

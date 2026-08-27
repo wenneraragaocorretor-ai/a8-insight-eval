@@ -7,20 +7,40 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "../../components/ui/table";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "../../components/ui/dialog";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Loader2, Plus, Copy, ChevronLeft, Power, ShieldOff } from "lucide-react";
 import {
-  listarAfiliadosAdmin, criarAfiliadoAdmin, atualizarAfiliadoAdmin,
-  removerRoleAfiliado, getAfiliadoDetalheAdmin, marcarComissaoPaga,
+  listarAfiliadosAdmin,
+  criarAfiliadoAdmin,
+  atualizarAfiliadoAdmin,
+  removerRoleAfiliado,
+  getAfiliadoDetalheAdmin,
+  marcarComissaoPaga,
 } from "../../lib/afiliados-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/afiliados")({
@@ -28,7 +48,9 @@ export const Route = createFileRoute("/_authenticated/admin/afiliados")({
 });
 
 const PLANO_LABEL: Record<string, string> = {
-  basico: "Básico", profissional: "Profissional", expert: "Expert",
+  basico: "Básico",
+  profissional: "Profissional",
+  expert: "Expert",
 };
 
 function fmtMoney(v: number) {
@@ -40,7 +62,8 @@ function fmtDate(s: string | null) {
 }
 function gerarCodigo(nome: string) {
   const base = (nome || "")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^A-Za-z0-9]/g, "")
     .toUpperCase()
     .slice(0, 8);
@@ -151,13 +174,17 @@ function ListaAfiliados({ onAbrir }: { onAbrir: (id: string) => void }) {
                       {editPctId === a.id ? (
                         <div className="flex items-center gap-1">
                           <Input
-                            type="number" min={0} max={100} step="0.01"
+                            type="number"
+                            min={0}
+                            max={100}
+                            step="0.01"
                             value={editPctVal}
                             onChange={(e) => setEditPctVal(e.target.value)}
                             className="h-7 w-20"
                           />
                           <Button
-                            size="sm" variant="secondary"
+                            size="sm"
+                            variant="secondary"
                             disabled={mutPct.isPending}
                             onClick={() => {
                               const n = Number(editPctVal);
@@ -167,34 +194,54 @@ function ListaAfiliados({ onAbrir }: { onAbrir: (id: string) => void }) {
                               }
                               mutPct.mutate({ id: a.id, pct: n });
                             }}
-                          >OK</Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditPctId(null)}>×</Button>
+                          >
+                            OK
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditPctId(null)}>
+                            ×
+                          </Button>
                         </div>
                       ) : (
                         <button
                           className="text-sm hover:underline"
-                          onClick={() => { setEditPctId(a.id); setEditPctVal(String(a.percentual_comissao)); }}
+                          onClick={() => {
+                            setEditPctId(a.id);
+                            setEditPctVal(String(a.percentual_comissao));
+                          }}
                         >
                           {a.percentual_comissao}%
                         </button>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge className={a.ativo ? "bg-emerald-600 hover:bg-emerald-600" : "bg-muted text-muted-foreground hover:bg-muted"}>
+                      <Badge
+                        className={
+                          a.ativo
+                            ? "bg-emerald-600 hover:bg-emerald-600"
+                            : "bg-muted text-muted-foreground hover:bg-muted"
+                        }
+                      >
                         {a.ativo ? "Ativo" : "Inativo"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">{a.total_indicacoes}</TableCell>
-                    <TableCell className="text-right text-amber-600">{fmtMoney(a.total_pendente)}</TableCell>
-                    <TableCell className="text-right text-emerald-600">{fmtMoney(a.total_pago)}</TableCell>
+                    <TableCell className="text-right text-amber-600">
+                      {fmtMoney(a.total_pendente)}
+                    </TableCell>
+                    <TableCell className="text-right text-emerald-600">
+                      {fmtMoney(a.total_pago)}
+                    </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Button
-                        size="sm" variant="ghost"
+                        size="sm"
+                        variant="ghost"
                         title={a.ativo ? "Desativar" : "Ativar"}
                         disabled={mutToggle.isPending}
                         onClick={() => mutToggle.mutate({ id: a.id, ativo: !a.ativo })}
                       >
-                        <Power className={`h-4 w-4 ${a.ativo ? "text-emerald-600" : "text-muted-foreground"}`} />
+                        <Power
+                          className={`h-4 w-4 ${a.ativo ? "text-emerald-600" : "text-muted-foreground"}`}
+                        />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -214,9 +261,9 @@ function ListaAfiliados({ onAbrir }: { onAbrir: (id: string) => void }) {
               <ShieldOff className="h-5 w-5" /> Remover acesso ao painel?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              O afiliado foi desativado e não gera mais comissões. Você também quer remover
-              o papel de afiliado deste usuário? Isso vai bloquear o acesso dele ao painel
-              de afiliados (inclusive ao histórico).
+              O afiliado foi desativado e não gera mais comissões. Você também quer remover o papel
+              de afiliado deste usuário? Isso vai bloquear o acesso dele ao painel de afiliados
+              (inclusive ao histórico).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -245,19 +292,20 @@ function NovoAfiliadoDialog({ open, onClose }: { open: boolean; onClose: () => v
   const [codigoTocado, setCodigoTocado] = useState(false);
 
   const linkGerado = useMemo(
-    () => resultado ? `https://a8avalia.com.br/?ref=${resultado.codigo}` : "",
+    () => (resultado ? `https://a8avalia.com.br/?ref=${resultado.codigo}` : ""),
     [resultado],
   );
 
   const mut = useMutation({
-    mutationFn: () => criar({
-      data: {
-        nome: nome.trim(),
-        email: email.trim().toLowerCase(),
-        codigo: codigo.trim() || gerarCodigo(nome),
-        percentual_comissao: Number(pct),
-      },
-    }),
+    mutationFn: () =>
+      criar({
+        data: {
+          nome: nome.trim(),
+          email: email.trim().toLowerCase(),
+          codigo: codigo.trim() || gerarCodigo(nome),
+          percentual_comissao: Number(pct),
+        },
+      }),
     onSuccess: (r) => {
       toast.success("Afiliado criado");
       qc.invalidateQueries({ queryKey: ["admin-afiliados"] });
@@ -267,8 +315,12 @@ function NovoAfiliadoDialog({ open, onClose }: { open: boolean; onClose: () => v
   });
 
   function fechar() {
-    setNome(""); setEmail(""); setCodigo(""); setPct("20");
-    setResultado(null); setCodigoTocado(false);
+    setNome("");
+    setEmail("");
+    setCodigo("");
+    setPct("20");
+    setResultado(null);
+    setCodigoTocado(false);
     onClose();
   }
 
@@ -288,20 +340,32 @@ function NovoAfiliadoDialog({ open, onClose }: { open: boolean; onClose: () => v
           <div className="space-y-3">
             <p className="text-sm">Compartilhe o link de indicação com o afiliado:</p>
             <div className="flex gap-2">
-              <Input readOnly value={linkGerado} className="font-mono text-sm" onFocus={(e) => e.currentTarget.select()} />
+              <Input
+                readOnly
+                value={linkGerado}
+                className="font-mono text-sm"
+                onFocus={(e) => e.currentTarget.select()}
+              />
               <Button
                 onClick={async () => {
                   await navigator.clipboard.writeText(linkGerado);
                   toast.success("Link copiado");
                 }}
-              ><Copy className="h-4 w-4" /></Button>
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
             </div>
-            <DialogFooter><Button onClick={fechar}>Fechar</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={fechar}>Fechar</Button>
+            </DialogFooter>
           </div>
         ) : (
           <form
             className="space-y-3"
-            onSubmit={(e) => { e.preventDefault(); mut.mutate(); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              mut.mutate();
+            }}
           >
             <div className="space-y-1">
               <label className="text-sm font-medium">Nome</label>
@@ -311,14 +375,17 @@ function NovoAfiliadoDialog({ open, onClose }: { open: boolean; onClose: () => v
                   setNome(e.target.value);
                   if (!codigoTocado) setCodigo(gerarCodigo(e.target.value));
                 }}
-                required maxLength={120}
+                required
+                maxLength={120}
               />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">E-mail (do usuário já cadastrado)</label>
               <Input
-                type="email" value={email}
-                onChange={(e) => setEmail(e.target.value)} required
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -326,9 +393,14 @@ function NovoAfiliadoDialog({ open, onClose }: { open: boolean; onClose: () => v
                 <label className="text-sm font-medium">Código</label>
                 <Input
                   value={codigo}
-                  onChange={(e) => { setCodigo(e.target.value.toUpperCase()); setCodigoTocado(true); }}
+                  onChange={(e) => {
+                    setCodigo(e.target.value.toUpperCase());
+                    setCodigoTocado(true);
+                  }}
                   placeholder="EX: JOAO123"
-                  required minLength={3} maxLength={32}
+                  required
+                  minLength={3}
+                  maxLength={32}
                   className="font-mono"
                 />
                 <p className="text-[11px] text-muted-foreground">Letras, números, _ ou -</p>
@@ -336,13 +408,20 @@ function NovoAfiliadoDialog({ open, onClose }: { open: boolean; onClose: () => v
               <div className="space-y-1">
                 <label className="text-sm font-medium">% Comissão</label>
                 <Input
-                  type="number" min={0} max={100} step="0.01"
-                  value={pct} onChange={(e) => setPct(e.target.value)} required
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  value={pct}
+                  onChange={(e) => setPct(e.target.value)}
+                  required
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={fechar}>Cancelar</Button>
+              <Button type="button" variant="ghost" onClick={fechar}>
+                Cancelar
+              </Button>
               <Button type="submit" disabled={mut.isPending}>
                 {mut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
                 Criar afiliado
@@ -414,7 +493,13 @@ function DetalheAfiliado({ id, onBack }: { id: string; onBack: () => void }) {
               </div>
               <div>
                 <div className="text-muted-foreground text-xs">Status</div>
-                <Badge className={data.afiliado.ativo ? "bg-emerald-600 hover:bg-emerald-600" : "bg-muted text-muted-foreground hover:bg-muted"}>
+                <Badge
+                  className={
+                    data.afiliado.ativo
+                      ? "bg-emerald-600 hover:bg-emerald-600"
+                      : "bg-muted text-muted-foreground hover:bg-muted"
+                  }
+                >
                   {data.afiliado.ativo ? "Ativo" : "Inativo"}
                 </Badge>
               </div>
@@ -451,7 +536,9 @@ function DetalheAfiliado({ id, onBack }: { id: string; onBack: () => void }) {
                         <TableCell className="text-xs">{i.email_indicado}</TableCell>
                         <TableCell>{PLANO_LABEL[i.plano] ?? i.plano}</TableCell>
                         <TableCell className="text-right">{fmtMoney(i.valor_pago)}</TableCell>
-                        <TableCell className="text-right font-medium">{fmtMoney(i.valor_comissao)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {fmtMoney(i.valor_comissao)}
+                        </TableCell>
                         <TableCell>
                           {i.status === "pago" ? (
                             <Badge className="bg-emerald-600 hover:bg-emerald-600">Pago</Badge>
@@ -459,10 +546,16 @@ function DetalheAfiliado({ id, onBack }: { id: string; onBack: () => void }) {
                             <Badge className="bg-amber-500 hover:bg-amber-500">Pendente</Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{fmtDate(i.pago_em)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {fmtDate(i.pago_em)}
+                        </TableCell>
                         <TableCell>
                           {i.status === "pendente" && (
-                            <Button size="sm" variant="secondary" onClick={() => setConfirmIndId(i.id)}>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setConfirmIndId(i.id)}
+                            >
                               Marcar como pago
                             </Button>
                           )}
@@ -482,8 +575,8 @@ function DetalheAfiliado({ id, onBack }: { id: string; onBack: () => void }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar pagamento</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação marca a comissão como paga e registra a data de pagamento.
-              Use apenas após efetivamente pagar o afiliado — não há desfazer fácil.
+              Esta ação marca a comissão como paga e registra a data de pagamento. Use apenas após
+              efetivamente pagar o afiliado — não há desfazer fácil.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

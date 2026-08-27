@@ -57,12 +57,19 @@ export const listarAfiliadosAdmin = createServerFn({ method: "GET" })
 export const criarAfiliadoAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({
-      nome: z.string().trim().min(1).max(120),
-      email: z.string().trim().toLowerCase().email(),
-      codigo: z.string().trim().min(3).max(32).regex(/^[A-Za-z0-9_-]+$/, "Código inválido"),
-      percentual_comissao: z.number().min(0).max(100),
-    }).parse(data),
+    z
+      .object({
+        nome: z.string().trim().min(1).max(120),
+        email: z.string().trim().toLowerCase().email(),
+        codigo: z
+          .string()
+          .trim()
+          .min(3)
+          .max(32)
+          .regex(/^[A-Za-z0-9_-]+$/, "Código inválido"),
+        percentual_comissao: z.number().min(0).max(100),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
@@ -81,8 +88,10 @@ export const criarAfiliadoAdmin = createServerFn({ method: "POST" })
       userId = profile.id;
       userNome = profile.nome ?? null;
     } else {
-      const { data: list, error: listErr } =
-        await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+      const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 200,
+      });
       if (listErr) throw new Error(`Erro ao buscar usuário: ${listErr.message}`);
       const u = list.users.find((x) => (x.email ?? "").toLowerCase() === data.email);
       if (u) userId = u.id;
@@ -136,7 +145,9 @@ export const criarAfiliadoAdmin = createServerFn({ method: "POST" })
     }
 
     console.log("[admin/afiliados] novo afiliado", {
-      admin: context.userId, target: userId, codigo,
+      admin: context.userId,
+      target: userId,
+      codigo,
     });
 
     return { ok: true, afiliado: novo, user_nome: userNome };
@@ -145,18 +156,21 @@ export const criarAfiliadoAdmin = createServerFn({ method: "POST" })
 export const atualizarAfiliadoAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({
-      id: z.string().uuid(),
-      percentual_comissao: z.number().min(0).max(100).optional(),
-      ativo: z.boolean().optional(),
-    }).parse(data),
+    z
+      .object({
+        id: z.string().uuid(),
+        percentual_comissao: z.number().min(0).max(100).optional(),
+        ativo: z.boolean().optional(),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("../integrations/supabase/client.server");
 
     const update: Record<string, any> = {};
-    if (typeof data.percentual_comissao === "number") update.percentual_comissao = data.percentual_comissao;
+    if (typeof data.percentual_comissao === "number")
+      update.percentual_comissao = data.percentual_comissao;
     if (typeof data.ativo === "boolean") update.ativo = data.ativo;
     if (Object.keys(update).length === 0) return { ok: true };
 
@@ -209,7 +223,9 @@ export const getAfiliadoDetalheAdmin = createServerFn({ method: "POST" })
 
     const { data: indicacoes, error: indErr } = await supabaseAdmin
       .from("indicacoes_afiliado")
-      .select("id, usuario_indicado_id, plano, valor_pago, valor_comissao, status, created_at, pago_em")
+      .select(
+        "id, usuario_indicado_id, plano, valor_pago, valor_comissao, status, created_at, pago_em",
+      )
       .eq("afiliado_id", data.afiliado_id)
       .order("created_at", { ascending: false });
     if (indErr) throw new Error(`Falha ao buscar indicações: ${indErr.message}`);
@@ -269,6 +285,9 @@ export const marcarComissaoPaga = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(`Falha ao marcar como pago: ${error.message}`);
     if (!updated) throw new Error("Comissão não encontrada ou já estava paga.");
-    console.log("[admin/afiliados] comissão paga", { admin: context.userId, id: data.indicacao_id });
+    console.log("[admin/afiliados] comissão paga", {
+      admin: context.userId,
+      id: data.indicacao_id,
+    });
     return { ok: true, indicacao: updated };
   });

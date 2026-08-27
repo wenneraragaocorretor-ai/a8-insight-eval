@@ -7,22 +7,32 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "../../components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "../../components/ui/dialog";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "../../components/ui/table";
 import { Loader2, Search, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { listarUsuariosAdmin } from "../../lib/admin.functions";
-import {
-  listarBetaTesters,
-  liberarBetaTester,
-  revogarBetaTester,
-} from "../../lib/admin.functions";
+import { listarBetaTesters, liberarBetaTester, revogarBetaTester } from "../../lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/beta-testers")({
   component: AdminBetaTesters,
@@ -50,7 +60,11 @@ function AdminBetaTesters() {
 
   const [busca, setBusca] = useState("");
   const [aplicada, setAplicada] = useState("");
-  const [target, setTarget] = useState<{ id: string; nome: string | null; email: string | null } | null>(null);
+  const [target, setTarget] = useState<{
+    id: string;
+    nome: string | null;
+    email: string | null;
+  } | null>(null);
   const [plano, setPlano] = useState<"basico" | "profissional" | "expert">("expert");
   const defaultExpira = (() => {
     const d = new Date();
@@ -78,7 +92,11 @@ function AdminBetaTesters() {
     try {
       setSaving(true);
       await liberarFn({
-        data: { user_id: target.id, plano, expira_em: new Date(expira + "T23:59:59").toISOString() },
+        data: {
+          user_id: target.id,
+          plano,
+          expira_em: new Date(expira + "T23:59:59").toISOString(),
+        },
       });
       toast.success("Acesso beta liberado");
       setTarget(null);
@@ -142,8 +160,12 @@ function AdminBetaTesters() {
                       <TableCell className="text-muted-foreground">{b.email ?? "—"}</TableCell>
                       <TableCell>{planoLabel[b.beta_plano ?? ""] ?? "—"}</TableCell>
                       <TableCell>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${expirado ? "bg-muted text-muted-foreground" : "bg-amber-100 text-amber-800"}`}>
-                          {expirado ? `Expirado em ${fmtData(b.beta_expira_em)}` : `Beta até ${fmtData(b.beta_expira_em)}`}
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${expirado ? "bg-muted text-muted-foreground" : "bg-amber-100 text-amber-800"}`}
+                        >
+                          {expirado
+                            ? `Expirado em ${fmtData(b.beta_expira_em)}`
+                            : `Beta até ${fmtData(b.beta_expira_em)}`}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -167,7 +189,10 @@ function AdminBetaTesters() {
         </CardHeader>
         <CardContent className="space-y-4">
           <form
-            onSubmit={(e) => { e.preventDefault(); setAplicada(busca.trim()); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              setAplicada(busca.trim());
+            }}
             className="flex gap-2"
           >
             <Input
@@ -202,7 +227,8 @@ function AdminBetaTesters() {
               <TableBody>
                 {(usuariosQ.data ?? []).map((u: any) => {
                   const beta = betaByUserId.get(u.id);
-                  const betaAtivo = beta && beta.beta_expira_em && new Date(beta.beta_expira_em) > new Date();
+                  const betaAtivo =
+                    beta && beta.beta_expira_em && new Date(beta.beta_expira_em) > new Date();
                   return (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">{u.nome ?? "—"}</TableCell>
@@ -243,19 +269,27 @@ function AdminBetaTesters() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!target} onOpenChange={(o) => { if (!o) setTarget(null); }}>
+      <Dialog
+        open={!!target}
+        onOpenChange={(o) => {
+          if (!o) setTarget(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Liberar acesso beta</DialogTitle>
             <DialogDescription>
-              {target?.nome ?? target?.email ?? "Usuário"} terá acesso completo ao plano escolhido até a data definida, sem cobrança.
+              {target?.nome ?? target?.email ?? "Usuário"} terá acesso completo ao plano escolhido
+              até a data definida, sem cobrança.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label>Plano de teste</Label>
               <Select value={plano} onValueChange={(v) => setPlano(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="basico">Básico</SelectItem>
                   <SelectItem value="profissional">Profissional</SelectItem>
@@ -274,7 +308,9 @@ function AdminBetaTesters() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTarget(null)} disabled={saving}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setTarget(null)} disabled={saving}>
+              Cancelar
+            </Button>
             <Button onClick={handleLiberar} disabled={saving || !expira}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar"}
             </Button>

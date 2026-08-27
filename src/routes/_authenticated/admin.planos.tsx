@@ -8,11 +8,7 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { ArrowLeft, Search, ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  amIAdmin,
-  buscarUsuarioPorEmail,
-  redefinirPlanoUsuario,
-} from "../../lib/admin.functions";
+import { amIAdmin, buscarUsuarioPorEmail, redefinirPlanoUsuario } from "../../lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/planos")({
   component: AdminPage,
@@ -49,9 +45,7 @@ function AdminPage() {
     return (
       <div className="max-w-3xl mx-auto py-16 text-center space-y-4">
         <h1 className="text-2xl font-bold text-brand-blue">Acesso restrito</h1>
-        <p className="text-muted-foreground">
-          Esta página é exclusiva para administradores.
-        </p>
+        <p className="text-muted-foreground">Esta página é exclusiva para administradores.</p>
         <Link to="/dashboard">
           <Button variant="outline">Voltar ao dashboard</Button>
         </Link>
@@ -112,7 +106,6 @@ function AdminPage() {
         </p>
       </div>
 
-
       <Card className="premium-card">
         <CardHeader>
           <CardTitle className="text-lg">Buscar usuário</CardTitle>
@@ -130,12 +123,12 @@ function AdminPage() {
               />
             </div>
             <div className="flex md:items-end">
-              <Button
-                type="submit"
-                disabled={searching || !email.trim()}
-                className="h-10 gap-2"
-              >
-                {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              <Button type="submit" disabled={searching || !email.trim()} className="h-10 gap-2">
+                {searching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
                 Buscar
               </Button>
             </div>
@@ -208,9 +201,8 @@ function AdminPage() {
 
               <div className="text-xs text-muted-foreground bg-yellow-50 border border-yellow-200 rounded p-3">
                 Ao redefinir, a assinatura local será desvinculada (subscription_status,
-                stripe_subscription_id e plan_price_id ficam nulos). Não cancela a
-                assinatura no Stripe — faça isso manualmente no painel do Stripe se
-                necessário.
+                stripe_subscription_id e plan_price_id ficam nulos). Não cancela a assinatura no
+                Stripe — faça isso manualmente no painel do Stripe se necessário.
               </div>
 
               <Button

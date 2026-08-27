@@ -81,15 +81,32 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "google", content: "notranslate" },
       { httpEquiv: "Content-Language", content: "pt-BR" },
       { title: "A8 Avalia" },
-      { name: "description", content: "Avaliações imobiliárias com IA. Precisão técnica conforme NBR 14653-2." },
+      {
+        name: "description",
+        content: "Avaliações imobiliárias com IA. Precisão técnica conforme NBR 14653-2.",
+      },
       { property: "og:title", content: "A8 Avalia" },
-      { property: "og:description", content: "Avaliações imobiliárias com IA. Precisão técnica conforme NBR 14653-2." },
+      {
+        property: "og:description",
+        content: "Avaliações imobiliárias com IA. Precisão técnica conforme NBR 14653-2.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "A8 Avalia" },
-      { name: "twitter:description", content: "Avaliações imobiliárias com IA. Precisão técnica conforme NBR 14653-2." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3958f549-a94e-45b3-aa27-a7ba7279503b/id-preview-882b7fd4--605a3853-d613-4c26-8372-1d3b2682f23b.lovable.app-1780949599748.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3958f549-a94e-45b3-aa27-a7ba7279503b/id-preview-882b7fd4--605a3853-d613-4c26-8372-1d3b2682f23b.lovable.app-1780949599748.png" },
+      {
+        name: "twitter:description",
+        content: "Avaliações imobiliárias com IA. Precisão técnica conforme NBR 14653-2.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3958f549-a94e-45b3-aa27-a7ba7279503b/id-preview-882b7fd4--605a3853-d613-4c26-8372-1d3b2682f23b.lovable.app-1780949599748.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3958f549-a94e-45b3-aa27-a7ba7279503b/id-preview-882b7fd4--605a3853-d613-4c26-8372-1d3b2682f23b.lovable.app-1780949599748.png",
+      },
     ],
     links: [
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png?v=4" },

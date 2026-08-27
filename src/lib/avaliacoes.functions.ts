@@ -16,10 +16,12 @@ async function userIsAdmin(supabase: any, userId: string) {
 export const atualizarValorFinalCorretor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({
-      avaliacao_id: z.string().uuid(),
-      valor_final_corretor: z.number().nullable(),
-    }).parse(data),
+    z
+      .object({
+        avaliacao_id: z.string().uuid(),
+        valor_final_corretor: z.number().nullable(),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -58,8 +60,6 @@ export const atualizarValorFinalCorretor = createServerFn({ method: "POST" })
     return { ok: true, valor_final_corretor: data.valor_final_corretor };
   });
 
-
-
 const evaluationSchema = z.object({
   idempotencyKey: z.string().uuid().optional(),
   correlationId: z.string().uuid().optional(),
@@ -82,11 +82,17 @@ const evaluationSchema = z.object({
     caracteristicas: z.array(z.string()),
     observacoes: z.string().optional(),
     fotos: z.array(z.string()).max(15).optional().default([]),
-    fotos_meta: z.array(z.object({
-      path: z.string(),
-      legenda: z.string().optional().default(""),
-      principal: z.boolean().optional().default(false),
-    })).max(15).optional().default([]),
+    fotos_meta: z
+      .array(
+        z.object({
+          path: z.string(),
+          legenda: z.string().optional().default(""),
+          principal: z.boolean().optional().default(false),
+        }),
+      )
+      .max(15)
+      .optional()
+      .default([]),
     // Ficha Técnica Detalhada (Plano Expert)
     idade_real: z.number().optional(),
     idade_aparente: z.string().optional(),
@@ -103,32 +109,35 @@ const evaluationSchema = z.object({
     ambientes_servico: z.array(z.string()).optional().default([]),
     ambientes_outros: z.array(z.string()).optional().default([]),
   }),
-  comparaveis: z.array(z.object({
-    fonte: z.string(),
-    localizacao: z.string(),
-    area: z.number(),
-    area_privativa: z.number().optional(),
-    area_construida: z.number().optional(),
-    quartos: z.number().optional(),
-    suites: z.number().optional(),
-    banheiros: z.number().optional(),
-    vagas: z.number().optional(),
-    padrao: z.string().optional(),
-    conservacao: z.string().optional(),
-    posicao: z.string().optional(),
-    andar: z.number().optional(),
-    idade: z.number().optional(),
-    condominio: z.number().optional(),
-    caracteristicas: z.array(z.string()).optional(),
-    valor: z.number(),
-  })).min(3),
+  comparaveis: z
+    .array(
+      z.object({
+        fonte: z.string(),
+        localizacao: z.string(),
+        area: z.number(),
+        area_privativa: z.number().optional(),
+        area_construida: z.number().optional(),
+        quartos: z.number().optional(),
+        suites: z.number().optional(),
+        banheiros: z.number().optional(),
+        vagas: z.number().optional(),
+        padrao: z.string().optional(),
+        conservacao: z.string().optional(),
+        posicao: z.string().optional(),
+        andar: z.number().optional(),
+        idade: z.number().optional(),
+        condominio: z.number().optional(),
+        caracteristicas: z.array(z.string()).optional(),
+        valor: z.number(),
+      }),
+    )
+    .min(3),
 });
 
 // Limites mensais de laudos por plano — DEVEM ser idênticos aos da
 // Edge Function `gerar-avaliacao`.
 const LIMITE_MENSAL_PROFISSIONAL = 8;
 const LIMITE_MENSAL_EXPERT = 20;
-
 
 export function limiteEdicoesPorPlano(plano: string): number | null {
   switch (plano) {
@@ -143,7 +152,6 @@ export function limiteEdicoesPorPlano(plano: string): number | null {
       return 1;
   }
 }
-
 
 export const processarAvaliacaoIA = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -162,7 +170,8 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         .select("plano, creditos_avulsos")
         .eq("id", userId)
         .maybeSingle();
-      const plano = (profile?.plano ?? "basico") as "basico" | "profissional" | "expert" | "user" | "pro";
+      const plano = (profile?.plano ?? "basico") as
+        "basico" | "profissional" | "expert" | "user" | "pro";
       const creditos = profile?.creditos_avulsos ?? 0;
 
       // Flag: este laudo consome 1 crédito avulso?
@@ -173,7 +182,9 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       } else if (plano === "basico" || plano === "user") {
         // Plano Básico: pay-per-laudo. Precisa ter pelo menos 1 crédito.
         if (creditos < 1) {
-          throw new Error("Você não tem laudos avulsos disponíveis. Compre um novo laudo Básico (R$ 157,00) em /planos.");
+          throw new Error(
+            "Você não tem laudos avulsos disponíveis. Compre um novo laudo Básico (R$ 157,00) em /planos.",
+          );
         }
         consomeCredito = true;
       } else if (plano === "profissional" || plano === "pro" || plano === "expert") {
@@ -201,11 +212,15 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         }
       }
 
-
-      console.log(`[LAUDO 04] Chamando Edge Function 'gerar-avaliacao'. correlationId=${data.correlationId}`);
-      const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
-        body: data,
-      });
+      console.log(
+        `[LAUDO 04] Chamando Edge Function 'gerar-avaliacao'. correlationId=${data.correlationId}`,
+      );
+      const { data: aiResult, error: edgeError } = await supabase.functions.invoke(
+        "gerar-avaliacao",
+        {
+          body: data,
+        },
+      );
 
       if (edgeError) {
         console.error("[LAUDO ERR] Erro ao chamar Edge Function:", edgeError);
@@ -219,7 +234,6 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
       }
 
       console.log("[LAUDO 05] Resposta da IA recebida com sucesso");
-
 
       // Prepara os dados para a transação RPC
       const avaliacaoData = {
@@ -244,12 +258,15 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         fotos: data.imovel.fotos ?? [],
         fotos_meta: (() => {
           const baseMeta = Array.isArray(data.imovel.fotos_meta) ? data.imovel.fotos_meta : [];
-          const aiPerFoto = Array.isArray(aiResult.analise_fotos_individual) ? aiResult.analise_fotos_individual : [];
+          const aiPerFoto = Array.isArray(aiResult.analise_fotos_individual)
+            ? aiResult.analise_fotos_individual
+            : [];
           return baseMeta.map((m: any, i: number) => ({
             path: m.path,
             legenda: m.legenda ?? "",
             principal: !!m.principal,
-            comentario_ia: typeof aiPerFoto[i] === "string" ? aiPerFoto[i] : (aiPerFoto[i]?.comentario ?? ""),
+            comentario_ia:
+              typeof aiPerFoto[i] === "string" ? aiPerFoto[i] : (aiPerFoto[i]?.comentario ?? ""),
           }));
         })(),
         idade_real: data.imovel.idade_real ?? null,
@@ -269,7 +286,7 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
         status: "concluido",
       };
 
-      const comparaveisData = data.comparaveis.map(c => ({
+      const comparaveisData = data.comparaveis.map((c) => ({
         fonte: c.fonte,
         localizacao: c.localizacao,
         tipo: data.imovel.tipo,
@@ -297,25 +314,39 @@ export const processarAvaliacaoIA = createServerFn({ method: "POST" })
 
       const resultadoData = {
         valor_minimo: getVal(aiResult.valor_minimo ?? aiResult.sumario_executivo?.valor_minimo),
-        valor_central: getVal(aiResult.valor_central ?? aiResult.sumario_executivo?.valor_avaliado ?? aiResult.valor_avaliacao),
+        valor_central: getVal(
+          aiResult.valor_central ??
+            aiResult.sumario_executivo?.valor_avaliado ??
+            aiResult.valor_avaliacao,
+        ),
         valor_maximo: getVal(aiResult.valor_maximo ?? aiResult.sumario_executivo?.valor_maximo),
-        valor_unitario_medio: getVal(aiResult.valor_unitario_medio ?? aiResult.sumario_executivo?.valor_unitario_m2 ?? aiResult.valor_m2),
+        valor_unitario_medio: getVal(
+          aiResult.valor_unitario_medio ??
+            aiResult.sumario_executivo?.valor_unitario_m2 ??
+            aiResult.valor_m2,
+        ),
         relatorio_json: aiResult,
         versao_metodologia: 2,
       };
 
       // Executa a transação via RPC
       console.log("[LAUDO 08] Solicitando salvamento no banco via RPC");
-      const { data: avaliacaoId, error: rpcError } = await supabase.rpc("gravar_avaliacao_com_credito", {
-        p_avaliacao_data: avaliacaoData,
-        p_comparaveis_data: comparaveisData,
-        p_resultado_data: resultadoData,
-        p_consome_credito: consomeCredito,
-        p_idempotency_key: data.idempotencyKey
-      });
+      const { data: avaliacaoId, error: rpcError } = await supabase.rpc(
+        "gravar_avaliacao_com_credito",
+        {
+          p_avaliacao_data: avaliacaoData,
+          p_comparaveis_data: comparaveisData,
+          p_resultado_data: resultadoData,
+          p_consome_credito: consomeCredito,
+          p_idempotency_key: data.idempotencyKey,
+        },
+      );
 
       if (rpcError) {
-        console.error("[LAUDO ERR] Erro na transação RPC (gravar_avaliacao_com_credito):", rpcError);
+        console.error(
+          "[LAUDO ERR] Erro na transação RPC (gravar_avaliacao_com_credito):",
+          rpcError,
+        );
         throw new Error("Falha ao gravar avaliação e atualizar créditos: " + rpcError.message);
       }
 
@@ -347,10 +378,21 @@ export const getAvaliacaoDetalhe = createServerFn({ method: "GET" })
       throw new Error("Você não tem permissão para visualizar esta avaliação");
     }
 
-    const [{ data: resultado, error: errR }, { data: comparaveis, error: errC }, { data: profile }, { data: userData }] = await Promise.all([
+    const [
+      { data: resultado, error: errR },
+      { data: comparaveis, error: errC },
+      { data: profile },
+      { data: userData },
+    ] = await Promise.all([
       supabase.from("resultados").select("*").eq("avaliacao_id", data.id).maybeSingle(),
       supabase.from("comparaveis").select("*").eq("avaliacao_id", data.id),
-      supabase.from("profiles").select("nome, plano, creci, cnai, outro_registro, telefone, cidade, estado, email, cpf, tipo, nome_imobiliaria, logo_url").eq("id", userId).maybeSingle(),
+      supabase
+        .from("profiles")
+        .select(
+          "nome, plano, creci, cnai, outro_registro, telefone, cidade, estado, email, cpf, tipo, nome_imobiliaria, logo_url",
+        )
+        .eq("id", userId)
+        .maybeSingle(),
       supabase.auth.getUser(),
     ]);
 
@@ -360,8 +402,11 @@ export const getAvaliacaoDetalhe = createServerFn({ method: "GET" })
     const authUser = userData?.user;
     const meta = (authUser?.user_metadata ?? {}) as Record<string, any>;
     const nomeCompleto =
-      [meta.full_name, meta.name, meta.nome, profile?.nome].find((v) => typeof v === "string" && v.trim().length > 0) ??
-      profile?.nome ?? "Corretor";
+      [meta.full_name, meta.name, meta.nome, profile?.nome].find(
+        (v) => typeof v === "string" && v.trim().length > 0,
+      ) ??
+      profile?.nome ??
+      "Corretor";
 
     const profileFinal = {
       ...(profile ?? {}),
@@ -369,9 +414,13 @@ export const getAvaliacaoDetalhe = createServerFn({ method: "GET" })
       email: profile?.email ?? authUser?.email ?? null,
     };
 
-    return { avaliacao, resultado: resultado ?? null, comparaveis: comparaveis ?? [], profile: profileFinal };
+    return {
+      avaliacao,
+      resultado: resultado ?? null,
+      comparaveis: comparaveis ?? [],
+      profile: profileFinal,
+    };
   });
-
 
 export const listarAvaliacoes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -379,7 +428,9 @@ export const listarAvaliacoes = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("avaliacoes")
-      .select("id, tipo_imovel, localizacao, created_at, status, editado, ultima_edicao_em, edicoes_count, resultados(valor_central)")
+      .select(
+        "id, tipo_imovel, localizacao, created_at, status, editado, ultima_edicao_em, edicoes_count, resultados(valor_central)",
+      )
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(20);
@@ -399,9 +450,7 @@ export const listarAvaliacoes = createServerFn({ method: "GET" })
 
 export const regerarAvaliacao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
-    z.object({ id: z.string().uuid() }).merge(evaluationSchema).parse(data),
-  )
+  .inputValidator((data) => z.object({ id: z.string().uuid() }).merge(evaluationSchema).parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -427,7 +476,6 @@ export const regerarAvaliacao = createServerFn({ method: "POST" })
       throw new Error(`Limite de ${limite} edição(ões) deste laudo atingido no plano atual.`);
     }
 
-
     // 2) Snapshot da versão atual antes de sobrescrever
     const [{ data: resultadoAtual }, { data: comparaveisAtuais }] = await Promise.all([
       supabase.from("resultados").select("*").eq("avaliacao_id", data.id).maybeSingle(),
@@ -444,21 +492,27 @@ export const regerarAvaliacao = createServerFn({ method: "POST" })
     });
 
     // 3) Reprocessa via IA
-    const { data: aiResult, error: edgeError } = await supabase.functions.invoke("gerar-avaliacao", {
-      body: { imovel: data.imovel, comparaveis: data.comparaveis },
-    });
+    const { data: aiResult, error: edgeError } = await supabase.functions.invoke(
+      "gerar-avaliacao",
+      {
+        body: { imovel: data.imovel, comparaveis: data.comparaveis },
+      },
+    );
     if (edgeError) throw new Error("Erro na comunicação com o motor de IA: " + edgeError.message);
     if (aiResult?.error) throw new Error(aiResult.error);
 
     // 4) UPDATE avaliacao
     const fotosMetaUpd = (() => {
       const baseMeta = Array.isArray(data.imovel.fotos_meta) ? data.imovel.fotos_meta : [];
-      const aiPerFoto = Array.isArray(aiResult.analise_fotos_individual) ? aiResult.analise_fotos_individual : [];
+      const aiPerFoto = Array.isArray(aiResult.analise_fotos_individual)
+        ? aiResult.analise_fotos_individual
+        : [];
       return baseMeta.map((m: any, i: number) => ({
         path: m.path,
         legenda: m.legenda ?? "",
         principal: !!m.principal,
-        comentario_ia: typeof aiPerFoto[i] === "string" ? aiPerFoto[i] : (aiPerFoto[i]?.comentario ?? ""),
+        comentario_ia:
+          typeof aiPerFoto[i] === "string" ? aiPerFoto[i] : (aiPerFoto[i]?.comentario ?? ""),
       }));
     })();
 
@@ -554,4 +608,3 @@ export const regerarAvaliacao = createServerFn({ method: "POST" })
 
     return { id: data.id, ...aiResult };
   });
-

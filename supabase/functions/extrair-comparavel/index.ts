@@ -41,7 +41,13 @@ const MAX_REDIRECTS = 5;
 function isHostBloqueado(hostname: string): boolean {
   const h = hostname.toLowerCase().replace(/^\[|\]$/g, "");
 
-  if (h === "localhost" || h.endsWith(".localhost") || h.endsWith(".local") || h.endsWith(".internal")) return true;
+  if (
+    h === "localhost" ||
+    h.endsWith(".localhost") ||
+    h.endsWith(".local") ||
+    h.endsWith(".internal")
+  )
+    return true;
   if (h === "metadata.google.internal" || h === "metadata") return true;
 
   // IPv6
@@ -71,7 +77,11 @@ function isHostBloqueado(hostname: string): boolean {
 
 function validarUrlPublica(raw: string): URL | null {
   let u: URL;
-  try { u = new URL(raw); } catch { return null; }
+  try {
+    u = new URL(raw);
+  } catch {
+    return null;
+  }
   if (!["http:", "https:"].includes(u.protocol)) return null;
   if (u.username || u.password) return null;
   if (isHostBloqueado(u.hostname)) return null;
@@ -79,7 +89,9 @@ function validarUrlPublica(raw: string): URL | null {
 }
 
 /** Segue redirects manualmente, revalidando cada destino contra SSRF. */
-async function fetchHtmlSeguro(inicial: URL): Promise<
+async function fetchHtmlSeguro(
+  inicial: URL,
+): Promise<
   { ok: true; html: string; finalUrl: URL } | { ok: false; status: number; error: string }
 > {
   let atual = inicial;
@@ -87,18 +99,18 @@ async function fetchHtmlSeguro(inicial: URL): Promise<
     // Validação de DNS antes do fetch (prevenção contra DNS rebinding e IPs privados)
     try {
       const ips = await Deno.resolveDns(atual.hostname, "A");
-      if (ips.some(ip => isHostBloqueado(ip))) {
+      if (ips.some((ip) => isHostBloqueado(ip))) {
         return { ok: false, status: 400, error: "Endereço resolvido não permitido" };
       }
     } catch (e) {
       // Se falhar a resolução A, tenta AAAA
       try {
         const ips = await Deno.resolveDns(atual.hostname, "AAAA");
-        if (ips.some(ip => isHostBloqueado(ip))) {
+        if (ips.some((ip) => isHostBloqueado(ip))) {
           return { ok: false, status: 400, error: "Endereço resolvido não permitido" };
         }
       } catch (e2) {
-        // Se não resolver nada e não for IP literal (já validado em validarUrlPublica), permite o fetch 
+        // Se não resolver nada e não for IP literal (já validado em validarUrlPublica), permite o fetch
         // mas o fetch do Deno respeitará bloqueios se o hostname apontar para local.
       }
     }
@@ -106,7 +118,7 @@ async function fetchHtmlSeguro(inicial: URL): Promise<
     const resp = await fetch(atual.toString(), {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; A8Avalia/1.0; +https://a8avalia.com.br)",
-        "Accept": "text/html,application/xhtml+xml",
+        Accept: "text/html,application/xhtml+xml",
       },
       redirect: "manual",
     });
@@ -116,7 +128,8 @@ async function fetchHtmlSeguro(inicial: URL): Promise<
       await resp.body?.cancel();
       if (!loc) return { ok: false, status: 502, error: "Redirecionamento inválido" };
       const proximo = validarUrlPublica(new URL(loc, atual).toString());
-      if (!proximo) return { ok: false, status: 400, error: "Redirecionamento para endereço não permitido" };
+      if (!proximo)
+        return { ok: false, status: 400, error: "Redirecionamento para endereço não permitido" };
       atual = proximo;
       continue;
     }
@@ -127,7 +140,11 @@ async function fetchHtmlSeguro(inicial: URL): Promise<
     }
 
     const contentType = (resp.headers.get("content-type") ?? "").toLowerCase();
-    if (contentType && !contentType.includes("text/html") && !contentType.includes("application/xhtml")) {
+    if (
+      contentType &&
+      !contentType.includes("text/html") &&
+      !contentType.includes("application/xhtml")
+    ) {
       await resp.body?.cancel();
       return { ok: false, status: 415, error: "A URL não aponta para uma página HTML" };
     }
@@ -155,7 +172,10 @@ async function fetchHtmlSeguro(inicial: URL): Promise<
     }
     const buf = new Uint8Array(total);
     let off = 0;
-    for (const c of chunks) { buf.set(c, off); off += c.byteLength; }
+    for (const c of chunks) {
+      buf.set(c, off);
+      off += c.byteLength;
+    }
     return { ok: true, html: new TextDecoder("utf-8").decode(buf), finalUrl: atual };
   }
   return { ok: false, status: 502, error: "Excesso de redirecionamentos" };
@@ -182,7 +202,8 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader.toLowerCase().startsWith("bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -191,20 +212,23 @@ serve(async (req) => {
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { url } = await req.json();
     if (!url || typeof url !== "string") {
       return new Response(JSON.stringify({ error: "URL obrigatória" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const parsed = validarUrlPublica(url);
     if (!parsed) {
       return new Response(JSON.stringify({ error: "URL inválida ou não permitida" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -215,15 +239,22 @@ serve(async (req) => {
       const r = await fetchHtmlSeguro(parsed);
       if (!r.ok) {
         return new Response(JSON.stringify({ error: r.error }), {
-          status: r.status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: r.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       html = r.html;
       finalUrl = r.finalUrl;
     } catch (e: any) {
-      return new Response(JSON.stringify({ error: "Não foi possível acessar a página: " + (e?.message ?? "erro de rede") }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Não foi possível acessar a página: " + (e?.message ?? "erro de rede"),
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const htmlLimpo = limparHtml(html);
@@ -232,7 +263,8 @@ serve(async (req) => {
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
     if (!anthropicKey) {
       return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY não configurada" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -259,14 +291,15 @@ serve(async (req) => {
     if (!claudeResp.ok) {
       const errTxt = await claudeResp.text();
       console.error("Claude API error:", claudeResp.status, errTxt);
-      
+
       let msg = `Erro na IA: ${claudeResp.status}`;
       if (claudeResp.status === 401) msg = "ANTHROPIC_API_KEY inválida ou não autorizada (401).";
       if (claudeResp.status === 402) msg = "Créditos insuficientes na Anthropic (402).";
       if (claudeResp.status === 429) msg = "Limite de requisições na Anthropic (429).";
 
       return new Response(JSON.stringify({ error: msg }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -282,19 +315,22 @@ serve(async (req) => {
       dados = JSON.parse(jsonStr);
     } catch {
       return new Response(JSON.stringify({ error: "Resposta da IA não pôde ser interpretada" }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (!dados.fonte) dados.fonte = dominio;
 
     return new Response(JSON.stringify({ dados }), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
     console.error("[extrair-comparavel] erro:", e);
     return new Response(JSON.stringify({ error: e?.message ?? "Erro interno" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

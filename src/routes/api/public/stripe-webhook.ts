@@ -49,7 +49,6 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
         const ok = await verifyStripeSignature(payload, sig, webhookSecret);
         if (!ok) return new Response("Invalid signature", { status: 401 });
 
-
         const event = JSON.parse(payload);
         console.log("[stripe-webhook] Evento recebido", {
           type: event.type,
@@ -57,7 +56,8 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           livemode: event.livemode,
         });
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { stripeRequest, PLANS, resolvePlanCodeFromPriceId } = await import("@/lib/stripe.server");
+        const { stripeRequest, PLANS, resolvePlanCodeFromPriceId } =
+          await import("@/lib/stripe.server");
 
         async function applySubscription(sub: any, session?: any) {
           const userId = sub.metadata?.user_id ?? session?.metadata?.user_id;
@@ -66,8 +66,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             return;
           }
           const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
-          const rawMetadataPlanCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as PlanCode | undefined;
-          const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : null;
+          const rawMetadataPlanCode = (sub.metadata?.plan_code ?? session?.metadata?.plan_code) as
+            PlanCode | undefined;
+          const metadataPlanCode =
+            rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : null;
           const pricePlanCode = await resolvePlanCodeFromPriceId(priceId);
           // SEM fallback para "basico": se não resolver, não atribui plano.
           const planCode: PlanCode | null = pricePlanCode ?? metadataPlanCode ?? null;
@@ -82,7 +84,11 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             .select("nome, plano, stripe_subscription_id, subscription_current_period_end")
             .eq("id", userId)
             .maybeSingle();
-          const nome = existing?.nome || session?.customer_details?.name || session?.customer_details?.email?.split("@")[0] || "Usuário";
+          const nome =
+            existing?.nome ||
+            session?.customer_details?.name ||
+            session?.customer_details?.email?.split("@")[0] ||
+            "Usuário";
 
           console.log("[stripe-webhook] Estado antes da atualização", {
             userId,
@@ -93,8 +99,6 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             novoPlanCode: planCode,
             veioDoCheckoutAtual: !!session?.id,
           });
-
-
 
           // Se ativo mas não conseguiu identificar o plano → NÃO escreve plano (log para debug).
           // Se inativo/cancelado → zera plano (acesso bloqueado).
@@ -114,18 +118,25 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             planoFinal = null;
           }
 
-          const { data: updatedProfile, error } = await supabaseAdmin.from("profiles").upsert({
-            id: userId,
-            nome,
-            plano: planoFinal as any,
-            stripe_subscription_id: sub.id,
-            stripe_customer_id: sub.customer,
-            subscription_status: sub.status,
-            subscription_current_period_end: sub.current_period_end
-              ? new Date(sub.current_period_end * 1000).toISOString()
-              : null,
-            plan_price_id: priceId ?? null,
-          }, { onConflict: "id" }).select("plano, subscription_status, plan_price_id").single();
+          const { data: updatedProfile, error } = await supabaseAdmin
+            .from("profiles")
+            .upsert(
+              {
+                id: userId,
+                nome,
+                plano: planoFinal as any,
+                stripe_subscription_id: sub.id,
+                stripe_customer_id: sub.customer,
+                subscription_status: sub.status,
+                subscription_current_period_end: sub.current_period_end
+                  ? new Date(sub.current_period_end * 1000).toISOString()
+                  : null,
+                plan_price_id: priceId ?? null,
+              },
+              { onConflict: "id" },
+            )
+            .select("plano, subscription_status, plan_price_id")
+            .single();
 
           if (error) throw error;
           console.log("[stripe-webhook] Perfil atualizado com sucesso", {
@@ -187,33 +198,36 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
               return;
             }
 
-            const valorPago = typeof session?.amount_total === "number"
-              ? session.amount_total / 100
-              : 0;
+            const valorPago =
+              typeof session?.amount_total === "number" ? session.amount_total / 100 : 0;
             if (valorPago <= 0) {
-              console.warn("[afiliado] amount_total inválido, pulando", { userId, sessionId: session?.id });
+              console.warn("[afiliado] amount_total inválido, pulando", {
+                userId,
+                sessionId: session?.id,
+              });
               return;
             }
             const pct = Number(afiliado.percentual_comissao);
             const valorComissao = Math.round(valorPago * pct) / 100;
 
-            const { error: insErr } = await supabaseAdmin
-              .from("indicacoes_afiliado")
-              .insert({
-                afiliado_id: afiliado.id,
-                usuario_indicado_id: userId,
-                plano,
-                valor_pago: valorPago,
-                valor_comissao: valorComissao,
-                status: "pendente",
-                stripe_session_id: session?.id ?? null,
-              });
+            const { error: insErr } = await supabaseAdmin.from("indicacoes_afiliado").insert({
+              afiliado_id: afiliado.id,
+              usuario_indicado_id: userId,
+              plano,
+              valor_pago: valorPago,
+              valor_comissao: valorComissao,
+              status: "pendente",
+              stripe_session_id: session?.id ?? null,
+            });
 
             if (insErr) {
               // 23505 = unique_violation na UNIQUE(usuario_indicado_id).
               // Cobre a corrida entre o SELECT acima e o INSERT.
               if ((insErr as any).code === "23505") {
-                console.log("[afiliado] comissão já existe para este usuário, pulando (unique race)", { userId });
+                console.log(
+                  "[afiliado] comissão já existe para este usuário, pulando (unique race)",
+                  { userId },
+                );
                 return;
               }
               throw insErr;
@@ -225,7 +239,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             );
           } catch (e: any) {
             // Nunca propaga: afiliado é secundário ao processamento do pagamento.
-            console.error("[afiliado] erro ao registrar comissão (não bloqueante):", e?.message ?? e);
+            console.error(
+              "[afiliado] erro ao registrar comissão (não bloqueante):",
+              e?.message ?? e,
+            );
           }
         }
 
@@ -257,32 +274,38 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   sessionPriceId = lineItems.data?.[0]?.price?.id as string | undefined;
                 }
                 const rawMetadataPlanCode = session.metadata?.plan_code as PlanCode | undefined;
-                const metadataPlanCode = rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : null;
+                const metadataPlanCode =
+                  rawMetadataPlanCode && PLANS[rawMetadataPlanCode] ? rawMetadataPlanCode : null;
                 const pricePlanCode = await resolvePlanCodeFromPriceId(sessionPriceId);
                 // SEM fallback para "basico": se não resolver, NÃO credita nem altera plano.
                 const planCode: PlanCode | null = pricePlanCode ?? metadataPlanCode ?? null;
                 console.log("[stripe-webhook] Price ID selecionado:", sessionPriceId ?? null);
                 console.log("[stripe-webhook] Plano mapeado:", planCode);
                 if (!planCode) {
-                  console.error("[stripe-webhook] Price ID não reconhecido em pagamento avulso — NÃO atribuindo plano", {
-                    userId,
-                    sessionId: session.id,
-                    priceId: sessionPriceId ?? null,
-                    metadataPlanCode: rawMetadataPlanCode ?? null,
-                  });
+                  console.error(
+                    "[stripe-webhook] Price ID não reconhecido em pagamento avulso — NÃO atribuindo plano",
+                    {
+                      userId,
+                      sessionId: session.id,
+                      priceId: sessionPriceId ?? null,
+                      metadataPlanCode: rawMetadataPlanCode ?? null,
+                    },
+                  );
                   break;
                 }
                 if (userId) {
                   // Idempotência: tenta inserir cobrança PRIMEIRO. Se já existe
                   // (unique em stripe_session_id), o Stripe está reentregando o
                   // mesmo evento — NÃO credita de novo.
-                  const valorCents = typeof session.amount_total === "number"
-                    ? session.amount_total
-                    : (planCode === "expert_extra" ? 1200 : 15700);
+                  const valorCents =
+                    typeof session.amount_total === "number"
+                      ? session.amount_total
+                      : planCode === "expert_extra"
+                        ? 1200
+                        : 15700;
                   const tipo = planCode === "expert_extra" ? "expert_extra" : "basico_laudo";
-                  const descricao = planCode === "expert_extra"
-                    ? "Laudo adicional Expert"
-                    : "Laudo avulso Básico";
+                  const descricao =
+                    planCode === "expert_extra" ? "Laudo adicional Expert" : "Laudo avulso Básico";
                   const { error: cobrancaError } = await supabaseAdmin
                     .from("cobrancas_avulsas")
                     .insert({
@@ -291,15 +314,20 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                       valor_cents: valorCents,
                       moeda: session.currency ?? "brl",
                       stripe_session_id: session.id,
-                      stripe_payment_intent: (typeof session.payment_intent === "string" ? session.payment_intent : null),
+                      stripe_payment_intent:
+                        typeof session.payment_intent === "string" ? session.payment_intent : null,
                       status: "paid",
                       descricao,
                     });
                   if (cobrancaError) {
                     if ((cobrancaError as any).code === "23505") {
-                      console.log("[stripe-webhook] Sessão já processada — ignorando crédito duplicado", {
-                        userId, sessionId: session.id,
-                      });
+                      console.log(
+                        "[stripe-webhook] Sessão já processada — ignorando crédito duplicado",
+                        {
+                          userId,
+                          sessionId: session.id,
+                        },
+                      );
                       break;
                     }
                     throw cobrancaError;
@@ -310,7 +338,11 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                     .select("nome, creditos_avulsos, plano, subscription_status")
                     .eq("id", userId)
                     .maybeSingle();
-                  const nome = existing?.nome || session.customer_details?.name || session.customer_details?.email?.split("@")[0] || "Usuário";
+                  const nome =
+                    existing?.nome ||
+                    session.customer_details?.name ||
+                    session.customer_details?.email?.split("@")[0] ||
+                    "Usuário";
                   const novosCreditos = (existing?.creditos_avulsos ?? 0) + 1;
                   const upsertData: any = {
                     id: userId,
@@ -327,7 +359,9 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
                   } else if (planCode === "expert_extra") {
                     upsertData.plano = "expert";
                   }
-                  const { error } = await supabaseAdmin.from("profiles").upsert(upsertData, { onConflict: "id" });
+                  const { error } = await supabaseAdmin
+                    .from("profiles")
+                    .upsert(upsertData, { onConflict: "id" });
                   if (error) throw error;
                   console.log("[stripe-webhook] +1 crédito", { userId, planCode, novosCreditos });
                   // Comissão de afiliado (laudo avulso pode ser o primeiro pagamento).

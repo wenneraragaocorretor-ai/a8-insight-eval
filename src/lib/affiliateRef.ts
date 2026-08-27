@@ -35,7 +35,9 @@ function write(code: string) {
 
 export function clearRef() {
   if (typeof window === "undefined") return;
-  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {}
 }
 
 export function getRefCode(): string | null {
@@ -71,10 +73,9 @@ export async function vincularAfiliadoSeNecessario(userId: string): Promise<void
   const code = getRefCode();
   if (!code) return;
   try {
-    const { data: afiliadoId, error: rpcErr } = await supabase.rpc(
-      "resolver_codigo_afiliado",
-      { _codigo: code },
-    );
+    const { data: afiliadoId, error: rpcErr } = await supabase.rpc("resolver_codigo_afiliado", {
+      _codigo: code,
+    });
     if (rpcErr) {
       console.warn("[affiliateRef] rpc error", rpcErr);
       return;

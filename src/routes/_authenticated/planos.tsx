@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Check, ArrowLeft, Loader2, Sparkles } from "lucide-react";
-import { criarCheckoutSession, getStatusAssinatura, confirmarCheckout } from "../../lib/stripe.functions";
+import {
+  criarCheckoutSession,
+  getStatusAssinatura,
+  confirmarCheckout,
+} from "../../lib/stripe.functions";
 import { toast } from "sonner";
 
 type Search = { success?: string; canceled?: string; session_id?: string };
@@ -56,7 +60,7 @@ const PLANOS = [
       "Até 8 fotos com análise da IA",
       "Homogeneização dos comparáveis",
       "Tratamento estatístico básico",
-      
+
       "Caracterização do bairro pela IA",
       "Perfil do público-alvo",
       "PDF 8-10 páginas sem marca d'água",
@@ -93,7 +97,6 @@ const PLANOS = [
   },
 ];
 
-
 function PlanosPage() {
   const search = useSearch({ from: "/_authenticated/planos" });
   const fetchStatus = useServerFn(getStatusAssinatura);
@@ -110,7 +113,8 @@ function PlanosPage() {
     if (search.success && search.session_id) {
       confirm({ data: { session_id: search.session_id } })
         .then((res: any) => {
-          if (res?.plano === "basico") toast.success("Compra confirmada! +1 laudo Básico disponível.");
+          if (res?.plano === "basico")
+            toast.success("Compra confirmada! +1 laudo Básico disponível.");
           else toast.success("Assinatura ativada com sucesso!");
           refetch();
         })
@@ -129,7 +133,11 @@ function PlanosPage() {
       const origin =
         (window.top && window.top !== window.self ? window.top.location.origin : null) ??
         window.location.origin;
-      const { url, priceId, plano: planoMapeado } = await startCheckout({ data: { plano, origin } });
+      const {
+        url,
+        priceId,
+        plano: planoMapeado,
+      } = await startCheckout({ data: { plano, origin } });
       console.log("Price ID selecionado:", priceId);
       console.log("Plano mapeado:", planoMapeado);
       if (!url) throw new Error("URL de checkout não recebida");
@@ -163,7 +171,8 @@ function PlanosPage() {
     if (p.code === "basico") {
       return {
         variant: "outline" as const,
-        className: "w-full h-11 border-[#0A1F44] text-[#0A1F44] hover:bg-[#0A1F44] hover:text-white",
+        className:
+          "w-full h-11 border-[#0A1F44] text-[#0A1F44] hover:bg-[#0A1F44] hover:text-white",
       };
     }
     if (p.code === "profissional") {
@@ -181,7 +190,10 @@ function PlanosPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/dashboard"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft size={16} /> Voltar ao dashboard
       </Link>
 
@@ -191,15 +203,23 @@ function PlanosPage() {
       </div>
 
       {ehExpert && (
-        <Card className={`border-2 ${atingiuLimiteExpert ? "border-[#C8A951] bg-[#C8A951]/5" : "border-brand-blue/20"}`}>
+        <Card
+          className={`border-2 ${atingiuLimiteExpert ? "border-[#C8A951] bg-[#C8A951]/5" : "border-brand-blue/20"}`}
+        >
           <CardContent className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="space-y-1">
               <h3 className="font-semibold text-brand-blue">
                 {atingiuLimiteExpert ? "Limite mensal atingido" : "Laudos extras do Plano Expert"}
               </h3>
               <p className="text-sm text-muted-foreground">
-                Uso este mês: <strong>{usoMes}</strong>{limiteMes ? ` / ${limiteMes}` : ""} laudos
-                {creditosAvulsos > 0 && <> · Créditos avulsos disponíveis: <strong>{creditosAvulsos}</strong></>}
+                Uso este mês: <strong>{usoMes}</strong>
+                {limiteMes ? ` / ${limiteMes}` : ""} laudos
+                {creditosAvulsos > 0 && (
+                  <>
+                    {" "}
+                    · Créditos avulsos disponíveis: <strong>{creditosAvulsos}</strong>
+                  </>
+                )}
               </p>
               <p className="text-sm text-muted-foreground">
                 {atingiuLimiteExpert
@@ -213,8 +233,12 @@ function PlanosPage() {
               onClick={() => assinar("expert_extra")}
             >
               {loading === "expert_extra" ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...</>
-              ) : "Comprar laudo extra (R$ 12,00)"}
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...
+                </>
+              ) : (
+                "Comprar laudo extra (R$ 12,00)"
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -269,7 +293,9 @@ function PlanosPage() {
                   onClick={() => assinar(p.code)}
                 >
                   {loading === p.code ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...</>
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Redirecionando...
+                    </>
                   ) : p.modo === "avulso" ? (
                     "Comprar Laudo"
                   ) : ehAtual ? (

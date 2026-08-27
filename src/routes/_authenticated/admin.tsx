@@ -1,5 +1,14 @@
 import { createFileRoute, Link, Outlet, useRouterState, redirect } from "@tanstack/react-router";
-import { ShieldCheck, BarChart3, Users, Sparkles, Ticket, Handshake, CreditCard, ArrowLeft } from "lucide-react";
+import {
+  ShieldCheck,
+  BarChart3,
+  Users,
+  Sparkles,
+  Ticket,
+  Handshake,
+  CreditCard,
+  ArrowLeft,
+} from "lucide-react";
 import { amIAdmin } from "../../lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -24,15 +33,10 @@ const NAV = [
   { to: "/admin/test-ia", label: "Testar IA", icon: Sparkles, exact: false },
 ];
 
-const SOON = [
-  { label: "Cupons", icon: Ticket },
-];
-
+const SOON = [{ label: "Cupons", icon: Ticket }];
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-
 
   const isActive = (to: string, exact: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");

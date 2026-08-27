@@ -19,7 +19,9 @@ function AdminTestIA() {
     setLoading(true);
     setResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
       const correlationId = crypto.randomUUID();
@@ -40,7 +42,7 @@ function AdminTestIA() {
           vagas: 2,
           padrao: "Alto",
           conservacao: "Ótimo",
-          fotos: []
+          fotos: [],
         },
         comparaveis: [
           {
@@ -54,19 +56,20 @@ function AdminTestIA() {
             banheiros: 2,
             vagas: 1,
             padrao: "Alto",
-            conservacao: "Bom"
-          }
-        ]
+            conservacao: "Bom",
+          },
+        ],
       };
 
-      const sendRequest = () => fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-avaliacao`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const sendRequest = () =>
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-avaliacao`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(payload),
+        });
 
       let response;
       let data2;
@@ -77,7 +80,10 @@ function AdminTestIA() {
         const d1 = await r1.json();
         const d2 = await r2.json();
         response = r1;
-        data2 = { attempt1: { status: r1.status, data: d1 }, attempt2: { status: r2.status, data: d2 } };
+        data2 = {
+          attempt1: { status: r1.status, data: d1 },
+          attempt2: { status: r2.status, data: d2 },
+        };
       } else {
         response = await sendRequest();
         data2 = await response.json();
@@ -86,7 +92,7 @@ function AdminTestIA() {
       setResult({
         status: response.status,
         ok: response.ok,
-        data: data2
+        data: data2,
       });
 
       if (response.ok) {
@@ -106,27 +112,34 @@ function AdminTestIA() {
     setLoading(true);
     setResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extrair-comparavel`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extrair-comparavel`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ url: "https://www.google.com" }), // Teste de URL segura
         },
-        body: JSON.stringify({ url: "https://www.google.com" }) // Teste de URL segura
-      });
+      );
 
       const data = await response.json();
       setResult({
         status: response.status,
         ok: response.ok,
-        data
+        data,
       });
 
       if (response.ok) {
-        toast.success("Extração testada (o Google pode bloquear scrapers, mas a função deve responder)");
+        toast.success(
+          "Extração testada (o Google pode bloquear scrapers, mas a função deve responder)",
+        );
       } else {
         toast.error(`Erro ${response.status}: ${data.error || "Erro desconhecido"}`);
       }
@@ -142,30 +155,32 @@ function AdminTestIA() {
     setLoading(true);
     setResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
       const response = await fetch("/api/public/buscar-comparaveis", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           imovel: {
             tipo: "Apartamento",
             localizacao: "Moema, São Paulo",
             area_total: 100,
-            quartos: 3
+            quartos: 3,
           },
-          comparaveis_atuais: []
-        })
+          comparaveis_atuais: [],
+        }),
       });
 
       const data = await response.json();
       setResult({
         status: response.status,
         ok: response.ok,
-        data
+        data,
       });
 
       if (response.ok) {
@@ -186,12 +201,19 @@ function AdminTestIA() {
       <div>
         <h1 className="text-3xl font-bold text-brand-blue mb-2">Auditoria Técnica de IA</h1>
         <p className="text-muted-foreground">
-          Antes de publicar, confirme que a rota /admin/test-ia está protegida e acessível somente a usuários administradores autenticados. Ela não pode mostrar a ANTHROPIC_API_KEY nem qualquer outro secret na interface, nas respostas ou nos logs. Depois, revise se os testes utilizam dados fictícios e não alteram dados reais.
+          Antes de publicar, confirme que a rota /admin/test-ia está protegida e acessível somente a
+          usuários administradores autenticados. Ela não pode mostrar a ANTHROPIC_API_KEY nem
+          qualquer outro secret na interface, nas respostas ou nos logs. Depois, revise se os testes
+          utilizam dados fictícios e não alteram dados reais.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Button onClick={() => testGerarAvaliacao(false)} disabled={loading} className="bg-brand-blue">
+        <Button
+          onClick={() => testGerarAvaliacao(false)}
+          disabled={loading}
+          className="bg-brand-blue"
+        >
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Testar Gerar Avaliação (Diagnóstico)
         </Button>

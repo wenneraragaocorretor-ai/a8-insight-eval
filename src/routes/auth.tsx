@@ -5,7 +5,14 @@ import { supabase } from "../integrations/supabase/client";
 import { lovable } from "../integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -20,8 +27,12 @@ const PLAN_LABEL: Record<PlanCode, string> = {
 };
 
 function readPendingPlan(searchPlan: string | undefined): PlanCode | null {
-  const candidate = (searchPlan ?? (typeof window !== "undefined" ? sessionStorage.getItem("a8_plano_pendente") : null)) as PlanCode | null;
-  if (candidate === "basico" || candidate === "profissional" || candidate === "expert") return candidate;
+  const candidate = (searchPlan ??
+    (typeof window !== "undefined"
+      ? sessionStorage.getItem("a8_plano_pendente")
+      : null)) as PlanCode | null;
+  if (candidate === "basico" || candidate === "profissional" || candidate === "expert")
+    return candidate;
   return null;
 }
 
@@ -51,7 +62,9 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
-  const [activeTab, setActiveTab] = useState<"login" | "signup">(readPendingPlan(search.plan) ? "signup" : "login");
+  const [activeTab, setActiveTab] = useState<"login" | "signup">(
+    readPendingPlan(search.plan) ? "signup" : "login",
+  );
   const triggered = useRef(false);
   const justSignedUp = useRef(false);
 
@@ -61,7 +74,9 @@ function AuthPage() {
     if (triggered.current) return;
     // Após CADASTRO: obrigatoriamente para /planos (escolhe plano antes de acessar).
     let justSignedUpFlag = false;
-    try { justSignedUpFlag = sessionStorage.getItem("a8_just_signed_up") === "true"; } catch {}
+    try {
+      justSignedUpFlag = sessionStorage.getItem("a8_just_signed_up") === "true";
+    } catch {}
     if (justSignedUp.current || justSignedUpFlag) {
       triggered.current = true;
       try {
@@ -79,7 +94,9 @@ function AuthPage() {
       try {
         const origin = window.location.origin;
         const { url } = await startCheckout({ data: { plano, origin } });
-        try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+        try {
+          sessionStorage.removeItem("a8_plano_pendente");
+        } catch {}
         if (!url) throw new Error("URL de checkout não recebida");
         window.location.href = url;
       } catch (e: any) {
@@ -100,7 +117,9 @@ function AuthPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) continuarFluxo();
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         // Tenta vincular afiliado (no-op se não houver ?ref= capturado).
         vincularAfiliadoSeNecessario(session.user.id).finally(() => continuarFluxo());
@@ -129,7 +148,9 @@ function AuthPage() {
     setIsLoading(true);
     try {
       justSignedUp.current = true;
-      try { sessionStorage.setItem("a8_just_signed_up", "true"); } catch {}
+      try {
+        sessionStorage.setItem("a8_just_signed_up", "true");
+      } catch {}
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -141,7 +162,9 @@ function AuthPage() {
       if (!data.user) throw new Error("Não foi possível criar a conta.");
 
       triggered.current = true;
-      try { sessionStorage.removeItem("a8_plano_pendente"); } catch {}
+      try {
+        sessionStorage.removeItem("a8_plano_pendente");
+      } catch {}
 
       // Aguarda a sessão estar persistida antes de redirecionar — senão o guard
       // do /_authenticated/planos bouncea para /auth (sem sessão no localStorage).
@@ -149,11 +172,16 @@ function AuthPage() {
       if (!session) {
         for (let i = 0; i < 30; i++) {
           const { data: s } = await supabase.auth.getSession();
-          if (s.session) { session = s.session; break; }
+          if (s.session) {
+            session = s.session;
+            break;
+          }
           await new Promise((r) => setTimeout(r, 150));
         }
       }
-      try { sessionStorage.removeItem("a8_just_signed_up"); } catch {}
+      try {
+        sessionStorage.removeItem("a8_just_signed_up");
+      } catch {}
 
       if (!session) {
         // Sem sessão (provavelmente confirmação por e-mail obrigatória).
@@ -166,28 +194,28 @@ function AuthPage() {
       // Vincula afiliado (se houver ?ref= capturado). Silencioso em caso de erro.
       await vincularAfiliadoSeNecessario(session.user.id);
 
-
-
       console.log("[signup] sessão pronta, redirecionando para /planos");
       toast.success("Cadastro realizado! Escolha seu plano para continuar.");
       // window.location garante reload do guard com sessão fresca.
       window.location.href = "/planos";
     } catch (error: any) {
       justSignedUp.current = false;
-      try { sessionStorage.removeItem("a8_just_signed_up"); } catch {}
+      try {
+        sessionStorage.removeItem("a8_just_signed_up");
+      } catch {}
       const msg: string = error?.message ?? "";
       const code: string = error?.code ?? error?.error_code ?? "";
       const jaExiste =
         code === "user_already_exists" ||
         /already registered|already exists|user already/i.test(msg);
       if (jaExiste) {
-        toast.error("Este e-mail já está cadastrado. Faça login para continuar.", { duration: 6000 });
+        toast.error("Este e-mail já está cadastrado. Faça login para continuar.", {
+          duration: 6000,
+        });
         setActiveTab("login");
       } else {
         toast.error(msg || "Erro ao criar conta");
       }
-
-
     } finally {
       setIsLoading(false);
     }
@@ -196,7 +224,10 @@ function AuthPage() {
   const handleGoogleLogin = async () => {
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: typeof window !== "undefined" ? window.location.origin + "/auth" + (pendingPlan ? `?plan=${pendingPlan}` : "") : "",
+        redirect_uri:
+          typeof window !== "undefined"
+            ? window.location.origin + "/auth" + (pendingPlan ? `?plan=${pendingPlan}` : "")
+            : "",
       });
       if (result.error) throw result.error;
     } catch (error: any) {
@@ -204,12 +235,13 @@ function AuthPage() {
     }
   };
 
-
   if (redirectingToCheckout) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 bg-background">
         <div className="text-center space-y-3">
-          <div className="text-brand-blue font-semibold text-lg">Redirecionando para o pagamento…</div>
+          <div className="text-brand-blue font-semibold text-lg">
+            Redirecionando para o pagamento…
+          </div>
           <p className="text-sm text-muted-foreground">Não feche esta janela.</p>
         </div>
       </div>
@@ -220,7 +252,10 @@ function AuthPage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="text-3xl font-bold text-brand-blue flex items-center justify-center gap-1 mb-2">
+          <Link
+            to="/"
+            className="text-3xl font-bold text-brand-blue flex items-center justify-center gap-1 mb-2"
+          >
             A8 <span className="text-brand-gold">Avalia</span>
           </Link>
           <p className="text-muted-foreground">Gerando riqueza, construindo patrimônio</p>
@@ -228,11 +263,16 @@ function AuthPage() {
 
         {pendingPlan && (
           <div className="mb-4 rounded-md border border-brand-gold/40 bg-brand-gold/10 text-[#0A1F44] text-sm px-4 py-3">
-            Plano selecionado: <strong>{PLAN_LABEL[pendingPlan]}</strong>. Faça login ou crie sua conta para continuar até o pagamento.
+            Plano selecionado: <strong>{PLAN_LABEL[pendingPlan]}</strong>. Faça login ou crie sua
+            conta para continuar até o pagamento.
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")} className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "login" | "signup")}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="signup">Cadastro</TabsTrigger>
@@ -248,23 +288,55 @@ function AuthPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">E-mail</Label>
-                    <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Senha</Label>
-                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
                   <Button type="submit" className="w-full bg-brand-blue" disabled={isLoading}>
-                    {isLoading ? "Entrando..." : pendingPlan ? "Entrar e continuar para pagamento" : "Entrar"}
+                    {isLoading
+                      ? "Entrando..."
+                      : pendingPlan
+                        ? "Entrar e continuar para pagamento"
+                        : "Entrar"}
                   </Button>
                   <div className="relative w-full">
-                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Ou continue com</span></div>
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Ou continue com
+                      </span>
+                    </div>
                   </div>
-                  <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin}>
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-4 h-4 mr-2" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleLogin}
+                  >
+                    <img
+                      src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                      alt="Google"
+                      className="w-4 h-4 mr-2"
+                    />
                     Google
                   </Button>
                 </CardFooter>
@@ -277,23 +349,47 @@ function AuthPage() {
               <CardHeader>
                 <CardTitle>Criar conta</CardTitle>
                 <CardDescription>
-                  {pendingPlan ? "Cadastro rápido — só e-mail e senha." : "Comece hoje mesmo a avaliar imóveis com IA."}
+                  {pendingPlan
+                    ? "Cadastro rápido — só e-mail e senha."
+                    : "Comece hoje mesmo a avaliar imóveis com IA."}
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleSignUp}>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">E-mail</Label>
-                    <Input id="signup-email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Senha</Label>
-                    <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                  <Button type="submit" className="w-full bg-brand-gold text-primary-foreground" disabled={isLoading}>
-                    {isLoading ? "Criando..." : pendingPlan ? "Continuar para pagamento" : "Criar Conta"}
+                  <Button
+                    type="submit"
+                    className="w-full bg-brand-gold text-primary-foreground"
+                    disabled={isLoading}
+                  >
+                    {isLoading
+                      ? "Criando..."
+                      : pendingPlan
+                        ? "Continuar para pagamento"
+                        : "Criar Conta"}
                   </Button>
                 </CardFooter>
               </form>

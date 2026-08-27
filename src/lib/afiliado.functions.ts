@@ -47,7 +47,9 @@ export const getAfiliadoDashboard = createServerFn({ method: "GET" })
     // Indicações — RLS filtra por afiliado_id
     const { data: indicacoes, error: indErr } = await context.supabase
       .from("indicacoes_afiliado")
-      .select("id, usuario_indicado_id, plano, valor_pago, valor_comissao, status, created_at, pago_em")
+      .select(
+        "id, usuario_indicado_id, plano, valor_pago, valor_comissao, status, created_at, pago_em",
+      )
       .eq("afiliado_id", afiliado.id)
       .order("created_at", { ascending: false });
     if (indErr) throw new Error(`Falha ao buscar indicações: ${indErr.message}`);

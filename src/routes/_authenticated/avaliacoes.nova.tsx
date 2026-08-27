@@ -1,19 +1,46 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { processarAvaliacaoIA, regerarAvaliacao, getAvaliacaoDetalhe, limiteEdicoesPorPlano } from "../../lib/avaliacoes.functions";
+import {
+  processarAvaliacaoIA,
+  regerarAvaliacao,
+  getAvaliacaoDetalhe,
+  limiteEdicoesPorPlano,
+} from "../../lib/avaliacoes.functions";
 import { getStatusAssinatura, criarCheckoutSession } from "../../lib/stripe.functions";
 import { supabase } from "../../integrations/supabase/client";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../../components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "../../components/ui/dialog";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { toast } from "sonner";
-import { ChevronRight, ChevronLeft, Sparkles, Plus, Trash2, Upload, X, ImagePlus, ClipboardList, Star, Pencil, AlertTriangle, Loader2, Copy, Download } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  Plus,
+  Trash2,
+  Upload,
+  X,
+  ImagePlus,
+  ClipboardList,
+  Star,
+  Pencil,
+  AlertTriangle,
+  Loader2,
+  Copy,
+  Download,
+} from "lucide-react";
 import { ADMIN_PLANO_OVERRIDE_KEY } from "./dashboard.index";
-
 
 const CARACTERISTICAS_OPCOES = [
   "Piscina",
@@ -97,15 +124,17 @@ const AMBIENTES_SERVICO_OPCOES = [
   "Banheiro de Serviço",
   "Despensa",
 ];
-const AMBIENTES_OUTROS_OPCOES = [
-  "Escritório / Home Office",
-  "Closet",
-  "Adega",
-  "Hall de Entrada",
-];
+const AMBIENTES_OUTROS_OPCOES = ["Escritório / Home Office", "Closet", "Adega", "Hall de Entrada"];
 
-const TIPOS_IMOVEL = ["Apartamento", "Casa", "Sobrado", "Terreno", "Sala Comercial", "Galpão"] as const;
-type TipoImovel = typeof TIPOS_IMOVEL[number];
+const TIPOS_IMOVEL = [
+  "Apartamento",
+  "Casa",
+  "Sobrado",
+  "Terreno",
+  "Sala Comercial",
+  "Galpão",
+] as const;
+type TipoImovel = (typeof TIPOS_IMOVEL)[number];
 
 type NativeSelectProps = {
   value: string;
@@ -262,7 +291,7 @@ const calcularValorM2 = (valor: number, area: number): number | null => {
 function NovaAvaliacao() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorDetail, setErrorDetail] = useState<{ mensagem: string, stack?: string } | null>(null);
+  const [errorDetail, setErrorDetail] = useState<{ mensagem: string; stack?: string } | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -321,7 +350,12 @@ function NovaAvaliacao() {
   const isExpert = plano === "expert";
   // Ficha Técnica Completa é vendida tanto no plano Profissional quanto no Expert.
   const temFichaCompleta = plano === "profissional" || plano === "pro" || plano === "expert";
-  const [statusUso, setStatusUso] = useState<{ avaliacoesMes: number; limiteMes: number | null; creditosAvulsos: number; assinaturaAtiva: boolean } | null>(null);
+  const [statusUso, setStatusUso] = useState<{
+    avaliacoesMes: number;
+    limiteMes: number | null;
+    creditosAvulsos: number;
+    assinaturaAtiva: boolean;
+  } | null>(null);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
   const [comprandoExtra, setComprandoExtra] = useState(false);
   const fetchStatusFn = useServerFn(getStatusAssinatura);
@@ -343,7 +377,6 @@ function NovaAvaliacao() {
     }
   };
 
-
   useEffect(() => {
     (async () => {
       const { data: userData } = await supabase.auth.getUser();
@@ -356,7 +389,8 @@ function NovaAvaliacao() {
       if (data?.plano) setPlanoReal(data.plano);
       await recarregarStatus();
       try {
-        const v = typeof window !== "undefined" ? localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY) : null;
+        const v =
+          typeof window !== "undefined" ? localStorage.getItem(ADMIN_PLANO_OVERRIDE_KEY) : null;
         setAdminOverride(v || "expert");
       } catch {
         setAdminOverride("expert");
@@ -371,8 +405,6 @@ function NovaAvaliacao() {
       navigate({ to: "/planos", replace: true });
     }
   }, [statusUso, navigate]);
-
-
 
   const expertAtingiuLimite =
     !isAdmin &&
@@ -449,13 +481,18 @@ function NovaAvaliacao() {
       const num = (v: any): number => {
         if (v == null) return 0;
         if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-        const n = Number(String(v).replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+        const n = Number(
+          String(v)
+            .replace(/[^\d.,-]/g, "")
+            .replace(/\.(?=\d{3}(\D|$))/g, "")
+            .replace(",", "."),
+        );
         return Number.isFinite(n) ? n : 0;
       };
       // Mapeamento de áreas
       const areaTotal = num(d.area_total);
       const areaPriv = num(d.area_privativa) || num(d.area_construida);
-      
+
       const novosDados: Partial<Comparavel> = {
         fonte: d.fonte ? String(d.fonte) : extrairDominio(url),
         localizacao: d.localizacao ? String(d.localizacao) : "",
@@ -549,7 +586,9 @@ function NovaAvaliacao() {
           posicao_solar: av.posicao_solar ?? "",
           topografia: av.topografia ?? "",
           zoneamento: av.zoneamento ?? "",
-          infraestrutura_lazer: Array.isArray(av.infraestrutura_lazer) ? av.infraestrutura_lazer : [],
+          infraestrutura_lazer: Array.isArray(av.infraestrutura_lazer)
+            ? av.infraestrutura_lazer
+            : [],
           vagas_cobertas: Number(av.vagas_cobertas) || 0,
           vagas_descobertas: Number(av.vagas_descobertas) || 0,
           total_andares: Number(av.total_andares) || 0,
@@ -639,7 +678,13 @@ function NovaAvaliacao() {
         continue;
       }
       const previewUrl = URL.createObjectURL(file);
-      const tempItem: FotoItem = { path: "", previewUrl, uploading: true, legenda: "", principal: false };
+      const tempItem: FotoItem = {
+        path: "",
+        previewUrl,
+        uploading: true,
+        legenda: "",
+        principal: false,
+      };
       setFotos((prev) => [...prev, tempItem]);
       try {
         const ext = file.name.split(".").pop() || "jpg";
@@ -676,7 +721,6 @@ function NovaAvaliacao() {
   };
 
   const campos = camposDoTipo(imovel.tipo);
-
 
   const setImovelField = <K extends keyof typeof imovel>(key: K, value: (typeof imovel)[K]) => {
     safe(() => setImovel((prev) => ({ ...prev, [key]: value })));
@@ -752,8 +796,8 @@ function NovaAvaliacao() {
     safe(() => {
       const original = comparaveis[index];
       if (!original) return;
-      const novoId = Math.max(...comparaveis.map(c => c.id)) + 1;
-      setComparaveis(prev => [...prev, { ...original, id: novoId }]);
+      const novoId = Math.max(...comparaveis.map((c) => c.id)) + 1;
+      setComparaveis((prev) => [...prev, { ...original, id: novoId }]);
       toast.success("Comparável duplicado");
     });
   };
@@ -764,14 +808,15 @@ function NovaAvaliacao() {
     const errors: Record<string, string> = {};
     let firstErrorId: string | null = null;
 
-    const validos = comparaveis.filter(c => {
+    const validos = comparaveis.filter((c) => {
       // Um comparável é considerado "iniciado" se o usuário alterou dados essenciais.
       // Ignoramos valores default (Normal, Bom, Meio de quadra, 0)
-      const iniciado = (c.localizacao && c.localizacao.trim() !== "") || 
-                       (c.area !== 0) || 
-                       (c.valor !== 0) || 
-                       (c.fonte && c.fonte.trim() !== "");
-      
+      const iniciado =
+        (c.localizacao && c.localizacao.trim() !== "") ||
+        c.area !== 0 ||
+        c.valor !== 0 ||
+        (c.fonte && c.fonte.trim() !== "");
+
       if (!iniciado) return false;
 
       // Validação rigorosa para cards iniciados
@@ -803,9 +848,10 @@ function NovaAvaliacao() {
     if (Object.keys(errors).length > 0) {
       toast.error("Revise os comparáveis destacados para continuar");
       if (firstErrorId) {
-        const el = document.getElementsByName(firstErrorId)[0] || document.getElementById(firstErrorId);
+        const el =
+          document.getElementsByName(firstErrorId)[0] || document.getElementById(firstErrorId);
         el?.focus();
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       return false;
     }
@@ -818,8 +864,6 @@ function NovaAvaliacao() {
     return true;
   };
 
-  
-
   const handleProcessar = async () => {
     if (processandoRef.current) return;
     setIsLoading(true);
@@ -828,16 +872,15 @@ function NovaAvaliacao() {
 
     // O modo de diagnóstico (USE_LOCAL_MOCK) agora é controlado exclusivamente pelo localStorage.
     // Em produção/uso normal, savedMock será null e USE_LOCAL_MOCK será false.
-    const savedMock = typeof window !== 'undefined' ? localStorage.getItem('USE_LOCAL_MOCK') : null;
-    const USE_LOCAL_MOCK = savedMock === 'true';
-
+    const savedMock = typeof window !== "undefined" ? localStorage.getItem("USE_LOCAL_MOCK") : null;
+    const USE_LOCAL_MOCK = savedMock === "true";
 
     let timeoutId: any;
 
     try {
       if (USE_LOCAL_MOCK === true) {
         console.log("[LAUDO 01] MODO DIAGNÓSTICO: Iniciado...");
-        
+
         // Deterministico: Definimos o timeout e limpamos no unmount se necessário
         // No entanto, como handleProcessar é uma função asíncrona fechada,
         // o timeoutId serve apenas para interromper o estado se algo travar.
@@ -846,14 +889,14 @@ function NovaAvaliacao() {
             console.error("[LAUDO ERR] Timeout de segurança atingido no Mock");
             setIsLoading(false);
             processandoRef.current = false;
-            setErrorDetail({ mensagem: "O processamento local excedeu o tempo limite de segurança (15s)." });
+            setErrorDetail({
+              mensagem: "O processamento local excedeu o tempo limite de segurança (15s).",
+            });
           }
         }, 15000);
 
-
         console.log("[LAUDO 02] Gerando objeto de diagnóstico...");
-        await new Promise(resolve => setTimeout(resolve, 800));
-
+        await new Promise((resolve) => setTimeout(resolve, 800));
 
         const mockRes = {
           id: "mock-" + crypto.randomUUID(),
@@ -864,8 +907,13 @@ function NovaAvaliacao() {
           area_base_calculo: imovel.area_total || 100,
           area_base_tipo: imovel.tipo,
           area_base_descricao: `Cálculo simulado base em ${imovel.tipo}`,
-          resumo_texto: "Este laudo foi gerado em modo de demonstração técnica. As análises e valores apresentados são simulações destinadas à validação do fluxo do sistema.",
-          pontos_positivos: ["Localização estratégica", "Planta bem dimensionada", "Potencial de valorização"],
+          resumo_texto:
+            "Este laudo foi gerado em modo de demonstração técnica. As análises e valores apresentados são simulações destinadas à validação do fluxo do sistema.",
+          pontos_positivos: [
+            "Localização estratégica",
+            "Planta bem dimensionada",
+            "Potencial de valorização",
+          ],
           pontos_atencao: ["Imóvel necessita de atualização", "Concorrência elevada na região"],
           potencial_valorizacao: "Médio a longo prazo.",
           tendencias_mercado: "Estabilidade com viés de alta.",
@@ -878,13 +926,13 @@ function NovaAvaliacao() {
             cidade: "Cidade",
             potencial_valorizacao: "Estável",
             tendencias_mercado: "Normal",
-            descricao: "Região consolidada com infraestrutura urbana."
+            descricao: "Região consolidada com infraestrutura urbana.",
           },
           perfil_publico: {
             profissao: "Variada",
             renda_media: "Média",
             preferencias: "Acesso a transporte",
-            interesses: "Qualidade de vida"
+            interesses: "Qualidade de vida",
           },
           dicas_precificacao: ["Manter valor competitivo", "Negociação flexível"],
           estrategias_venda: ["Divulgação em redes sociais", "Open house"],
@@ -893,44 +941,46 @@ function NovaAvaliacao() {
           analise_fotos_individual: fotos.map(() => "Foto analisada com sucesso."),
           equacao_regressao: "y = a + bx",
           r2: 0.85,
-          r2_interpretacao: "Boa"
+          r2_interpretacao: "Boa",
         };
 
         console.log("[LAUDO 09] Gravando no sessionStorage...");
-        
+
         const payload = JSON.stringify({
-          avaliacao: { 
-            ...imovel, 
-            id: mockRes.id, 
-            user_id: "mock-user", 
-            created_at: new Date().toISOString(), 
-            fotos: fotos.map(f => f.path) 
+          avaliacao: {
+            ...imovel,
+            id: mockRes.id,
+            user_id: "mock-user",
+            created_at: new Date().toISOString(),
+            fotos: fotos.map((f) => f.path),
           },
-          resultado: { 
-            ...mockRes, 
-            avaliacao_id: mockRes.id, 
-            relatorio_json: mockRes 
+          resultado: {
+            ...mockRes,
+            avaliacao_id: mockRes.id,
+            relatorio_json: mockRes,
           },
-          comparaveis: comparaveis.map(c => ({ ...c, valor_anunciado: c.valor })),
-          profile: { 
-            nome: "Corretor de Testes", 
+          comparaveis: comparaveis.map((c) => ({ ...c, valor_anunciado: c.valor })),
+          profile: {
+            nome: "Corretor de Testes",
             creci: "12345-F",
             email: "teste@a8avalia.com.br",
-            plano: plano 
-          }
+            plano: plano,
+          },
         });
 
         sessionStorage.setItem(`mock_laudo_${mockRes.id}`, payload);
-        
+
         // Verificação imediata pós-gravação
         const check = sessionStorage.getItem(`mock_laudo_${mockRes.id}`);
         if (!check) {
-          throw new Error("Falha crítica ao persistir dados temporários no navegador (sessionStorage).");
+          throw new Error(
+            "Falha crítica ao persistir dados temporários no navegador (sessionStorage).",
+          );
         }
 
         console.log("[LAUDO 10] Navegando para:", `/avaliacoes/${mockRes.id}`);
         clearTimeout(timeoutId);
-        
+
         // No modo mock, encerramos o loading ANTES de navegar para garantir que a UI não trave
         // se a navegação for lenta ou interceptada.
         setIsLoading(false);
@@ -938,25 +988,23 @@ function NovaAvaliacao() {
         console.log("[LAUDO 10.1] Finalizando processamento e navegando...");
         setIsLoading(false);
         processandoRef.current = false;
-        
-        // Sequência determinística sem atrasos arbitrários se possível, 
-        // mas o micro-delay garante que o loop de eventos processe o estado da UI (isLoading=false) 
+
+        // Sequência determinística sem atrasos arbitrários se possível,
+        // mas o micro-delay garante que o loop de eventos processe o estado da UI (isLoading=false)
         // antes de mudar de rota, evitando percepção de travamento.
         setTimeout(() => {
           navigate({ to: "/avaliacoes/$id", params: { id: mockRes.id } });
         }, 50);
 
         return;
-
-
       }
 
       const idempotencyKey = crypto.randomUUID();
       const correlationId = crypto.randomUUID();
-      
+
       console.log("[LAUDO 01] Iniciando processamento real...");
-      
-      const res = isEdit 
+
+      const res = isEdit
         ? await regerarIA({ data: { id: editId!, imovel, comparaveis } })
         : await processarIA({ data: { imovel, comparaveis, idempotencyKey, correlationId } });
 
@@ -965,10 +1013,10 @@ function NovaAvaliacao() {
       navigate({ to: "/avaliacoes/$id", params: { id: res.id } });
     } catch (e: any) {
       console.error("[LAUDO ERR] Falha no processamento:", e);
-      
+
       let msg = e.message || "Erro desconhecido";
       let stack = e.stack;
-      
+
       try {
         if (e.message && e.message.includes("{")) {
           const detailed = JSON.parse(e.message.substring(e.message.indexOf("{")));
@@ -980,7 +1028,10 @@ function NovaAvaliacao() {
       } catch {}
 
       // REGRA 7: Tratamento de EMERGENCY_SHUTDOWN (AI_GENERATION_ENABLED=false)
-      if (msg.includes("EMERGENCY_SHUTDOWN") || msg.includes("Geração temporariamente indisponível")) {
+      if (
+        msg.includes("EMERGENCY_SHUTDOWN") ||
+        msg.includes("Geração temporariamente indisponível")
+      ) {
         msg = "Geração real desativada para manutenção.";
       }
 
@@ -991,8 +1042,6 @@ function NovaAvaliacao() {
       processandoRef.current = false;
     }
   };
-
-
 
   return (
     <div className="max-w-4xl mx-auto py-8">
@@ -1005,15 +1054,17 @@ function NovaAvaliacao() {
           <p className="text-red-700 font-medium mb-3">{errorDetail.mensagem}</p>
           {errorDetail.stack && (
             <details className="mt-2">
-              <summary className="text-xs text-red-600 cursor-pointer hover:underline">Ver stack trace</summary>
+              <summary className="text-xs text-red-600 cursor-pointer hover:underline">
+                Ver stack trace
+              </summary>
               <pre className="mt-2 p-3 bg-white/50 text-[10px] font-mono text-red-500 overflow-auto max-h-40 rounded border border-red-100">
                 {errorDetail.stack}
               </pre>
             </details>
           )}
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="mt-4 border-red-200 text-red-700 hover:bg-red-100"
             onClick={() => setErrorDetail(null)}
           >
@@ -1026,7 +1077,7 @@ function NovaAvaliacao() {
         <div>
           <h1 className="text-3xl font-bold text-brand-blue">
             {isEdit ? "Editar Laudo" : "Nova Avaliação"}
-            {typeof window !== 'undefined' && localStorage.getItem('DEBUG_MODE') === 'true' && (
+            {typeof window !== "undefined" && localStorage.getItem("DEBUG_MODE") === "true" && (
               <span className="ml-3 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full uppercase tracking-tighter">
                 DIAGNÓSTICO
               </span>
@@ -1034,28 +1085,30 @@ function NovaAvaliacao() {
           </h1>
           <p className="text-muted-foreground">
             {isEdit
-              ? `Atualize os dados e regenere o laudo com a IA.${
-                  (() => {
-                    const lim = limiteEdicoesPorPlano(plano);
-                    if (lim === null) return " Edições ilimitadas (Expert).";
-                    const restantes = Math.max(0, lim - edicoesUsadas);
-                    return ` ${restantes} edição(ões) restante(s) neste laudo.`;
-                  })()
-                }`
+              ? `Atualize os dados e regenere o laudo com a IA.${(() => {
+                  const lim = limiteEdicoesPorPlano(plano);
+                  if (lim === null) return " Edições ilimitadas (Expert).";
+                  const restantes = Math.max(0, lim - edicoesUsadas);
+                  return ` ${restantes} edição(ões) restante(s) neste laudo.`;
+                })()}`
               : "Preencha os dados para gerar o estudo com IA."}
           </p>
-
         </div>
         <div className="flex gap-2">
           {[1, 2, 3].map((s) => (
-            <div key={s} className={`w-10 h-2 rounded-full ${step >= s ? "bg-brand-gold" : "bg-muted"}`} />
+            <div
+              key={s}
+              className={`w-10 h-2 rounded-full ${step >= s ? "bg-brand-gold" : "bg-muted"}`}
+            />
           ))}
         </div>
       </div>
 
       {step === 1 && (
         <Card className="premium-card">
-          <CardHeader><CardTitle>Dados do Imóvel</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Dados do Imóvel</CardTitle>
+          </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Tipo do Imóvel</Label>
@@ -1077,7 +1130,8 @@ function NovaAvaliacao() {
                 onChange={(e) => setImovelField("endereco_completo", e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Usado para gerar a página de Localização no laudo Expert. Quanto mais completo, melhor.
+                Usado para gerar a página de Localização no laudo Expert. Quanto mais completo,
+                melhor.
               </p>
             </div>
             <div className="space-y-2">
@@ -1111,41 +1165,53 @@ function NovaAvaliacao() {
                 {["Casa", "Apartamento", "Sobrado", "Galpão"].includes(imovel.tipo) &&
                   (!imovel.area_privativa || imovel.area_privativa <= 0) && (
                     <p className="text-xs rounded-md border border-yellow-400 bg-yellow-50 text-yellow-800 px-3 py-2">
-                      Informe a Área Privativa para um cálculo mais preciso — será usada como base do valor/m².
+                      Informe a Área Privativa para um cálculo mais preciso — será usada como base
+                      do valor/m².
                     </p>
                   )}
               </div>
             )}
-
 
             {(campos.quartos || campos.suites || campos.banheiros || campos.vagas) && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:col-span-2">
                 {campos.quartos && (
                   <div className="space-y-2">
                     <Label>Quartos</Label>
-                    <Input type="number" value={imovel.quartos}
-                      onChange={(e) => setImovelField("quartos", toNum(e.target.value))} />
+                    <Input
+                      type="number"
+                      value={imovel.quartos}
+                      onChange={(e) => setImovelField("quartos", toNum(e.target.value))}
+                    />
                   </div>
                 )}
                 {campos.suites && (
                   <div className="space-y-2">
                     <Label>Suítes</Label>
-                    <Input type="number" value={imovel.suites}
-                      onChange={(e) => setImovelField("suites", toNum(e.target.value))} />
+                    <Input
+                      type="number"
+                      value={imovel.suites}
+                      onChange={(e) => setImovelField("suites", toNum(e.target.value))}
+                    />
                   </div>
                 )}
                 {campos.banheiros && (
                   <div className="space-y-2">
                     <Label>Banheiros</Label>
-                    <Input type="number" value={imovel.banheiros}
-                      onChange={(e) => setImovelField("banheiros", toNum(e.target.value))} />
+                    <Input
+                      type="number"
+                      value={imovel.banheiros}
+                      onChange={(e) => setImovelField("banheiros", toNum(e.target.value))}
+                    />
                   </div>
                 )}
                 {campos.vagas && (
                   <div className="space-y-2">
                     <Label>Vagas</Label>
-                    <Input type="number" value={imovel.vagas}
-                      onChange={(e) => setImovelField("vagas", toNum(e.target.value))} />
+                    <Input
+                      type="number"
+                      value={imovel.vagas}
+                      onChange={(e) => setImovelField("vagas", toNum(e.target.value))}
+                    />
                   </div>
                 )}
               </div>
@@ -1165,18 +1231,30 @@ function NovaAvaliacao() {
 
             <div className="space-y-2">
               <Label>Posição do terreno/imóvel</Label>
-              <NativeSelect value={imovel.posicao} options={POSICOES_IMOVEL} onChange={(v) => setImovelField("posicao", v)} />
+              <NativeSelect
+                value={imovel.posicao}
+                options={POSICOES_IMOVEL}
+                onChange={(v) => setImovelField("posicao", v)}
+              />
             </div>
 
             <div className="space-y-2">
               <Label>Padrão Construtivo</Label>
-              <NativeSelect value={imovel.padrao} options={PADROES} onChange={(v) => setImovelField("padrao", v)} />
+              <NativeSelect
+                value={imovel.padrao}
+                options={PADROES}
+                onChange={(v) => setImovelField("padrao", v)}
+              />
             </div>
 
             {campos.conservacao && (
               <div className="space-y-2">
                 <Label>Estado de Conservação</Label>
-                <NativeSelect value={imovel.conservacao} options={CONSERVACOES} onChange={(v) => setImovelField("conservacao", v)} />
+                <NativeSelect
+                  value={imovel.conservacao}
+                  options={CONSERVACOES}
+                  onChange={(v) => setImovelField("conservacao", v)}
+                />
               </div>
             )}
 
@@ -1277,7 +1355,8 @@ function NovaAvaliacao() {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Campos avançados disponíveis nos Planos Profissional e Expert — refinam a análise técnica do imóvel.
+                  Campos avançados disponíveis nos Planos Profissional e Expert — refinam a análise
+                  técnica do imóvel.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1435,7 +1514,6 @@ function NovaAvaliacao() {
               </div>
             )}
 
-
             <div className="space-y-2 md:col-span-2">
               <Label>Observações</Label>
               <Input
@@ -1450,8 +1528,10 @@ function NovaAvaliacao() {
                 <div>
                   <Label className="text-base">Fotos do Imóvel</Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Até {maxFotos} fotos · JPG, PNG ou WEBP · máx. 5MB cada · usadas pela IA na análise visual e no PDF.
-                    {plano === "expert" && " Marque a foto principal com a estrela — ela vai para a capa do PDF."}
+                    Até {maxFotos} fotos · JPG, PNG ou WEBP · máx. 5MB cada · usadas pela IA na
+                    análise visual e no PDF.
+                    {plano === "expert" &&
+                      " Marque a foto principal com a estrela — ela vai para a capa do PDF."}
                   </p>
                 </div>
                 <Button
@@ -1487,7 +1567,11 @@ function NovaAvaliacao() {
                   {fotos.map((f, i) => (
                     <div key={f.previewUrl} className="space-y-2">
                       <div className="relative group rounded-lg overflow-hidden border border-border aspect-[4/3] bg-muted">
-                        <img src={f.previewUrl} alt={`Foto ${i + 1} do imóvel`} className="w-full h-full object-cover" />
+                        <img
+                          src={f.previewUrl}
+                          alt={`Foto ${i + 1} do imóvel`}
+                          className="w-full h-full object-cover"
+                        />
                         {f.uploading && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs">
                             Enviando…
@@ -1498,12 +1582,17 @@ function NovaAvaliacao() {
                           onClick={() =>
                             safe(() =>
                               setFotos((prev) =>
-                                prev.map((p, idx) => ({ ...p, principal: idx === i ? !p.principal : false })),
+                                prev.map((p, idx) => ({
+                                  ...p,
+                                  principal: idx === i ? !p.principal : false,
+                                })),
                               ),
                             )
                           }
                           className={`absolute top-2 left-2 rounded-full p-1.5 ${
-                            f.principal ? "bg-brand-gold text-white" : "bg-black/70 text-white hover:bg-brand-gold"
+                            f.principal
+                              ? "bg-brand-gold text-white"
+                              : "bg-black/70 text-white hover:bg-brand-gold"
                           }`}
                           aria-label={f.principal ? "Foto principal" : "Marcar como foto principal"}
                           title={f.principal ? "Foto principal" : "Marcar como foto principal"}
@@ -1527,7 +1616,9 @@ function NovaAvaliacao() {
                           onChange={(e) =>
                             safe(() =>
                               setFotos((prev) =>
-                                prev.map((p, idx) => (idx === i ? { ...p, legenda: e.target.value } : p)),
+                                prev.map((p, idx) =>
+                                  idx === i ? { ...p, legenda: e.target.value } : p,
+                                ),
                               ),
                             )
                           }
@@ -1559,9 +1650,7 @@ function NovaAvaliacao() {
                     variant="outline"
                     size="sm"
                     type="button"
-                    onClick={() =>
-                      setImportUrlAberto((s) => ({ ...s, [c.id]: !s[c.id] }))
-                    }
+                    onClick={() => setImportUrlAberto((s) => ({ ...s, [c.id]: !s[c.id] }))}
                     className="gap-1"
                   >
                     📎 Importar por URL
@@ -1592,9 +1681,7 @@ function NovaAvaliacao() {
                     type="url"
                     placeholder="Cole aqui o link do anúncio (Zap, OLX, Viva Real...)"
                     value={importUrlValor[c.id] ?? ""}
-                    onChange={(e) =>
-                      setImportUrlValor((s) => ({ ...s, [c.id]: e.target.value }))
-                    }
+                    onChange={(e) => setImportUrlValor((s) => ({ ...s, [c.id]: e.target.value }))}
                   />
                   <Button
                     type="button"
@@ -1616,24 +1703,32 @@ function NovaAvaliacao() {
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label className={validationErrors[`comp-${c.id}-localizacao`] ? "text-destructive" : ""}>
+                  <Label
+                    className={
+                      validationErrors[`comp-${c.id}-localizacao`] ? "text-destructive" : ""
+                    }
+                  >
                     Localização / Referência
                   </Label>
-                  <Input 
+                  <Input
                     id={`comp-${c.id}-localizacao`}
                     name={`comp-${c.id}-localizacao`}
-                    value={c.localizacao} 
+                    value={c.localizacao}
                     onChange={(e) => {
                       updateComp(index, { localizacao: e.target.value });
                       if (validationErrors[`comp-${c.id}-localizacao`]) {
-                        setValidationErrors(prev => {
+                        setValidationErrors((prev) => {
                           const next = { ...prev };
                           delete next[`comp-${c.id}-localizacao`];
                           return next;
                         });
                       }
-                    }} 
-                    className={validationErrors[`comp-${c.id}-localizacao`] ? "border-destructive focus-visible:ring-destructive" : ""}
+                    }}
+                    className={
+                      validationErrors[`comp-${c.id}-localizacao`]
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : ""
+                    }
                   />
                   {validationErrors[`comp-${c.id}-localizacao`] && (
                     <p className="text-xs font-medium text-destructive">
@@ -1642,79 +1737,107 @@ function NovaAvaliacao() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className={validationErrors[`comp-${c.id}-area`] ? "text-destructive" : ""}>
+                  <Label
+                    className={validationErrors[`comp-${c.id}-area`] ? "text-destructive" : ""}
+                  >
                     Área Total (m²)
                   </Label>
-                  <Input 
+                  <Input
                     id={`comp-${c.id}-area`}
                     name={`comp-${c.id}-area`}
-                    type="number" 
+                    type="number"
                     value={c.area || ""}
                     onChange={(e) => {
                       updateComp(index, { area: toNum(e.target.value) });
                       if (validationErrors[`comp-${c.id}-area`]) {
-                        setValidationErrors(prev => {
+                        setValidationErrors((prev) => {
                           const next = { ...prev };
                           delete next[`comp-${c.id}-area`];
                           return next;
                         });
                       }
                     }}
-                    className={validationErrors[`comp-${c.id}-area`] ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={
+                      validationErrors[`comp-${c.id}-area`]
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : ""
+                    }
                   />
                   {validationErrors[`comp-${c.id}-area`] ? (
                     <p className="text-xs font-medium text-destructive">
                       Comparável #{index + 1}: {validationErrors[`comp-${c.id}-area`]}
                     </p>
-                  ) : (Number(c.valor) > 0 && (!c.area || Number(c.area) <= 0)) && (
-                    <p className="text-xs font-medium text-amber-600">
-                      Informe a área para calcular o valor/m²
-                    </p>
+                  ) : (
+                    Number(c.valor) > 0 &&
+                    (!c.area || Number(c.area) <= 0) && (
+                      <p className="text-xs font-medium text-amber-600">
+                        Informe a área para calcular o valor/m²
+                      </p>
+                    )
                   )}
                 </div>
                 {campos.areaConstruida && (
                   <div className="space-y-2">
                     <Label>Área Construída (m²)</Label>
-                    <Input type="number" value={c.area_construida || ""} placeholder="Opcional"
-                      onChange={(e) => updateComp(index, { area_construida: toNum(e.target.value) })} />
+                    <Input
+                      type="number"
+                      value={c.area_construida || ""}
+                      placeholder="Opcional"
+                      onChange={(e) =>
+                        updateComp(index, { area_construida: toNum(e.target.value) })
+                      }
+                    />
                   </div>
                 )}
                 {campos.areaPrivativa && (
                   <div className="space-y-2">
                     <Label>Área Privativa (m²)</Label>
-                    <Input type="number" value={c.area_privativa || ""} placeholder="Opcional"
-                      onChange={(e) => updateComp(index, { area_privativa: toNum(e.target.value) })} />
+                    <Input
+                      type="number"
+                      value={c.area_privativa || ""}
+                      placeholder="Opcional"
+                      onChange={(e) => updateComp(index, { area_privativa: toNum(e.target.value) })}
+                    />
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label className={validationErrors[`comp-${c.id}-valor`] ? "text-destructive" : ""}>
+                  <Label
+                    className={validationErrors[`comp-${c.id}-valor`] ? "text-destructive" : ""}
+                  >
                     Valor Anunciado (R$)
                   </Label>
-                  <Input 
+                  <Input
                     id={`comp-${c.id}-valor`}
                     name={`comp-${c.id}-valor`}
-                    type="number" 
+                    type="number"
                     value={c.valor || ""}
                     onChange={(e) => {
                       updateComp(index, { valor: toNum(e.target.value) });
                       if (validationErrors[`comp-${c.id}-valor`]) {
-                        setValidationErrors(prev => {
+                        setValidationErrors((prev) => {
                           const next = { ...prev };
                           delete next[`comp-${c.id}-valor`];
                           return next;
                         });
                       }
                     }}
-                    className={validationErrors[`comp-${c.id}-valor`] ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={
+                      validationErrors[`comp-${c.id}-valor`]
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : ""
+                    }
                   />
                   {validationErrors[`comp-${c.id}-valor`] ? (
                     <p className="text-xs font-medium text-destructive">
                       Comparável #{index + 1}: {validationErrors[`comp-${c.id}-valor`]}
                     </p>
-                  ) : Number(c.valor) > 0 && Number(c.valor) < 10000 && (
-                    <p className="text-xs font-medium text-destructive">
-                      Valor muito baixo — verifique se esqueceu zeros
-                    </p>
+                  ) : (
+                    Number(c.valor) > 0 &&
+                    Number(c.valor) < 10000 && (
+                      <p className="text-xs font-medium text-destructive">
+                        Valor muito baixo — verifique se esqueceu zeros
+                      </p>
+                    )
                   )}
                   {(() => {
                     const vpm2 = calcularValorM2(Number(c.valor), Number(c.area));
@@ -1732,61 +1855,97 @@ function NovaAvaliacao() {
                 {campos.quartos && (
                   <div className="space-y-2">
                     <Label>Quartos</Label>
-                    <Input type="number" value={c.quartos}
-                      onChange={(e) => updateComp(index, { quartos: toNum(e.target.value) })} />
+                    <Input
+                      type="number"
+                      value={c.quartos}
+                      onChange={(e) => updateComp(index, { quartos: toNum(e.target.value) })}
+                    />
                   </div>
                 )}
                 {campos.suites && (
                   <div className="space-y-2">
                     <Label>Suítes</Label>
-                    <Input type="number" value={c.suites}
-                      onChange={(e) => updateComp(index, { suites: toNum(e.target.value) })} />
+                    <Input
+                      type="number"
+                      value={c.suites}
+                      onChange={(e) => updateComp(index, { suites: toNum(e.target.value) })}
+                    />
                   </div>
                 )}
                 {campos.banheiros && (
                   <div className="space-y-2">
                     <Label>Banheiros</Label>
-                    <Input type="number" value={c.banheiros}
-                      onChange={(e) => updateComp(index, { banheiros: toNum(e.target.value) })} />
+                    <Input
+                      type="number"
+                      value={c.banheiros}
+                      onChange={(e) => updateComp(index, { banheiros: toNum(e.target.value) })}
+                    />
                   </div>
                 )}
                 {campos.vagas && (
                   <div className="space-y-2">
                     <Label>Vagas</Label>
-                    <Input type="number" value={c.vagas}
-                      onChange={(e) => updateComp(index, { vagas: toNum(e.target.value) })} />
+                    <Input
+                      type="number"
+                      value={c.vagas}
+                      onChange={(e) => updateComp(index, { vagas: toNum(e.target.value) })}
+                    />
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Padrão Construtivo</Label>
-                  <NativeSelect value={c.padrao} options={PADROES} onChange={(v) => updateComp(index, { padrao: v })} />
+                  <NativeSelect
+                    value={c.padrao}
+                    options={PADROES}
+                    onChange={(v) => updateComp(index, { padrao: v })}
+                  />
                 </div>
                 {campos.conservacao && (
                   <div className="space-y-2">
                     <Label>Estado de Conservação</Label>
-                    <NativeSelect value={c.conservacao} options={CONSERVACOES} onChange={(v) => updateComp(index, { conservacao: v })} />
+                    <NativeSelect
+                      value={c.conservacao}
+                      options={CONSERVACOES}
+                      onChange={(v) => updateComp(index, { conservacao: v })}
+                    />
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Posição</Label>
-                  <NativeSelect value={c.posicao} options={POSICOES_COMPARAVEL} onChange={(v) => updateComp(index, { posicao: v })} />
+                  <NativeSelect
+                    value={c.posicao}
+                    options={POSICOES_COMPARAVEL}
+                    onChange={(v) => updateComp(index, { posicao: v })}
+                  />
                 </div>
                 {campos.andar && (
                   <div className="space-y-2">
                     <Label>Andar</Label>
-                    <Input type="number" value={c.andar || ""} placeholder="Opcional"
-                      onChange={(e) => updateComp(index, { andar: toNum(e.target.value) })} />
+                    <Input
+                      type="number"
+                      value={c.andar || ""}
+                      placeholder="Opcional"
+                      onChange={(e) => updateComp(index, { andar: toNum(e.target.value) })}
+                    />
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Idade aprox. (anos)</Label>
-                  <Input type="number" value={c.idade || ""} placeholder="Opcional"
-                    onChange={(e) => updateComp(index, { idade: toNum(e.target.value) })} />
+                  <Input
+                    type="number"
+                    value={c.idade || ""}
+                    placeholder="Opcional"
+                    onChange={(e) => updateComp(index, { idade: toNum(e.target.value) })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Condomínio mensal (R$)</Label>
-                  <Input type="number" value={c.condominio || ""} placeholder="Opcional"
-                    onChange={(e) => updateComp(index, { condominio: toNum(e.target.value) })} />
+                  <Input
+                    type="number"
+                    value={c.condominio || ""}
+                    placeholder="Opcional"
+                    onChange={(e) => updateComp(index, { condominio: toNum(e.target.value) })}
+                  />
                 </div>
                 {campos.caracteristicas && (
                   <div className="space-y-3 md:col-span-3">
@@ -1817,7 +1976,7 @@ function NovaAvaliacao() {
               <Button variant="ghost" onClick={() => setStep(1)} className="gap-2">
                 <ChevronLeft size={18} /> Voltar
               </Button>
-               <Button
+              <Button
                 onClick={() => {
                   if (validarStep2()) {
                     setStep(3);
@@ -1840,9 +1999,11 @@ function NovaAvaliacao() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-brand-blue">Tudo pronto!</h2>
-              <p className="text-muted-foreground">Nossa IA irá analisar os dados e gerar seu relatório.</p>
+              <p className="text-muted-foreground">
+                Nossa IA irá analisar os dados e gerar seu relatório.
+              </p>
             </div>
-            
+
             {statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-left">
                 <p className="text-red-800 text-sm font-medium flex items-center gap-2">
@@ -1852,8 +2013,8 @@ function NovaAvaliacao() {
                 <p className="text-red-600 text-xs mt-1">
                   Você precisa adquirir um laudo ou assinar um plano para gerar a avaliação.
                 </p>
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   className="p-0 h-auto text-xs text-brand-blue underline mt-2"
                   onClick={() => navigate({ to: "/planos" })}
                 >
@@ -1864,9 +2025,22 @@ function NovaAvaliacao() {
 
             <div className="flex flex-col gap-4 max-w-sm mx-auto w-full">
               <Button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleProcessar(); }}
-                className={isEdit ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]" : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold gap-2"}
-                disabled={isLoading || (statusUso?.assinaturaAtiva === false && statusUso?.creditosAvulsos <= 0 && !isEdit)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleProcessar();
+                }}
+                className={
+                  isEdit
+                    ? "bg-[#0F2D5C] text-white h-12 text-lg font-bold gap-2 hover:bg-[#0A1F44]"
+                    : "bg-brand-gold text-primary-foreground h-12 text-lg font-bold gap-2"
+                }
+                disabled={
+                  isLoading ||
+                  (statusUso?.assinaturaAtiva === false &&
+                    statusUso?.creditosAvulsos <= 0 &&
+                    !isEdit)
+                }
               >
                 {isLoading ? (
                   <div className="flex flex-col items-center gap-1">
@@ -1882,11 +2056,11 @@ function NovaAvaliacao() {
                   </>
                 )}
               </Button>
-              
+
               {isLoading && (
                 <div className="flex flex-col gap-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setIsLoading(false);
                       processandoRef.current = false;
@@ -1902,7 +2076,9 @@ function NovaAvaliacao() {
               )}
 
               {!isLoading && (
-                <Button variant="ghost" onClick={() => setStep(2)}>Revisar dados</Button>
+                <Button variant="ghost" onClick={() => setStep(2)}>
+                  Revisar dados
+                </Button>
               )}
             </div>
           </CardContent>
@@ -1910,10 +2086,11 @@ function NovaAvaliacao() {
       )}
 
       <p className="mt-8 text-xs text-center text-muted-foreground italic">
-        "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional habilitado (CNAI/IBAPE)"
+        "Esta avaliação é mercadológica e não substitui laudo técnico aprovado por profissional
+        habilitado (CNAI/IBAPE)"
       </p>
 
-      {typeof window !== 'undefined' && localStorage.getItem('DEBUG_MODE') === 'true' && (
+      {typeof window !== "undefined" && localStorage.getItem("DEBUG_MODE") === "true" && (
         <div className="fixed bottom-4 right-4 z-[9999]">
           <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg">
             MODO DIAGNÓSTICO ATIVO
@@ -1927,9 +2104,12 @@ function NovaAvaliacao() {
             <div className="mx-auto mb-2 rounded-full bg-orange-100 p-3 w-fit">
               <AlertTriangle className="h-6 w-6 text-orange-600" />
             </div>
-            <DialogTitle className="text-center text-brand-blue">Você atingiu seu limite mensal</DialogTitle>
+            <DialogTitle className="text-center text-brand-blue">
+              Você atingiu seu limite mensal
+            </DialogTitle>
             <DialogDescription className="text-center">
-              Você já utilizou seus {statusUso?.limiteMes ?? 20} laudos deste mês.<br />
+              Você já utilizou seus {statusUso?.limiteMes ?? 20} laudos deste mês.
+              <br />
               Deseja gerar laudos adicionais por <strong>R$ 12,00</strong> cada?
             </DialogDescription>
           </DialogHeader>
@@ -1951,7 +2131,8 @@ function NovaAvaliacao() {
             </Button>
           </DialogFooter>
           <p className="text-[11px] text-muted-foreground text-center mt-2">
-            Após o pagamento, volte aqui e clique em "Gerar Avaliação" novamente — o crédito é aplicado automaticamente.
+            Após o pagamento, volte aqui e clique em "Gerar Avaliação" novamente — o crédito é
+            aplicado automaticamente.
           </p>
         </DialogContent>
       </Dialog>

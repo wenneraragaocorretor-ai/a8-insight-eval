@@ -16,20 +16,26 @@ async function userIsAdmin(supabase: any, userId: string) {
 export const criarCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({
-      plano: z.enum(["basico", "profissional", "expert", "expert_extra"]),
-      origin: z.string().url(),
-    }).parse(data),
+    z
+      .object({
+        plano: z.enum(["basico", "profissional", "expert", "expert_extra"]),
+        origin: z.string().url(),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { PLANS, ensurePrice, listConfiguredStripePrices, stripeRequest } = await import("./stripe.server");
+    const { PLANS, ensurePrice, listConfiguredStripePrices, stripeRequest } =
+      await import("./stripe.server");
     const { supabase, userId } = context;
 
     console.log("[checkout] === INÍCIO ===", { userId, plano: data.plano, origin: data.origin });
 
     const plan = PLANS[data.plano];
     console.log("[checkout] Plano recebido:", {
-      code: plan.code, lookup_key: plan.lookup_key, price_cents: plan.price_cents, mode: plan.mode,
+      code: plan.code,
+      lookup_key: plan.lookup_key,
+      price_cents: plan.price_cents,
+      mode: plan.mode,
     });
 
     let priceId: string;
@@ -67,7 +73,9 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
     if (!customerId) {
       try {
         const customer = await stripeRequest("POST", "/customers", {
-          email, name: nome, metadata: { user_id: userId },
+          email,
+          name: nome,
+          metadata: { user_id: userId },
         });
         customerId = customer.id;
         console.log("[checkout] Customer Stripe criado:", customerId);
@@ -106,12 +114,19 @@ export const criarCheckoutSession = createServerFn({ method: "POST" })
     try {
       session = await stripeRequest("POST", "/checkout/sessions", sessionBody);
       console.log("[checkout] ✅ Sessão criada:", {
-        id: session.id, url: session.url, mode: session.mode,
-        status: session.status, customer: session.customer, livemode: session.livemode,
+        id: session.id,
+        url: session.url,
+        mode: session.mode,
+        status: session.status,
+        customer: session.customer,
+        livemode: session.livemode,
       });
     } catch (e: any) {
       console.error("[checkout] ❌ FALHA ao criar sessão Stripe:", {
-        message: e?.message ?? String(e), priceId, customerId, plano: data.plano,
+        message: e?.message ?? String(e),
+        priceId,
+        customerId,
+        plano: data.plano,
       });
       throw e;
     }
@@ -141,13 +156,13 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       };
     }
 
-
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plano, subscription_status, subscription_current_period_end, plan_price_id, creditos_avulsos, is_beta_tester, beta_plano, beta_expira_em")
+      .select(
+        "plano, subscription_status, subscription_current_period_end, plan_price_id, creditos_avulsos, is_beta_tester, beta_plano, beta_expira_em",
+      )
       .eq("id", userId)
       .maybeSingle();
-
 
     const inicioMes = new Date();
     inicioMes.setDate(1);
@@ -176,20 +191,25 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
         proximoCiclo: profile!.beta_expira_em,
         avaliacoesMes: count ?? 0,
         limiteMes: limBeta,
-        creditosAvulsos: bp === "basico" ? Math.max(1, profile?.creditos_avulsos ?? 0) : (profile?.creditos_avulsos ?? 0),
+        creditosAvulsos:
+          bp === "basico"
+            ? Math.max(1, profile?.creditos_avulsos ?? 0)
+            : (profile?.creditos_avulsos ?? 0),
         isAdmin: false as const,
         isBetaTester: true as const,
         betaExpiraEm: profile!.beta_expira_em,
       };
     }
 
-    const plano = (profile?.plano ?? null) as "basico" | "profissional" | "expert" | "user" | "pro" | null;
+    const plano = (profile?.plano ?? null) as
+      "basico" | "profissional" | "expert" | "user" | "pro" | null;
     let limite: number | null;
     if (plano === "expert") limite = 20;
     else if (plano === "profissional" || plano === "pro") limite = 8;
     else if (plano === "basico") limite = 1;
     else limite = 0; // sem plano: sem acesso
-    const ativa = profile?.subscription_status === "active" || profile?.subscription_status === "trialing";
+    const ativa =
+      profile?.subscription_status === "active" || profile?.subscription_status === "trialing";
 
     return {
       plano,
@@ -203,9 +223,7 @@ export const getStatusAssinatura = createServerFn({ method: "GET" })
       isBetaTester: false as const,
       betaExpiraEm: null as string | null,
     };
-
   });
-
 
 export const confirmarCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -285,26 +303,36 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
         .eq("stripe_session_id", session.id)
         .maybeSingle();
       if (existingCharge) {
-        return { ok: true, plano: planCode, creditosAvulsos: existing?.creditos_avulsos ?? 0, alreadyProcessed: true };
+        return {
+          ok: true,
+          plano: planCode,
+          creditosAvulsos: existing?.creditos_avulsos ?? 0,
+          alreadyProcessed: true,
+        };
       }
 
       // Registra cobrança PRIMEIRO (unique constraint em stripe_session_id é a barreira atômica).
-      const valorCents = typeof session.amount_total === "number"
-        ? session.amount_total
-        : plan.price_cents;
+      const valorCents =
+        typeof session.amount_total === "number" ? session.amount_total : plan.price_cents;
       const { error: cobrancaError } = await supabaseAdmin.from("cobrancas_avulsas").insert({
         user_id: userId,
         tipo: planCode === "expert_extra" ? "expert_extra" : "basico_laudo",
         valor_cents: valorCents,
         moeda: session.currency ?? "brl",
         stripe_session_id: session.id,
-        stripe_payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+        stripe_payment_intent:
+          typeof session.payment_intent === "string" ? session.payment_intent : null,
         status: "paid",
         descricao: planCode === "expert_extra" ? "Laudo adicional Expert" : "Laudo avulso Básico",
       });
       if (cobrancaError) {
         if ((cobrancaError as any).code === "23505") {
-          return { ok: true, plano: planCode, creditosAvulsos: existing?.creditos_avulsos ?? 0, alreadyProcessed: true };
+          return {
+            ok: true,
+            plano: planCode,
+            creditosAvulsos: existing?.creditos_avulsos ?? 0,
+            alreadyProcessed: true,
+          };
         }
         throw new Error(`Falha ao registrar cobrança: ${cobrancaError.message}`);
       }
@@ -338,29 +366,34 @@ export const confirmarCheckout = createServerFn({ method: "POST" })
 
     // ---- PROFISSIONAL/EXPERT: assinatura recorrente ----
     if (!session.subscription) return { ok: false };
-    const sub = typeof session.subscription === "string"
-      ? await stripeRequest("GET", `/subscriptions/${session.subscription}`)
-      : session.subscription;
+    const sub =
+      typeof session.subscription === "string"
+        ? await stripeRequest("GET", `/subscriptions/${session.subscription}`)
+        : session.subscription;
 
     const priceId = sub.items?.data?.[0]?.price?.id as string | undefined;
     const dbPlan = plan.db_plan;
 
     // SEMPRE sobrescreve o plano com o produto recém-comprado (upgrade/downgrade).
-    const { data: updatedProfile, error } = await supabaseAdmin.from("profiles").upsert(
-      {
-        id: userId,
-        nome,
-        plano: dbPlan as any,
-        stripe_subscription_id: sub.id,
-        subscription_status: sub.status,
-        subscription_current_period_end: sub.current_period_end
-          ? new Date(sub.current_period_end * 1000).toISOString()
-          : null,
-        plan_price_id: priceId ?? null,
-        stripe_customer_id: sub.customer,
-      },
-      { onConflict: "id" },
-    ).select("plano, subscription_status, plan_price_id, stripe_subscription_id").single();
+    const { data: updatedProfile, error } = await supabaseAdmin
+      .from("profiles")
+      .upsert(
+        {
+          id: userId,
+          nome,
+          plano: dbPlan as any,
+          stripe_subscription_id: sub.id,
+          subscription_status: sub.status,
+          subscription_current_period_end: sub.current_period_end
+            ? new Date(sub.current_period_end * 1000).toISOString()
+            : null,
+          plan_price_id: priceId ?? null,
+          stripe_customer_id: sub.customer,
+        },
+        { onConflict: "id" },
+      )
+      .select("plano, subscription_status, plan_price_id, stripe_subscription_id")
+      .single();
 
     if (error) {
       console.error("[confirmarCheckout] ❌ Falha ao atualizar perfil:", error);

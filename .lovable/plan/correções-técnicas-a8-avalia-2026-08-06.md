@@ -8,13 +8,13 @@ Hoje a regra existe duplicada e divergente: no PDF (`src/lib/pdfReport.ts`) casa
 
 Regra canônica a valer em todos os pontos:
 
-| Tipologia | Área-base |
-|---|---|
-| Terreno / lote | área total do terreno |
-| Apartamento | privativa → total |
-| Casa / sobrado | construída → privativa (representa privativa/construída) → total |
-| Galpão / barracão | privativa/útil → total |
-| Sala comercial / loja / demais | privativa/útil → total |
+| Tipologia                      | Área-base                                                        |
+| ------------------------------ | ---------------------------------------------------------------- |
+| Terreno / lote                 | área total do terreno                                            |
+| Apartamento                    | privativa → total                                                |
+| Casa / sobrado                 | construída → privativa (representa privativa/construída) → total |
+| Galpão / barracão              | privativa/útil → total                                           |
+| Sala comercial / loja / demais | privativa/útil → total                                           |
 
 Implementação: uma função `areaBase(tipo, item)` retornando `{ area, fonte, label }`, com um único texto de regra documentado. O código do app importa de um novo `src/lib/areaBase.ts`; a Edge Function (runtime Deno, sem acesso ao bundle do app) recebe uma cópia idêntica em `supabase/functions/_shared/area-base.ts`, com comentário apontando o arquivo espelho e a obrigação de alterar os dois juntos.
 

@@ -17,7 +17,8 @@ function encodeForm(obj: Record<string, any>, prefix = ""): string {
     if (Array.isArray(v)) {
       v.forEach((item, i) => {
         if (typeof item === "object") parts.push(encodeForm(item, `${key}[${i}]`));
-        else parts.push(`${encodeURIComponent(`${key}[${i}]`)}=${encodeURIComponent(String(item))}`);
+        else
+          parts.push(`${encodeURIComponent(`${key}[${i}]`)}=${encodeURIComponent(String(item))}`);
       });
     } else if (typeof v === "object") {
       parts.push(encodeForm(v, key));
@@ -32,7 +33,7 @@ export async function stripeRequest(method: string, path: string, body?: Record<
   const headers: Record<string, string> = {
     Authorization: `Bearer ${getSecret()}`,
   };
-  let init: RequestInit = { method, headers };
+  const init: RequestInit = { method, headers };
   if (body) {
     headers["Content-Type"] = "application/x-www-form-urlencoded";
     init.body = encodeForm(body);
@@ -106,7 +107,9 @@ const LEGACY_PLAN_CODE_BY_LOOKUP: Partial<Record<string, PlanCode>> = {
   a8_expert_monthly: "expert",
 };
 
-export async function resolvePlanCodeFromPriceId(priceId?: string | null): Promise<PlanCode | null> {
+export async function resolvePlanCodeFromPriceId(
+  priceId?: string | null,
+): Promise<PlanCode | null> {
   if (!priceId) return null;
   const known = PLAN_CODE_BY_PRICE_ID[priceId];
   if (known) return known;
@@ -114,7 +117,11 @@ export async function resolvePlanCodeFromPriceId(priceId?: string | null): Promi
   const price = await stripeRequest("GET", `/prices/${encodeURIComponent(priceId)}`);
   const lookupKey = price.lookup_key as string | undefined;
   const byLookup = Object.values(PLANS).find((plan) => plan.lookup_key === lookupKey);
-  return (byLookup?.code as PlanCode | undefined) ?? (lookupKey ? LEGACY_PLAN_CODE_BY_LOOKUP[lookupKey] : undefined) ?? null;
+  return (
+    (byLookup?.code as PlanCode | undefined) ??
+    (lookupKey ? LEGACY_PLAN_CODE_BY_LOOKUP[lookupKey] : undefined) ??
+    null
+  );
 }
 
 export async function listConfiguredStripePrices() {
@@ -125,13 +132,16 @@ export async function listConfiguredStripePrices() {
         `/prices?lookup_keys[]=${encodeURIComponent(plan.lookup_key)}&active=true&limit=1&expand[]=data.product`,
       );
       const price = list.data?.[0];
-      return [code, {
-        lookup_key: plan.lookup_key,
-        price_id: price?.id ?? null,
-        valor_centavos: price?.unit_amount ?? null,
-        tipo: price?.recurring ? "subscription" : "payment",
-        plano_banco: plan.db_plan,
-      }] as const;
+      return [
+        code,
+        {
+          lookup_key: plan.lookup_key,
+          price_id: price?.id ?? null,
+          valor_centavos: price?.unit_amount ?? null,
+          tipo: price?.recurring ? "subscription" : "payment",
+          plano_banco: plan.db_plan,
+        },
+      ] as const;
     }),
   );
   return Object.fromEntries(entries);
@@ -154,15 +164,17 @@ export async function ensurePrice(plan: (typeof PLANS)[PlanCode]): Promise<strin
   if (existing) {
     const amountOk = existing.unit_amount === plan.price_cents;
     const currencyOk = existing.currency === "brl";
-    const modeOk = plan.mode === "subscription"
-      ? existing.recurring?.interval === "month"
-      : existing.recurring == null;
+    const modeOk =
+      plan.mode === "subscription"
+        ? existing.recurring?.interval === "month"
+        : existing.recurring == null;
     if (amountOk && currencyOk && modeOk) return existing.id;
 
     // Mismatch: desativa price antigo e cria um novo transferindo o lookup_key.
     await stripeRequest("POST", `/prices/${existing.id}`, { active: false });
 
-    const productId = typeof existing.product === "string" ? existing.product : existing.product?.id;
+    const productId =
+      typeof existing.product === "string" ? existing.product : existing.product?.id;
     const newPriceBody: Record<string, any> = {
       product: productId,
       unit_amount: plan.price_cents,

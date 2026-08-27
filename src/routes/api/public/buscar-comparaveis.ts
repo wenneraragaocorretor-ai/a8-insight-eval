@@ -72,28 +72,35 @@ Localização: ${imovel.localizacao}
 Área: ${imovel.area_total}m²
 Quartos: ${imovel.quartos}
 
-Complete a amostra até atingir 5 válidos. Já possuo ${comparaveis_atuais.length} comparáveis.`
-                }
+Complete a amostra até atingir 5 válidos. Já possuo ${comparaveis_atuais.length} comparáveis.`,
+                },
               ],
               tools: [
                 {
                   name: "web_search",
-                  description: "Pesquisa anúncios de imóveis em portais brasileiros (ZAP, VivaReal, Imovelweb).",
+                  description:
+                    "Pesquisa anúncios de imóveis em portais brasileiros (ZAP, VivaReal, Imovelweb).",
                   input_schema: {
                     type: "object",
                     properties: {
-                      query: { type: "string", description: "Query de pesquisa, ex: 'apartamento venda Moema 100m2'" }
+                      query: {
+                        type: "string",
+                        description: "Query de pesquisa, ex: 'apartamento venda Moema 100m2'",
+                      },
                     },
-                    required: ["query"]
-                  }
-                }
-              ]
+                    required: ["query"],
+                  },
+                },
+              ],
             }),
           });
 
           if (!claudeResp.ok) {
             const errTxt = await claudeResp.text();
-            return Response.json({ error: `Erro Anthropic: ${claudeResp.status}`, details: errTxt }, { status: claudeResp.status });
+            return Response.json(
+              { error: `Erro Anthropic: ${claudeResp.status}`, details: errTxt },
+              { status: claudeResp.status },
+            );
           }
 
           const result = await claudeResp.json();
@@ -101,9 +108,8 @@ Complete a amostra até atingir 5 válidos. Já possuo ${comparaveis_atuais.leng
           return Response.json({
             info: "Etapa 1: Rota de busca automática criada com sucesso.",
             etapa: "Aguardando testes de tool-use para processar resultados de busca.",
-            raw: result
+            raw: result,
           });
-
         } catch (e: any) {
           return Response.json({ error: e.message }, { status: 500 });
         }

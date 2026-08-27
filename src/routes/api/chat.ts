@@ -15,7 +15,11 @@ const SYSTEM_BASE =
 
 function fmtBRL(v: number | null | undefined) {
   if (v == null) return "—";
-  return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return Number(v).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  });
 }
 
 async function loadContext(
@@ -32,7 +36,9 @@ async function loadContext(
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" } as const;
 
   // Verifica plano Expert
@@ -45,7 +51,9 @@ async function loadContext(
 
   const { data: avaliacao } = await supabase
     .from("avaliacoes")
-    .select("id, tipo_imovel, localizacao, endereco_completo, area_total, quartos, suites, banheiros, vagas, padrao, conservacao, idade_real, observacoes")
+    .select(
+      "id, tipo_imovel, localizacao, endereco_completo, area_total, quartos, suites, banheiros, vagas, padrao, conservacao, idade_real, observacoes",
+    )
     .eq("id", avaliacaoId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -53,13 +61,17 @@ async function loadContext(
 
   const { data: resultado } = await supabase
     .from("resultados")
-    .select("valor_minimo, valor_central, valor_maximo, valor_unitario_medio, coeficiente_variacao, relatorio_json")
+    .select(
+      "valor_minimo, valor_central, valor_maximo, valor_unitario_medio, coeficiente_variacao, relatorio_json",
+    )
     .eq("avaliacao_id", avaliacaoId)
     .maybeSingle();
 
   const { data: comparaveis } = await supabase
     .from("comparaveis")
-    .select("fonte, localizacao, area, quartos, banheiros, vagas, valor_anunciado, valor_homogeneizado")
+    .select(
+      "fonte, localizacao, area, quartos, banheiros, vagas, valor_anunciado, valor_homogeneizado",
+    )
     .eq("avaliacao_id", avaliacaoId)
     .limit(15);
 
@@ -69,9 +81,13 @@ async function loadContext(
 function buildSystemPrompt(ctx: any): string {
   if (!ctx || ctx.error) return SYSTEM_BASE;
   const { avaliacao, resultado, comparaveis } = ctx;
-  const compLines = (comparaveis ?? []).slice(0, 10).map((c: any, i: number) =>
-    `${i + 1}. ${c.localizacao ?? "—"} | ${c.area ?? "—"}m² | ${c.quartos ?? "—"}q/${c.banheiros ?? "—"}b/${c.vagas ?? "—"}v | anunc: ${fmtBRL(c.valor_anunciado)}${c.valor_homogeneizado ? ` | hom: ${fmtBRL(c.valor_homogeneizado)}` : ""}`,
-  ).join("\n");
+  const compLines = (comparaveis ?? [])
+    .slice(0, 10)
+    .map(
+      (c: any, i: number) =>
+        `${i + 1}. ${c.localizacao ?? "—"} | ${c.area ?? "—"}m² | ${c.quartos ?? "—"}q/${c.banheiros ?? "—"}b/${c.vagas ?? "—"}v | anunc: ${fmtBRL(c.valor_anunciado)}${c.valor_homogeneizado ? ` | hom: ${fmtBRL(c.valor_homogeneizado)}` : ""}`,
+    )
+    .join("\n");
 
   return `${SYSTEM_BASE}
 
@@ -106,7 +122,9 @@ export const Route = createFileRoute("/api/chat")({
 
         const apiKey = process.env.LOVABLE_API_KEY;
         if (!apiKey) {
-          console.error("[api/chat] Missing required env var: LOVABLE_API_KEY is not set on the server");
+          console.error(
+            "[api/chat] Missing required env var: LOVABLE_API_KEY is not set on the server",
+          );
           return new Response(
             "Serviço temporariamente indisponível. Tente novamente em instantes.",
             { status: 503 },
@@ -114,7 +132,8 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-        const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const publishableKey =
+          process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const authHeader = request.headers.get("authorization") ?? "";
         const accessToken = authHeader.toLowerCase().startsWith("bearer ")
           ? authHeader.slice(7)
@@ -123,12 +142,20 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Unauthorized", { status: 401 });
         }
 
-        const ctx: any = await loadContext(supabaseUrl, publishableKey, accessToken, body.avaliacaoId);
+        const ctx: any = await loadContext(
+          supabaseUrl,
+          publishableKey,
+          accessToken,
+          body.avaliacaoId,
+        );
         if (ctx?.error === "Unauthorized") return new Response("Unauthorized", { status: 401 });
         if (ctx?.error === "Forbidden") {
-          return new Response("Suporte por chat disponível apenas no plano Expert.", { status: 403 });
+          return new Response("Suporte por chat disponível apenas no plano Expert.", {
+            status: 403,
+          });
         }
-        if (ctx?.error === "NotFound") return new Response("Avaliação não encontrada", { status: 404 });
+        if (ctx?.error === "NotFound")
+          return new Response("Avaliação não encontrada", { status: 404 });
 
         // Se não há avaliacaoId, ainda assim verifica plano expert do usuário
         if (!body.avaliacaoId) {
@@ -137,11 +164,19 @@ export const Route = createFileRoute("/api/chat")({
             global: { headers: { Authorization: `Bearer ${accessToken}` } },
             auth: { persistSession: false, autoRefreshToken: false },
           });
-          const { data: { user } } = await supabase.auth.getUser();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           if (!user) return new Response("Unauthorized", { status: 401 });
-          const { data: profile } = await supabase.from("profiles").select("plano").eq("id", user.id).maybeSingle();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("plano")
+            .eq("id", user.id)
+            .maybeSingle();
           if (profile?.plano !== "expert") {
-            return new Response("Suporte por chat disponível apenas no plano Expert.", { status: 403 });
+            return new Response("Suporte por chat disponível apenas no plano Expert.", {
+              status: 403,
+            });
           }
         }
 

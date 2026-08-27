@@ -8,8 +8,7 @@ export const Route = createFileRoute("/privacidade")({
       { title: "Política de Privacidade — A8 Avalia" },
       {
         name: "description",
-        content:
-          "Política de Privacidade da A8 Avalia. Conformidade com a LGPD.",
+        content: "Política de Privacidade da A8 Avalia. Conformidade com a LGPD.",
       },
     ],
   }),
@@ -27,13 +26,12 @@ function PrivacidadePage() {
 
           <div className="space-y-6 text-[#666666] leading-relaxed text-center">
             <p>
-              A A8 Avalia coleta e trata dados pessoais em
-              conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº
-              13.709/2018).
+              A A8 Avalia coleta e trata dados pessoais em conformidade com a Lei Geral de Proteção
+              de Dados (LGPD — Lei nº 13.709/2018).
             </p>
             <p>
-              Suas informações são utilizadas exclusivamente para o
-              funcionamento da plataforma e nunca são vendidas a terceiros.
+              Suas informações são utilizadas exclusivamente para o funcionamento da plataforma e
+              nunca são vendidas a terceiros.
             </p>
             <p>
               Para dúvidas ou solicitações sobre seus dados, entre em contato:{" "}

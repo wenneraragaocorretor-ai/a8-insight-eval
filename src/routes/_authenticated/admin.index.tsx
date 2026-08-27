@@ -76,8 +76,8 @@ function AdminOverview() {
           <CardContent>
             <p className="text-3xl font-bold">{brl(data.receitaCentavos)}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Soma de cobranças avulsas pagas. Receita recorrente de assinaturas
-              deve ser conferida no painel Stripe.
+              Soma de cobranças avulsas pagas. Receita recorrente de assinaturas deve ser conferida
+              no painel Stripe.
             </p>
           </CardContent>
         </Card>

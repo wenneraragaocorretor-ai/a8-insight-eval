@@ -53,7 +53,7 @@ export const salvarMeuPerfil = createServerFn({ method: "POST" })
       cnai: data.cnai || null,
       outro_registro: data.outro_registro || null,
       tipo: data.tipo,
-      nome_imobiliaria: data.tipo === "imobiliaria" ? (data.nome_imobiliaria || null) : null,
+      nome_imobiliaria: data.tipo === "imobiliaria" ? data.nome_imobiliaria || null : null,
       cidade: data.cidade,
       estado: data.estado.toUpperCase(),
       logo_url: data.logo_url || null,
@@ -67,4 +67,3 @@ export const salvarMeuPerfil = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
-

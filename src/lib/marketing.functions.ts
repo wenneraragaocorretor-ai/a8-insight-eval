@@ -45,7 +45,6 @@ export const gerarMarketingAvaliacao = createServerFn({ method: "POST" })
       throw new Error("Assistente de Marketing disponível apenas no plano Expert");
     }
 
-
     const { data: avRaw, error: e1 } = await supabase
       .from("avaliacoes")
       .select("*")
@@ -67,9 +66,10 @@ export const gerarMarketingAvaliacao = createServerFn({ method: "POST" })
     const valorMax = Number(res?.valor_maximo ?? 0);
 
     const padraoStr = String(av.padrao ?? "").toLowerCase();
-    const tomGuia = padraoStr.includes("alto") || padraoStr.includes("luxo")
-      ? "Tom SOFISTICADO e valorizado, destacando exclusividade, requinte e acabamentos premium."
-      : "Tom OBJETIVO, claro e direto, sem exageros nem termos como 'alto padrão', 'luxo' ou 'sofisticado'. Foque em utilidade, custo-benefício e funcionalidade para o dia a dia.";
+    const tomGuia =
+      padraoStr.includes("alto") || padraoStr.includes("luxo")
+        ? "Tom SOFISTICADO e valorizado, destacando exclusividade, requinte e acabamentos premium."
+        : "Tom OBJETIVO, claro e direto, sem exageros nem termos como 'alto padrão', 'luxo' ou 'sofisticado'. Foque em utilidade, custo-benefício e funcionalidade para o dia a dia.";
     const sistema = `Você é um especialista em marketing imobiliário no Brasil. Adapte o tom dos textos ao padrão construtivo informado: ${tomGuia} Não assuma que o imóvel é de alto padrão por padrão. Gere um plano de marketing personalizado e prático para o imóvel descrito, baseando-se nos dados reais informados (valor, localização, padrão, ambientes, lazer, acabamentos, análise de fotos). Não invente diferenciais que não existem. Retorne APENAS JSON estruturado conforme o schema exato. Sem markdown, sem comentários.`;
 
     const userPrompt = `DADOS DO IMÓVEL:
@@ -139,7 +139,8 @@ Devolva JSON EXATO neste formato:
     if (!resp.ok) {
       const txt = await resp.text();
       console.error("AI Gateway erro:", resp.status, txt);
-      if (resp.status === 429) throw new Error("Limite de requisições atingido. Tente novamente em instantes.");
+      if (resp.status === 429)
+        throw new Error("Limite de requisições atingido. Tente novamente em instantes.");
       if (resp.status === 402) throw new Error("Créditos da IA esgotados.");
       throw new Error("Falha ao gerar marketing");
     }

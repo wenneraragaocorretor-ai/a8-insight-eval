@@ -22,10 +22,7 @@ export const Route = createFileRoute("/afiliados/dashboard")({
   },
   component: AfiliadosDashboardPage,
   head: () => ({
-    meta: [
-      { title: "Painel do Afiliado — A8 Avalia" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Painel do Afiliado — A8 Avalia" }, { name: "robots", content: "noindex" }],
   }),
   errorComponent: ({ error }) => (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -90,8 +87,12 @@ function AfiliadosDashboardPage() {
   const { afiliado, indicacoes } = data;
   const link = `${window.location.origin}/?ref=${afiliado.codigo}`;
   const totalConv = indicacoes.length;
-  const pendentes = indicacoes.filter((i) => i.status === "pendente").reduce((s, i) => s + i.valor_comissao, 0);
-  const pagas = indicacoes.filter((i) => i.status === "pago").reduce((s, i) => s + i.valor_comissao, 0);
+  const pendentes = indicacoes
+    .filter((i) => i.status === "pendente")
+    .reduce((s, i) => s + i.valor_comissao, 0);
+  const pagas = indicacoes
+    .filter((i) => i.status === "pago")
+    .reduce((s, i) => s + i.valor_comissao, 0);
 
   async function copiar() {
     try {
@@ -132,7 +133,8 @@ function AfiliadosDashboardPage() {
         <section>
           <h1 className="text-2xl font-bold text-brand-blue mb-1">Painel do Afiliado</h1>
           <p className="text-sm text-muted-foreground">
-            Compartilhe seu link e acompanhe suas comissões. Você ganha {afiliado.percentual_comissao}% sobre o primeiro pagamento de cada indicação.
+            Compartilhe seu link e acompanhe suas comissões. Você ganha{" "}
+            {afiliado.percentual_comissao}% sobre o primeiro pagamento de cada indicação.
           </p>
         </section>
 
@@ -143,7 +145,12 @@ function AfiliadosDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
-                <Input readOnly value={link} className="font-mono text-sm" onFocus={(e) => e.currentTarget.select()} />
+                <Input
+                  readOnly
+                  value={link}
+                  className="font-mono text-sm"
+                  onFocus={(e) => e.currentTarget.select()}
+                />
                 <Button onClick={copiar} variant={copied ? "secondary" : "default"}>
                   <Copy className="h-4 w-4 mr-1" /> {copied ? "Copiado" : "Copiar"}
                 </Button>
@@ -212,7 +219,9 @@ function AfiliadosDashboardPage() {
                           <td className="py-3 pr-4 font-mono text-xs">{i.email_mascarado}</td>
                           <td className="py-3 pr-4">{PLANO_LABEL[i.plano] ?? i.plano}</td>
                           <td className="py-3 pr-4 text-right">{fmtMoney(i.valor_pago)}</td>
-                          <td className="py-3 pr-4 text-right font-medium">{fmtMoney(i.valor_comissao)}</td>
+                          <td className="py-3 pr-4 text-right font-medium">
+                            {fmtMoney(i.valor_comissao)}
+                          </td>
                           <td className="py-3">
                             {i.status === "pago" ? (
                               <Badge className="bg-emerald-600 hover:bg-emerald-600">Pago</Badge>

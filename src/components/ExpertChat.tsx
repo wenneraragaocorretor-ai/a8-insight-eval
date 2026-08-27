@@ -135,7 +135,11 @@ function ChatPanel({
             <p className="text-[10px] text-white/70 leading-tight">IA · NBR 14653-2</p>
           </div>
         </div>
-        <button onClick={onClose} aria-label="Fechar chat" className="p-1 hover:bg-white/10 rounded">
+        <button
+          onClick={onClose}
+          aria-label="Fechar chat"
+          className="p-1 hover:bg-white/10 rounded"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -145,7 +149,9 @@ function ChatPanel({
         {messages.length === 0 && (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Olá! Sou seu especialista em avaliação imobiliária. {avaliacaoId ? "Já tenho o contexto deste laudo carregado." : ""} Pergunte qualquer coisa ou escolha uma sugestão:
+              Olá! Sou seu especialista em avaliação imobiliária.{" "}
+              {avaliacaoId ? "Já tenho o contexto deste laudo carregado." : ""} Pergunte qualquer
+              coisa ou escolha uma sugestão:
             </p>
             <div className="flex flex-wrap gap-2">
               {SUGESTOES.map((s) => (
@@ -186,9 +192,7 @@ function ChatPanel({
           </div>
         )}
         {error && (
-          <div className="text-xs text-destructive">
-            Erro: {error.message || "Falha ao enviar"}
-          </div>
+          <div className="text-xs text-destructive">Erro: {error.message || "Falha ao enviar"}</div>
         )}
       </div>
 

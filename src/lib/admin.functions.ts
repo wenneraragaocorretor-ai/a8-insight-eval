@@ -48,7 +48,9 @@ export const buscarUsuarioPorEmail = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("id, nome, plano, subscription_status, creditos_avulsos, stripe_subscription_id, plan_price_id, subscription_current_period_end")
+      .select(
+        "id, nome, plano, subscription_status, creditos_avulsos, stripe_subscription_id, plan_price_id, subscription_current_period_end",
+      )
       .eq("id", user.id)
       .maybeSingle();
 
@@ -62,12 +64,14 @@ export const buscarUsuarioPorEmail = createServerFn({ method: "POST" })
 export const redefinirPlanoUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({
-      user_id: z.string().uuid(),
-      plano: z.enum(PLANO_VALUES),
-      creditos_avulsos: z.number().int().min(0).max(999).optional(),
-      limparAssinatura: z.boolean().optional().default(true),
-    }).parse(data),
+    z
+      .object({
+        user_id: z.string().uuid(),
+        plano: z.enum(PLANO_VALUES),
+        creditos_avulsos: z.number().int().min(0).max(999).optional(),
+        limparAssinatura: z.boolean().optional().default(true),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
@@ -126,7 +130,10 @@ export const getAdminStats = createServerFn({ method: "GET" })
     const totalLaudos = laudosRes.count ?? 0;
 
     let receitaCentavos = 0;
-    for (const c of (receitaRes.data ?? []) as Array<{ valor_cents: number | null; status: string | null }>) {
+    for (const c of (receitaRes.data ?? []) as Array<{
+      valor_cents: number | null;
+      status: string | null;
+    }>) {
       if (c.status === "paid" || c.status === "succeeded" || c.status === "complete") {
         receitaCentavos += c.valor_cents ?? 0;
       }
@@ -143,10 +150,12 @@ export const getAdminStats = createServerFn({ method: "GET" })
 export const listarUsuariosAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({
-      busca: z.string().trim().max(200).optional().default(""),
-      limit: z.number().int().min(1).max(200).optional().default(100),
-    }).parse(data),
+    z
+      .object({
+        busca: z.string().trim().max(200).optional().default(""),
+        limit: z.number().int().min(1).max(200).optional().default(100),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
@@ -167,7 +176,7 @@ export const listarUsuariosAdmin = createServerFn({ method: "POST" })
 
     // Enriquecer com e-mail real do auth quando profile.email estiver vazio
     const missingEmail = (rows ?? []).filter((r: any) => !r.email).map((r: any) => r.id);
-    let authEmails: Record<string, string> = {};
+    const authEmails: Record<string, string> = {};
     if (missingEmail.length) {
       const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
       for (const u of list?.users ?? []) {
@@ -204,11 +213,13 @@ export const listarBetaTesters = createServerFn({ method: "GET" })
 export const liberarBetaTester = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({
-      user_id: z.string().uuid(),
-      plano: z.enum(PLANO_VALUES),
-      expira_em: z.string().min(10), // ISO date or datetime
-    }).parse(data),
+    z
+      .object({
+        user_id: z.string().uuid(),
+        plano: z.enum(PLANO_VALUES),
+        expira_em: z.string().min(10), // ISO date or datetime
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
@@ -228,7 +239,10 @@ export const liberarBetaTester = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(`Falha ao liberar beta: ${error.message}`);
     console.log("[admin] Beta liberado", {
-      admin: context.userId, target: data.user_id, plano: data.plano, expira: expira.toISOString(),
+      admin: context.userId,
+      target: data.user_id,
+      plano: data.plano,
+      expira: expira.toISOString(),
     });
     return { ok: true, profile: updated };
   });

@@ -5,17 +5,21 @@ import { supabase } from "../integrations/supabase/client";
 import { amIAfiliado } from "../lib/afiliado.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/afiliados/login")({
   component: AfiliadosLoginPage,
   head: () => ({
-    meta: [
-      { title: "Login Afiliados — A8 Avalia" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Login Afiliados — A8 Avalia" }, { name: "robots", content: "noindex" }],
   }),
 });
 
@@ -70,7 +74,10 @@ function AfiliadosLoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="text-3xl font-bold text-brand-blue inline-flex items-center justify-center gap-1 mb-2">
+          <Link
+            to="/"
+            className="text-3xl font-bold text-brand-blue inline-flex items-center justify-center gap-1 mb-2"
+          >
             A8 <span className="text-brand-gold">Avalia</span>
           </Link>
           <p className="text-muted-foreground">Área do Afiliado</p>
@@ -79,7 +86,9 @@ function AfiliadosLoginPage() {
         <Card className="premium-card">
           <CardHeader>
             <CardTitle>Login Afiliado</CardTitle>
-            <CardDescription>Acesse sua área de afiliado para acompanhar suas indicações e comissões.</CardDescription>
+            <CardDescription>
+              Acesse sua área de afiliado para acompanhar suas indicações e comissões.
+            </CardDescription>
           </CardHeader>
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
@@ -90,18 +99,35 @@ function AfiliadosLoginPage() {
               )}
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
               <Button type="submit" className="w-full bg-brand-blue" disabled={isLoading}>
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
-              <Link to="/auth" search={{ plan: undefined }} className="text-xs text-muted-foreground hover:text-foreground">
+              <Link
+                to="/auth"
+                search={{ plan: undefined }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
                 Não é afiliado? Acessar login normal
               </Link>
             </CardFooter>

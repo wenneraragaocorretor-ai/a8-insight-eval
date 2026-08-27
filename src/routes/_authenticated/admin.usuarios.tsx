@@ -6,7 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Input } from "../../components/ui/input";
 import { Loader2, Search } from "lucide-react";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "../../components/ui/table";
 import { listarUsuariosAdmin } from "../../lib/admin.functions";
 
@@ -91,32 +96,23 @@ function AdminUsuarios() {
               <TableBody>
                 {(data ?? []).map((u) => {
                   const ativo =
-                    u.subscription_status === "active" ||
-                    u.subscription_status === "trialing";
+                    u.subscription_status === "active" || u.subscription_status === "trialing";
                   return (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">{u.nome ?? "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {u.email ?? "—"}
-                      </TableCell>
-                      <TableCell>
-                        {u.plano ? planoLabel[u.plano] ?? u.plano : "—"}
-                      </TableCell>
+                      <TableCell className="text-muted-foreground">{u.email ?? "—"}</TableCell>
+                      <TableCell>{u.plano ? (planoLabel[u.plano] ?? u.plano) : "—"}</TableCell>
                       <TableCell>
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full ${
-                            ativo
-                              ? "bg-green-100 text-green-700"
-                              : "bg-muted text-muted-foreground"
+                            ativo ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
                           }`}
                         >
-                          {ativo ? "Ativo" : u.subscription_status ?? "Inativo"}
+                          {ativo ? "Ativo" : (u.subscription_status ?? "Inativo")}
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {u.created_at
-                          ? new Date(u.created_at).toLocaleDateString("pt-BR")
-                          : "—"}
+                        {u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR") : "—"}
                       </TableCell>
                     </TableRow>
                   );

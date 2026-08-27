@@ -1,6 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calculator, FileText, LayoutDashboard, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Calculator,
+  FileText,
+  LayoutDashboard,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -8,16 +15,19 @@ export const Route = createFileRoute("/")({
       <div className="max-w-3xl w-full text-center space-y-8">
         <div className="inline-flex items-center gap-2 bg-brand-gold/10 text-brand-gold px-4 py-2 rounded-full border border-brand-gold/20 animate-in fade-in slide-in-from-top-4 duration-1000">
           <Sparkles size={16} />
-          <span className="text-sm font-semibold tracking-wide">TECNOLOGIA EXCLUSIVA PARA CORRETORES</span>
+          <span className="text-sm font-semibold tracking-wide">
+            TECNOLOGIA EXCLUSIVA PARA CORRETORES
+          </span>
         </div>
-        
+
         <h1 className="text-4xl md:text-6xl font-bold text-brand-blue tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
           Avaliações de Imóveis <br />
           <span className="text-brand-gold">em Segundos com IA</span>
         </h1>
-        
+
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-          Gere laudos técnicos profissionais, estudos de mercado e estratégias de venda utilizando o poder da inteligência artificial avançada.
+          Gere laudos técnicos profissionais, estudos de mercado e estratégias de venda utilizando o
+          poder da inteligência artificial avançada.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
@@ -29,7 +39,10 @@ export const Route = createFileRoute("/")({
             </Button>
           </Link>
           <Link to="/avaliacoes/nova">
-            <Button variant="outline" className="h-14 px-8 text-lg border-brand-blue text-brand-blue hover:bg-brand-blue/5 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              className="h-14 px-8 text-lg border-brand-blue text-brand-blue hover:bg-brand-blue/5 w-full sm:w-auto"
+            >
               <Calculator size={20} className="mr-2" />
               Nova Avaliação
             </Button>
@@ -42,21 +55,27 @@ export const Route = createFileRoute("/")({
               <FileText size={24} />
             </div>
             <h3 className="font-bold text-brand-blue">Laudos Profissionais</h3>
-            <p className="text-sm text-muted-foreground">Documentos estruturados com tratamento estatístico e regressão linear.</p>
+            <p className="text-sm text-muted-foreground">
+              Documentos estruturados com tratamento estatístico e regressão linear.
+            </p>
           </div>
           <div className="p-6 bg-card rounded-2xl border border-border/50 text-left space-y-3">
             <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
               <Sparkles size={24} />
             </div>
             <h3 className="font-bold text-brand-blue">Marketing com IA</h3>
-            <p className="text-sm text-muted-foreground">Textos prontos para portais, WhatsApp e identificação de público-alvo.</p>
+            <p className="text-sm text-muted-foreground">
+              Textos prontos para portais, WhatsApp e identificação de público-alvo.
+            </p>
           </div>
           <div className="p-6 bg-card rounded-2xl border border-border/50 text-left space-y-3">
             <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
               <ShieldCheck size={24} />
             </div>
             <h3 className="font-bold text-brand-blue">Segurança de Dados</h3>
-            <p className="text-sm text-muted-foreground">Persistência segura em nuvem e exportação de PDFs em alta resolução.</p>
+            <p className="text-sm text-muted-foreground">
+              Persistência segura em nuvem e exportação de PDFs em alta resolução.
+            </p>
           </div>
         </div>
 

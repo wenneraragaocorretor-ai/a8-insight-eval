@@ -6,9 +6,7 @@ export const numeroMonetario = z.preprocess((v) => {
   if (typeof v === "string") {
     const limpo = v.replace(/[^\d.,-]/g, "").trim();
     if (!limpo) return v;
-    const normalizado = limpo.includes(",")
-      ? limpo.replace(/\./g, "").replace(",", ".")
-      : limpo;
+    const normalizado = limpo.includes(",") ? limpo.replace(/\./g, "").replace(",", ".") : limpo;
     const n = Number(normalizado);
     return Number.isFinite(n) ? n : v;
   }
